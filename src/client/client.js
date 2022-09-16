@@ -1,3 +1,6 @@
+/* eslint-disable class-methods-use-this */
+/* eslint-disable guard-for-in */
+/* eslint-disable no-restricted-syntax */
 import axios from 'axios';
 import _ from 'lodash';
 
@@ -20,6 +23,18 @@ class Client {
     this.leagueId = options.leagueId;
 
     this.setCookies({ espnS2: options.espnS2, SWID: options.SWID });
+
+    this.ACTIVITY_MAP = {
+      178: 'FA ADDED',
+      180: 'WAIVER ADDED',
+      179: 'DROPPED',
+      181: 'DROPPED',
+      239: 'DROPPED',
+      244: 'TRADED',
+      FA: 178,
+      WAIVER: 180,
+      TRADED: 244
+    };
   }
 
   /**
@@ -203,6 +218,137 @@ class Client {
       const data = _.get(response.data, 'settings');
       return League.buildFromServer(data, { leagueId: this.leagueId, seasonId });
     });
+  }
+
+  /**
+   * Returns recent transactions on an ESPN fantasy football league
+   *
+   * @param {object} options Required options object.
+   * @param {number} options.seasonId The season to grab data from.
+   * @param options.msgType
+   * @returns Leagues Recent Activity
+   */
+  getRecentActivity({ seasonId, msgType = '' }) {
+    let topics = [];
+    let msgTypes = [178, 180, 179, 239, 181, 244];
+    const searchIds = [];
+    let activity = [];
+    if (msgType in this.ACTIVITY_MAP) {
+      msgTypes = [this.ACTIVITY_MAP[msgType]];
+    }
+
+    const route = this.constructor._buildRoute({
+      base: `apis/v3/games/ffl/seasons/${seasonId}/segments/0/leagues/${this.leagueId}/communication`,
+      params: '?view=kona_league_communication'
+    });
+
+    const config = this._buildAxiosConfig({
+      baseURL: 'https://fantasy.espn.com/',
+      headers: {
+        'x-fantasy-filter': JSON.stringify({
+          topics: {
+            filterType: { value: ['ACTIVITY_TRANSACTIONS'] },
+            limit: 25,
+            limitPerMessageSet: { value: 25 },
+            offset: 0,
+            sortMessageDate: { sortPriority: 1, sortAsc: false },
+            sortFor: { sortPriority: 2, sortAsc: false },
+            filterIncludeMessageTypeIds: { value: msgTypes }
+          }
+        })
+      }
+    });
+
+    const leagueRoute = this.constructor._buildRoute({
+      base: `apis/v3/games/ffl/seasons/${seasonId}/segments/0/leagues/${this.leagueId}`,
+      params: '?view=mTeam&view=mRoster&view=mMatchup&view=mSettings&view=mStandings'
+    });
+
+    const leagueConfig = this._buildAxiosConfig({
+      baseURL: 'https://fantasy.espn.com/'
+    });
+    return axios.get(route, config).then((response) => {
+      topics = response.data.topics;
+      return axios.get(leagueRoute, leagueConfig);
+    }).then((res) => {
+      activity = topics.map((topic) => this._buildActivity(topic, res.data));
+      activity.forEach((action) => {
+        action.forEach((msg) => {
+          if (!msg.player) {
+            searchIds.push(msg.targetId);
+          }
+        });
+      });
+      const playerRoute = this.constructor._buildRoute({
+        base: `apis/v3/games/ffl/seasons/${seasonId}/segments/0/leagues/${this.leagueId}`,
+        params: '?view=kona_playercard'
+      });
+
+      const playerConfig = this._buildAxiosConfig({
+        baseURL: 'https://fantasy.espn.com/',
+        headers: {
+          'x-fantasy-filter': JSON.stringify({
+            players: {
+              filterIds: { value: searchIds },
+              filterStatsForTopScoringPeriodIds: { value: 17, additionalValue: [`00${seasonId}`, `10${seasonId}`] }
+            }
+          })
+        }
+      });
+      return axios.get(playerRoute, playerConfig);
+    }).then((resp) => {
+      const newData = activity.map((action) => action.map((msg) => {
+        if (!msg.player) {
+          return {
+            ...msg,
+            player: resp.data.players.find((x) => x.id === msg.targetId)
+          };
+        }
+        return msg;
+      }));
+      return newData;
+    });
+  }
+
+  _buildActivity(topic, data) {
+    const { teams } = data;
+    const actions = [];
+    const { date } = topic;
+    for (const msg in topic.messages) {
+      let team = '';
+      let action = 'UNKNOWN';
+      let player = null;
+      let bidAmount = 0;
+      const msgId = topic.messages[msg].messageTypeId;
+
+      if (msgId === 244) {
+        team = teams.find((x) => x.id === topic.messages[msg].from);
+      } else if (msgId === 239) {
+        team = teams.find((x) => x.id === topic.messages[msg].for);
+      } else {
+        team = teams.find((x) => x.id === topic.messages[msg].to);
+      }
+
+      if (this.ACTIVITY_MAP[msgId]) {
+        action = this.ACTIVITY_MAP[msgId];
+      }
+      if (action === 'WAIVER ADDED') {
+        bidAmount = topic.messages[msg].from || 0;
+      }
+      if (team) {
+        player = team.roster.entries.find((x) => x.playerId === topic.messages[msg].targetId);
+      }
+
+      const ids = {
+        from: topic.messages[msg].from,
+        for: topic.messages[msg].for,
+        to: topic.messages[msg].to
+      };
+      actions.push({
+        team, action, player, bidAmount, date, targetId: topic.messages[msg].targetId, ids
+      });
+    }
+    return actions;
   }
 
   /**
