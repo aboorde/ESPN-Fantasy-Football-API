@@ -14937,6 +14937,94 @@ var Client = /*#__PURE__*/function () {
         });
       });
     }
+  }, {
+    key: "getExtendedLeagueInfo",
+    value: function getExtendedLeagueInfo(_ref8) {
+      var _this6 = this;
+
+      var seasonId = _ref8.seasonId,
+          scoringPeriodId = _ref8.scoringPeriodId;
+
+      var route = this.constructor._buildRoute({
+        base: "apis/v3/games/ffl/seasons/".concat(seasonId, "/segments/0/leagues/").concat(this.leagueId),
+        params: '?view=mTeam&view=mRoster&view=mMatchup&view=mSettings&view=mStandings'
+      });
+
+      var config = this._buildAxiosConfig({
+        baseURL: 'https://fantasy.espn.com/'
+      });
+
+      return axios__WEBPACK_IMPORTED_MODULE_4___default.a.get(route, config).then(function (response) {
+        var teams = response.data.teams.map(function (team) {
+          return _objectSpread(_objectSpread({}, team), _this6._fetchExtendedTeamData(response.data.teams, team, response.data.schedule));
+        });
+        var scheduledTeams = teams.map(function (team) {
+          var schedule = team.schedule;
+          team.schedule.forEach(function (matchup, week) {
+            teams.forEach(function (opponent) {
+              if (matchup === opponent.id) {
+                schedule[week] = _objectSpread(_objectSpread({}, opponent), _this6._fetchExtendedTeamData(teams, opponent, response.data.schedule));
+              }
+            });
+          });
+          return _objectSpread(_objectSpread({}, team), {}, {
+            schedule: schedule
+          });
+        });
+        var movTeams = scheduledTeams.map(function (team) {
+          var mov = [];
+          team.schedule.forEach(function (opponent, week) {
+            mov.push(team.scores[week] - opponent.scores[week]);
+          });
+          return _objectSpread(_objectSpread({}, team), {}, {
+            mov: mov
+          });
+        });
+        return movTeams;
+      });
+    }
+  }, {
+    key: "_fetchExtendedTeamData",
+    value: function _fetchExtendedTeamData(teams, team, data) {
+      var _this7 = this;
+
+      var outcomes = [];
+      var scores = [];
+      var schedule = [];
+      data.forEach(function (matchup) {
+        if (Object.keys(matchup).includes('away')) {
+          if (matchup.away.teamId === team.id) {
+            scores.push(matchup.away.totalPoints);
+            schedule.push(matchup.home.teamId);
+            outcomes.push(_this7._getWinner(matchup.winner, true));
+          } else if (matchup.home.teamId === team.id) {
+            scores.push(matchup.home.totalPoints);
+            schedule.push(matchup.away.teamId);
+            outcomes.push(_this7._getWinner(matchup.winner, false));
+          }
+        } else if (matchup.home.teamId === team.id) {
+          scores.push(matchup.home.totalPoints);
+          schedule.push(matchup.home.teamId);
+          outcomes.push(_this7._getWinner(matchup.winner, false));
+        }
+      });
+      return {
+        outcomes: outcomes,
+        scores: scores,
+        schedule: schedule
+      };
+    }
+  }, {
+    key: "_getWinner",
+    value: function _getWinner(winner, isAway) {
+      if (winner === 'UNDECIDED') {
+        return 'U';
+      } else if (isAway && winner === 'AWAY' || !isAway && winner === 'HOME') {
+        return 'W';
+      }
+
+      return 'L';
+    }
     /**
      * Returns recent transactions on an ESPN fantasy football league
      *
@@ -14948,12 +15036,12 @@ var Client = /*#__PURE__*/function () {
 
   }, {
     key: "getRecentActivity",
-    value: function getRecentActivity(_ref8) {
-      var _this6 = this;
+    value: function getRecentActivity(_ref9) {
+      var _this8 = this;
 
-      var seasonId = _ref8.seasonId,
-          _ref8$msgType = _ref8.msgType,
-          msgType = _ref8$msgType === void 0 ? '' : _ref8$msgType;
+      var seasonId = _ref9.seasonId,
+          _ref9$msgType = _ref9.msgType,
+          msgType = _ref9$msgType === void 0 ? '' : _ref9$msgType;
       var topics = [];
       var msgTypes = [178, 180, 179, 239, 181, 244];
       var searchIds = [];
@@ -15007,12 +15095,11 @@ var Client = /*#__PURE__*/function () {
       });
 
       return axios__WEBPACK_IMPORTED_MODULE_4___default.a.get(route, config).then(function (response) {
-        topics = response.data.topics; // const activity = response.data.topics.map((topic) => this._buildActivity(topic));
-
+        topics = response.data.topics;
         return axios__WEBPACK_IMPORTED_MODULE_4___default.a.get(leagueRoute, leagueConfig);
       }).then(function (res) {
         activity = topics.map(function (topic) {
-          return _this6._buildActivity(topic, res.data);
+          return _this8._buildActivity(topic, res.data);
         });
         activity.forEach(function (action) {
           action.forEach(function (msg) {
@@ -15020,17 +15107,14 @@ var Client = /*#__PURE__*/function () {
               searchIds.push(msg.targetId);
             }
           });
-        }); //
-        //
-        //
-        //
+        });
 
-        var playerRoute = _this6.constructor._buildRoute({
-          base: "apis/v3/games/ffl/seasons/".concat(seasonId, "/segments/0/leagues/").concat(_this6.leagueId),
+        var playerRoute = _this8.constructor._buildRoute({
+          base: "apis/v3/games/ffl/seasons/".concat(seasonId, "/segments/0/leagues/").concat(_this8.leagueId),
           params: '?view=kona_playercard'
         });
 
-        var playerConfig = _this6._buildAxiosConfig({
+        var playerConfig = _this8._buildAxiosConfig({
           baseURL: 'https://fantasy.espn.com/',
           headers: {
             'x-fantasy-filter': JSON.stringify({
@@ -15047,11 +15131,7 @@ var Client = /*#__PURE__*/function () {
           }
         });
 
-        return axios__WEBPACK_IMPORTED_MODULE_4___default.a.get(playerRoute, playerConfig); //
-        //
-        //
-        //
-        // return searchIds;
+        return axios__WEBPACK_IMPORTED_MODULE_4___default.a.get(playerRoute, playerConfig);
       }).then(function (resp) {
         var newData = activity.map(function (action) {
           return action.map(function (msg) {
@@ -15072,7 +15152,7 @@ var Client = /*#__PURE__*/function () {
   }, {
     key: "_buildActivity",
     value: function _buildActivity(topic, data) {
-      var _this7 = this;
+      var _this9 = this;
 
       var teams = data.teams;
       var actions = [];
@@ -15099,8 +15179,8 @@ var Client = /*#__PURE__*/function () {
           });
         }
 
-        if (_this7.ACTIVITY_MAP[msgId]) {
-          action = _this7.ACTIVITY_MAP[msgId];
+        if (_this9.ACTIVITY_MAP[msgId]) {
+          action = _this9.ACTIVITY_MAP[msgId];
         }
 
         if (action === 'WAIVER ADDED') {
@@ -15108,19 +15188,10 @@ var Client = /*#__PURE__*/function () {
         }
 
         if (team) {
-          // player = team.roster.entries[0];
           player = team.roster.entries.find(function (x) {
             return x.playerId === topic.messages[msg].targetId;
-          }); // for (const teamPlayer in team.roster.entries) {
-          //   if (teamPlayer.playerId === topic.messages[msg].targetId) {
-          //     player = team.roster.entries[0];
-          //     break;
-          //   }
-          // }
-        } // if (!player) {
-        //   player = playerInfo(msg.targetId);
-        // }
-
+          });
+        }
 
         var ids = {
           from: topic.messages[msg].from,
@@ -15169,9 +15240,9 @@ var Client = /*#__PURE__*/function () {
     }
   }], [{
     key: "_buildRoute",
-    value: function _buildRoute(_ref9) {
-      var base = _ref9.base,
-          params = _ref9.params;
+    value: function _buildRoute(_ref10) {
+      var base = _ref10.base,
+          params = _ref10.params;
       return "".concat(base).concat(params);
     }
   }]);
