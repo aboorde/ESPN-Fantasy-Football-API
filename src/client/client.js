@@ -220,6 +220,91 @@ class Client {
     });
   }
 
+  getExtendedLeagueInfo({ seasonId, scoringPeriodId }) {
+    const route = this.constructor._buildRoute({
+      base: `apis/v3/games/ffl/seasons/${seasonId}/segments/0/leagues/${this.leagueId}`,
+      params: '?view=mTeam&view=mRoster&view=mMatchup&view=mSettings&view=mStandings'
+    });
+
+    const config = this._buildAxiosConfig({
+      baseURL: 'https://fantasy.espn.com/'
+    });
+
+    return axios.get(route, config).then((response) => {
+      const teams = response.data.teams.map((team) => ({
+        ...team,
+        ...this._fetchExtendedTeamData(response.data.teams, team, response.data.schedule)
+      }));
+      const scheduledTeams = teams.map((team) => {
+        const { schedule } = team;
+        team.schedule.forEach((matchup, week) => {
+          teams.forEach((opponent) => {
+            if (matchup === opponent.id) {
+              schedule[week] = {
+                ...opponent,
+                ...this._fetchExtendedTeamData(teams, opponent, response.data.schedule)
+              };
+            }
+          });
+        });
+        return {
+          ...team,
+          schedule
+        };
+      });
+      const movTeams = scheduledTeams.map((team) => {
+        const mov = [];
+        team.schedule.forEach((opponent, week) => {
+          mov.push(team.scores[week] - opponent.scores[week]);
+        });
+        return {
+          ...team,
+          mov
+        };
+      });
+
+      return movTeams;
+    });
+  }
+
+  _fetchExtendedTeamData(teams, team, data) {
+    const outcomes = [];
+    const scores = [];
+    const schedule = [];
+    data.forEach((matchup) => {
+      if (Object.keys(matchup).includes('away')) {
+        if (matchup.away.teamId === team.id) {
+          scores.push(matchup.away.totalPoints);
+          schedule.push(matchup.home.teamId);
+          outcomes.push(this._getWinner(matchup.winner, true));
+        } else if (matchup.home.teamId === team.id) {
+          scores.push(matchup.home.totalPoints);
+          schedule.push(matchup.away.teamId);
+          outcomes.push(this._getWinner(matchup.winner, false));
+        }
+      } else if (matchup.home.teamId === team.id) {
+        scores.push(matchup.home.totalPoints);
+        schedule.push(matchup.home.teamId);
+        outcomes.push(this._getWinner(matchup.winner, false));
+      }
+    });
+
+    return {
+      outcomes,
+      scores,
+      schedule
+    };
+  }
+
+  _getWinner(winner, isAway) {
+    if (winner === 'UNDECIDED') {
+      return 'U';
+    } else if ((isAway && winner === 'AWAY') || (!isAway && winner === 'HOME')) {
+      return 'W';
+    }
+    return 'L';
+  }
+
   /**
    * Returns recent transactions on an ESPN fantasy football league
    *
