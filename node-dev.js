@@ -4271,12 +4271,21 @@ CombinedStream.prototype._emitError = function(err) {
  * This is the web browser implementation of `debug()`.
  */
 
-exports.log = log;
 exports.formatArgs = formatArgs;
 exports.save = save;
 exports.load = load;
 exports.useColors = useColors;
 exports.storage = localstorage();
+exports.destroy = (() => {
+	let warned = false;
+
+	return () => {
+		if (!warned) {
+			warned = true;
+			console.warn('Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.');
+		}
+	};
+})();
 
 /**
  * Colors.
@@ -4437,18 +4446,14 @@ function formatArgs(args) {
 }
 
 /**
- * Invokes `console.log()` when available.
- * No-op when `console.log` is not a "function".
+ * Invokes `console.debug()` when available.
+ * No-op when `console.debug` is not a "function".
+ * If `console.debug` is not available, falls back
+ * to `console.log`.
  *
  * @api public
  */
-function log(...args) {
-	// This hackery is required for IE8/9, where
-	// the `console.log` function doesn't have 'apply'
-	return typeof console === 'object' &&
-		console.log &&
-		console.log(...args);
-}
+exports.log = console.debug || console.log || (() => {});
 
 /**
  * Save `namespaces`.
@@ -4554,15 +4559,11 @@ function setup(env) {
 	createDebug.enable = enable;
 	createDebug.enabled = enabled;
 	createDebug.humanize = __webpack_require__(/*! ms */ "./node_modules/ms/index.js");
+	createDebug.destroy = destroy;
 
 	Object.keys(env).forEach(key => {
 		createDebug[key] = env[key];
 	});
-
-	/**
-	* Active `debug` instances.
-	*/
-	createDebug.instances = [];
 
 	/**
 	* The currently active debug mode names, and names to skip.
@@ -4580,7 +4581,7 @@ function setup(env) {
 
 	/**
 	* Selects a color for a debug namespace
-	* @param {String} namespace The namespace string for the for the debug instance to be colored
+	* @param {String} namespace The namespace string for the debug instance to be colored
 	* @return {Number|String} An ANSI color code for the given namespace
 	* @api private
 	*/
@@ -4605,6 +4606,9 @@ function setup(env) {
 	*/
 	function createDebug(namespace) {
 		let prevTime;
+		let enableOverride = null;
+		let namespacesCache;
+		let enabledCache;
 
 		function debug(...args) {
 			// Disabled?
@@ -4634,7 +4638,7 @@ function setup(env) {
 			args[0] = args[0].replace(/%([a-zA-Z%])/g, (match, format) => {
 				// If we encounter an escaped % then don't increase the array index
 				if (match === '%%') {
-					return match;
+					return '%';
 				}
 				index++;
 				const formatter = createDebug.formatters[format];
@@ -4657,31 +4661,36 @@ function setup(env) {
 		}
 
 		debug.namespace = namespace;
-		debug.enabled = createDebug.enabled(namespace);
 		debug.useColors = createDebug.useColors();
-		debug.color = selectColor(namespace);
-		debug.destroy = destroy;
+		debug.color = createDebug.selectColor(namespace);
 		debug.extend = extend;
-		// Debug.formatArgs = formatArgs;
-		// debug.rawLog = rawLog;
+		debug.destroy = createDebug.destroy; // XXX Temporary. Will be removed in the next major release.
 
-		// env-specific initialization logic for debug instances
+		Object.defineProperty(debug, 'enabled', {
+			enumerable: true,
+			configurable: false,
+			get: () => {
+				if (enableOverride !== null) {
+					return enableOverride;
+				}
+				if (namespacesCache !== createDebug.namespaces) {
+					namespacesCache = createDebug.namespaces;
+					enabledCache = createDebug.enabled(namespace);
+				}
+
+				return enabledCache;
+			},
+			set: v => {
+				enableOverride = v;
+			}
+		});
+
+		// Env-specific initialization logic for debug instances
 		if (typeof createDebug.init === 'function') {
 			createDebug.init(debug);
 		}
 
-		createDebug.instances.push(debug);
-
 		return debug;
-	}
-
-	function destroy() {
-		const index = createDebug.instances.indexOf(this);
-		if (index !== -1) {
-			createDebug.instances.splice(index, 1);
-			return true;
-		}
-		return false;
 	}
 
 	function extend(namespace, delimiter) {
@@ -4699,6 +4708,7 @@ function setup(env) {
 	*/
 	function enable(namespaces) {
 		createDebug.save(namespaces);
+		createDebug.namespaces = namespaces;
 
 		createDebug.names = [];
 		createDebug.skips = [];
@@ -4716,15 +4726,10 @@ function setup(env) {
 			namespaces = split[i].replace(/\*/g, '.*?');
 
 			if (namespaces[0] === '-') {
-				createDebug.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
+				createDebug.skips.push(new RegExp('^' + namespaces.slice(1) + '$'));
 			} else {
 				createDebug.names.push(new RegExp('^' + namespaces + '$'));
 			}
-		}
-
-		for (i = 0; i < createDebug.instances.length; i++) {
-			const instance = createDebug.instances[i];
-			instance.enabled = createDebug.enabled(instance.namespace);
 		}
 	}
 
@@ -4800,6 +4805,14 @@ function setup(env) {
 		return val;
 	}
 
+	/**
+	* XXX DO NOT USE. This is a temporary stub function.
+	* XXX It WILL be removed in the next major release.
+	*/
+	function destroy() {
+		console.warn('Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.');
+	}
+
 	createDebug.enable(createDebug.load());
 
 	return createDebug;
@@ -4855,6 +4868,10 @@ exports.formatArgs = formatArgs;
 exports.save = save;
 exports.load = load;
 exports.useColors = useColors;
+exports.destroy = util.deprecate(
+	() => {},
+	'Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.'
+);
 
 /**
  * Colors.
@@ -5023,11 +5040,11 @@ function getDate() {
 }
 
 /**
- * Invokes `util.format()` with the specified arguments and writes to stderr.
+ * Invokes `util.formatWithOptions()` with the specified arguments and writes to stderr.
  */
 
 function log(...args) {
-	return process.stderr.write(util.format(...args) + '\n');
+	return process.stderr.write(util.formatWithOptions(exports.inspectOpts, ...args) + '\n');
 }
 
 /**
@@ -5084,7 +5101,9 @@ const {formatters} = module.exports;
 formatters.o = function (v) {
 	this.inspectOpts.colors = this.useColors;
 	return util.inspect(v, this.inspectOpts)
-		.replace(/\s*\n\s*/g, ' ');
+		.split('\n')
+		.map(str => str.trim())
+		.join(' ');
 };
 
 /**
@@ -5258,6 +5277,30 @@ var Writable = __webpack_require__(/*! stream */ "stream").Writable;
 var assert = __webpack_require__(/*! assert */ "assert");
 var debug = __webpack_require__(/*! ./debug */ "./node_modules/follow-redirects/debug.js");
 
+// Whether to use the native URL object or the legacy url module
+var useNativeURL = false;
+try {
+  assert(new URL());
+}
+catch (error) {
+  useNativeURL = error.code === "ERR_INVALID_URL";
+}
+
+// URL fields to preserve in copy operations
+var preservedUrlFields = [
+  "auth",
+  "host",
+  "hostname",
+  "href",
+  "path",
+  "pathname",
+  "port",
+  "protocol",
+  "query",
+  "search",
+  "hash",
+];
+
 // Create handlers that pass events from native requests
 var events = ["abort", "aborted", "connect", "error", "socket", "timeout"];
 var eventHandlers = Object.create(null);
@@ -5268,13 +5311,19 @@ events.forEach(function (event) {
 });
 
 // Error types with codes
+var InvalidUrlError = createErrorType(
+  "ERR_INVALID_URL",
+  "Invalid URL",
+  TypeError
+);
 var RedirectionError = createErrorType(
   "ERR_FR_REDIRECTION_FAILURE",
   "Redirected request failed"
 );
 var TooManyRedirectsError = createErrorType(
   "ERR_FR_TOO_MANY_REDIRECTS",
-  "Maximum number of redirects exceeded"
+  "Maximum number of redirects exceeded",
+  RedirectionError
 );
 var MaxBodyLengthExceededError = createErrorType(
   "ERR_FR_MAX_BODY_LENGTH_EXCEEDED",
@@ -5284,6 +5333,9 @@ var WriteAfterEndError = createErrorType(
   "ERR_STREAM_WRITE_AFTER_END",
   "write after end"
 );
+
+// istanbul ignore next
+var destroy = Writable.prototype.destroy || noop;
 
 // An HTTP(S) request that can be redirected
 function RedirectableRequest(options, responseCallback) {
@@ -5306,7 +5358,13 @@ function RedirectableRequest(options, responseCallback) {
   // React to responses of native requests
   var self = this;
   this._onNativeResponse = function (response) {
-    self._processResponse(response);
+    try {
+      self._processResponse(response);
+    }
+    catch (cause) {
+      self.emit("error", cause instanceof RedirectionError ?
+        cause : new RedirectionError({ cause: cause }));
+    }
   };
 
   // Perform the first request
@@ -5315,8 +5373,15 @@ function RedirectableRequest(options, responseCallback) {
 RedirectableRequest.prototype = Object.create(Writable.prototype);
 
 RedirectableRequest.prototype.abort = function () {
-  abortRequest(this._currentRequest);
+  destroyRequest(this._currentRequest);
+  this._currentRequest.abort();
   this.emit("abort");
+};
+
+RedirectableRequest.prototype.destroy = function (error) {
+  destroyRequest(this._currentRequest, error);
+  destroy.call(this, error);
+  return this;
 };
 
 // Writes buffered data to the current native request
@@ -5327,10 +5392,10 @@ RedirectableRequest.prototype.write = function (data, encoding, callback) {
   }
 
   // Validate input and shift parameters if necessary
-  if (!(typeof data === "string" || typeof data === "object" && ("length" in data))) {
+  if (!isString(data) && !isBuffer(data)) {
     throw new TypeError("data should be a string, Buffer or Uint8Array");
   }
-  if (typeof encoding === "function") {
+  if (isFunction(encoding)) {
     callback = encoding;
     encoding = null;
   }
@@ -5359,11 +5424,11 @@ RedirectableRequest.prototype.write = function (data, encoding, callback) {
 // Ends the current native request
 RedirectableRequest.prototype.end = function (data, encoding, callback) {
   // Shift parameters if necessary
-  if (typeof data === "function") {
+  if (isFunction(data)) {
     callback = data;
     data = encoding = null;
   }
-  else if (typeof encoding === "function") {
+  else if (isFunction(encoding)) {
     callback = encoding;
     encoding = null;
   }
@@ -5431,6 +5496,7 @@ RedirectableRequest.prototype.setTimeout = function (msecs, callback) {
     self.removeListener("abort", clearTimer);
     self.removeListener("error", clearTimer);
     self.removeListener("response", clearTimer);
+    self.removeListener("close", clearTimer);
     if (callback) {
       self.removeListener("timeout", callback);
     }
@@ -5457,6 +5523,7 @@ RedirectableRequest.prototype.setTimeout = function (msecs, callback) {
   this.on("abort", clearTimer);
   this.on("error", clearTimer);
   this.on("response", clearTimer);
+  this.on("close", clearTimer);
 
   return this;
 };
@@ -5515,8 +5582,7 @@ RedirectableRequest.prototype._performRequest = function () {
   var protocol = this._options.protocol;
   var nativeProtocol = this._options.nativeProtocols[protocol];
   if (!nativeProtocol) {
-    this.emit("error", new TypeError("Unsupported protocol " + protocol));
-    return;
+    throw new TypeError("Unsupported protocol " + protocol);
   }
 
   // If specified, use the agent corresponding to the protocol
@@ -5540,7 +5606,7 @@ RedirectableRequest.prototype._performRequest = function () {
     url.format(this._options) :
     // When making a request to a proxy, […]
     // a client MUST send the target URI in absolute-form […].
-    this._currentUrl = this._options.path;
+    this._options.path;
 
   // End a redirected request
   // (The first request must be ended explicitly with RedirectableRequest#end)
@@ -5608,15 +5674,14 @@ RedirectableRequest.prototype._processResponse = function (response) {
   }
 
   // The response is a redirect, so abort the current request
-  abortRequest(this._currentRequest);
+  destroyRequest(this._currentRequest);
   // Discard the remainder of the response to avoid waiting for data
   response.destroy();
 
   // RFC7231§6.4: A client SHOULD detect and intervene
   // in cyclical redirections (i.e., "infinite" redirection loops).
   if (++this._redirectCount > this._options.maxRedirects) {
-    this.emit("error", new TooManyRedirectsError());
-    return;
+    throw new TooManyRedirectsError();
   }
 
   // Store the request headers if applicable
@@ -5650,38 +5715,28 @@ RedirectableRequest.prototype._processResponse = function (response) {
   var currentHostHeader = removeMatchingHeaders(/^host$/i, this._options.headers);
 
   // If the redirect is relative, carry over the host of the last request
-  var currentUrlParts = url.parse(this._currentUrl);
+  var currentUrlParts = parseUrl(this._currentUrl);
   var currentHost = currentHostHeader || currentUrlParts.host;
   var currentUrl = /^\w+:/.test(location) ? this._currentUrl :
     url.format(Object.assign(currentUrlParts, { host: currentHost }));
 
-  // Determine the URL of the redirection
-  var redirectUrl;
-  try {
-    redirectUrl = url.resolve(currentUrl, location);
-  }
-  catch (cause) {
-    this.emit("error", new RedirectionError(cause));
-    return;
-  }
-
   // Create the redirected request
-  debug("redirecting to", redirectUrl);
+  var redirectUrl = resolveUrl(location, currentUrl);
+  debug("redirecting to", redirectUrl.href);
   this._isRedirect = true;
-  var redirectUrlParts = url.parse(redirectUrl);
-  Object.assign(this._options, redirectUrlParts);
+  spreadUrlObject(redirectUrl, this._options);
 
   // Drop confidential headers when redirecting to a less secure protocol
   // or to a different domain that is not a superdomain
-  if (redirectUrlParts.protocol !== currentUrlParts.protocol &&
-     redirectUrlParts.protocol !== "https:" ||
-     redirectUrlParts.host !== currentHost &&
-     !isSubdomain(redirectUrlParts.host, currentHost)) {
-    removeMatchingHeaders(/^(?:authorization|cookie)$/i, this._options.headers);
+  if (redirectUrl.protocol !== currentUrlParts.protocol &&
+     redirectUrl.protocol !== "https:" ||
+     redirectUrl.host !== currentHost &&
+     !isSubdomain(redirectUrl.host, currentHost)) {
+    removeMatchingHeaders(/^(?:(?:proxy-)?authorization|cookie)$/i, this._options.headers);
   }
 
   // Evaluate the beforeRedirect callback
-  if (typeof beforeRedirect === "function") {
+  if (isFunction(beforeRedirect)) {
     var responseDetails = {
       headers: response.headers,
       statusCode: statusCode,
@@ -5691,23 +5746,12 @@ RedirectableRequest.prototype._processResponse = function (response) {
       method: method,
       headers: requestHeaders,
     };
-    try {
-      beforeRedirect(this._options, responseDetails, requestDetails);
-    }
-    catch (err) {
-      this.emit("error", err);
-      return;
-    }
+    beforeRedirect(this._options, responseDetails, requestDetails);
     this._sanitizeOptions(this._options);
   }
 
   // Perform the redirected request
-  try {
-    this._performRequest();
-  }
-  catch (cause) {
-    this.emit("error", new RedirectionError(cause));
-  }
+  this._performRequest();
 };
 
 // Wraps the key/value object of protocols with redirect functionality
@@ -5727,26 +5771,19 @@ function wrap(protocols) {
 
     // Executes a request, following redirects
     function request(input, options, callback) {
-      // Parse parameters
-      if (typeof input === "string") {
-        var urlStr = input;
-        try {
-          input = urlToOptions(new URL(urlStr));
-        }
-        catch (err) {
-          /* istanbul ignore next */
-          input = url.parse(urlStr);
-        }
+      // Parse parameters, ensuring that input is an object
+      if (isURL(input)) {
+        input = spreadUrlObject(input);
       }
-      else if (URL && (input instanceof URL)) {
-        input = urlToOptions(input);
+      else if (isString(input)) {
+        input = spreadUrlObject(parseUrl(input));
       }
       else {
         callback = options;
-        options = input;
+        options = validateUrl(input);
         input = { protocol: protocol };
       }
-      if (typeof options === "function") {
+      if (isFunction(options)) {
         callback = options;
         options = null;
       }
@@ -5757,6 +5794,9 @@ function wrap(protocols) {
         maxBodyLength: exports.maxBodyLength,
       }, input, options);
       options.nativeProtocols = nativeProtocols;
+      if (!isString(options.host) && !isString(options.hostname)) {
+        options.hostname = "::1";
+      }
 
       assert.equal(options.protocol, protocol, "protocol mismatch");
       debug("options", options);
@@ -5779,27 +5819,57 @@ function wrap(protocols) {
   return exports;
 }
 
-/* istanbul ignore next */
 function noop() { /* empty */ }
 
-// from https://github.com/nodejs/node/blob/master/lib/internal/url.js
-function urlToOptions(urlObject) {
-  var options = {
-    protocol: urlObject.protocol,
-    hostname: urlObject.hostname.startsWith("[") ?
-      /* istanbul ignore next */
-      urlObject.hostname.slice(1, -1) :
-      urlObject.hostname,
-    hash: urlObject.hash,
-    search: urlObject.search,
-    pathname: urlObject.pathname,
-    path: urlObject.pathname + urlObject.search,
-    href: urlObject.href,
-  };
-  if (urlObject.port !== "") {
-    options.port = Number(urlObject.port);
+function parseUrl(input) {
+  var parsed;
+  /* istanbul ignore else */
+  if (useNativeURL) {
+    parsed = new URL(input);
   }
-  return options;
+  else {
+    // Ensure the URL is valid and absolute
+    parsed = validateUrl(url.parse(input));
+    if (!isString(parsed.protocol)) {
+      throw new InvalidUrlError({ input });
+    }
+  }
+  return parsed;
+}
+
+function resolveUrl(relative, base) {
+  /* istanbul ignore next */
+  return useNativeURL ? new URL(relative, base) : parseUrl(url.resolve(base, relative));
+}
+
+function validateUrl(input) {
+  if (/^\[/.test(input.hostname) && !/^\[[:0-9a-f]+\]$/i.test(input.hostname)) {
+    throw new InvalidUrlError({ input: input.href || input });
+  }
+  if (/^\[/.test(input.host) && !/^\[[:0-9a-f]+\](:\d+)?$/i.test(input.host)) {
+    throw new InvalidUrlError({ input: input.href || input });
+  }
+  return input;
+}
+
+function spreadUrlObject(urlObject, target) {
+  var spread = target || {};
+  for (var key of preservedUrlFields) {
+    spread[key] = urlObject[key];
+  }
+
+  // Fix IPv6 hostname
+  if (spread.hostname.startsWith("[")) {
+    spread.hostname = spread.hostname.slice(1, -1);
+  }
+  // Ensure port is a number
+  if (spread.port !== "") {
+    spread.port = Number(spread.port);
+  }
+  // Concatenate path
+  spread.path = spread.search ? spread.pathname + spread.search : spread.pathname;
+
+  return spread;
 }
 
 function removeMatchingHeaders(regex, headers) {
@@ -5814,35 +5884,58 @@ function removeMatchingHeaders(regex, headers) {
     undefined : String(lastValue).trim();
 }
 
-function createErrorType(code, defaultMessage) {
-  function CustomError(cause) {
+function createErrorType(code, message, baseClass) {
+  // Create constructor
+  function CustomError(properties) {
     Error.captureStackTrace(this, this.constructor);
-    if (!cause) {
-      this.message = defaultMessage;
-    }
-    else {
-      this.message = defaultMessage + ": " + cause.message;
-      this.cause = cause;
-    }
+    Object.assign(this, properties || {});
+    this.code = code;
+    this.message = this.cause ? message + ": " + this.cause.message : message;
   }
-  CustomError.prototype = new Error();
-  CustomError.prototype.constructor = CustomError;
-  CustomError.prototype.name = "Error [" + code + "]";
-  CustomError.prototype.code = code;
+
+  // Attach constructor and set default properties
+  CustomError.prototype = new (baseClass || Error)();
+  Object.defineProperties(CustomError.prototype, {
+    constructor: {
+      value: CustomError,
+      enumerable: false,
+    },
+    name: {
+      value: "Error [" + code + "]",
+      enumerable: false,
+    },
+  });
   return CustomError;
 }
 
-function abortRequest(request) {
+function destroyRequest(request, error) {
   for (var event of events) {
     request.removeListener(event, eventHandlers[event]);
   }
   request.on("error", noop);
-  request.abort();
+  request.destroy(error);
 }
 
 function isSubdomain(subdomain, domain) {
-  const dot = subdomain.length - domain.length - 1;
+  assert(isString(subdomain) && isString(domain));
+  var dot = subdomain.length - domain.length - 1;
   return dot > 0 && subdomain[dot] === "." && subdomain.endsWith(domain);
+}
+
+function isString(value) {
+  return typeof value === "string" || value instanceof String;
+}
+
+function isFunction(value) {
+  return typeof value === "function";
+}
+
+function isBuffer(value) {
+  return typeof value === "object" && ("length" in value);
+}
+
+function isURL(value) {
+  return URL && value instanceof URL;
 }
 
 // Exports
@@ -13842,36 +13935,22 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var lodash_get__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! lodash/get */ "./node_modules/lodash/get.js");
 /* harmony import */ var lodash_get__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(lodash_get__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var _base_object_base_object_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../base-object/base-object.js */ "./src/base-classes/base-object/base-object.js");
-
-
-
-
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
+
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
 function _get2(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get2 = Reflect.get; } else { _get2 = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get2(target, property, receiver || target); }
-
 function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
-
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
 function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
 function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
-
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 
@@ -13890,21 +13969,15 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
  *
  * @augments {BaseObject}
  */
-
 var BaseCacheableObject = /*#__PURE__*/function (_BaseObject) {
   _inherits(BaseCacheableObject, _BaseObject);
-
   var _super = _createSuper(BaseCacheableObject);
-
   function BaseCacheableObject() {
     _classCallCheck(this, BaseCacheableObject);
-
     return _super.apply(this, arguments);
   }
-
   _createClass(BaseCacheableObject, [{
     key: "getIDParams",
-
     /**
      * Returns an object containing all IDs used for API requests and caching for the instance.
      *
@@ -13920,7 +13993,6 @@ var BaseCacheableObject = /*#__PURE__*/function (_BaseObject) {
      *
      * @returns {string | undefined}
      */
-
   }, {
     key: "getCacheId",
     value: function getCacheId() {
@@ -13928,7 +14000,6 @@ var BaseCacheableObject = /*#__PURE__*/function (_BaseObject) {
     }
   }], [{
     key: "_populateObject",
-
     /**
      * Defers to `BaseObject._populateObject` and then caches the instance using the caching id from
      * `getCacheId`.
@@ -13937,21 +14008,18 @@ var BaseCacheableObject = /*#__PURE__*/function (_BaseObject) {
      */
     value: function _populateObject(_ref) {
       var data = _ref.data,
-          constructorParams = _ref.constructorParams,
-          instance = _ref.instance,
-          isDataFromServer = _ref.isDataFromServer;
-
+        constructorParams = _ref.constructorParams,
+        instance = _ref.instance,
+        isDataFromServer = _ref.isDataFromServer;
       var populatedInstance = _get2(_getPrototypeOf(BaseCacheableObject), "_populateObject", this).call(this, {
         data: data,
         constructorParams: constructorParams,
         instance: instance,
         isDataFromServer: isDataFromServer
       });
-
       if (isDataFromServer && populatedInstance.getCacheId()) {
         this.cache[populatedInstance.getCacheId()] = populatedInstance;
       }
-
       return populatedInstance;
     }
     /**
@@ -13962,10 +14030,8 @@ var BaseCacheableObject = /*#__PURE__*/function (_BaseObject) {
      *
      * @returns {object.<string, BaseCacheableObject>} The cache of BaseCacheableObjects.
      */
-
   }, {
     key: "clearCache",
-
     /**
      * Resets cache to an empty object.
      */
@@ -13979,7 +14045,6 @@ var BaseCacheableObject = /*#__PURE__*/function (_BaseObject) {
      * @param  {number} id This id must match the form of the caching id provided by `getCacheId`.
      * @returns {BaseCacheableObject|undefined}
      */
-
   }, {
     key: "get",
     value: function get(id) {
@@ -13991,7 +14056,6 @@ var BaseCacheableObject = /*#__PURE__*/function (_BaseObject) {
      *
      * @returns {object}
      */
-
   }, {
     key: "getIDParams",
     value: function getIDParams() {
@@ -14004,14 +14068,12 @@ var BaseCacheableObject = /*#__PURE__*/function (_BaseObject) {
      * @param  {object} idParams
      * @returns {string|undefined}
      */
-
   }, {
     key: "getCacheId",
     value: function getCacheId(idParams) {
       var cacheId = lodash_map__WEBPACK_IMPORTED_MODULE_1___default()(this.getIDParams(idParams), function (value, key) {
         return "".concat(key, "=").concat(value, ";");
       }).join('');
-
       return lodash_isEmpty__WEBPACK_IMPORTED_MODULE_0___default()(cacheId) ? undefined : cacheId;
     }
   }, {
@@ -14020,7 +14082,6 @@ var BaseCacheableObject = /*#__PURE__*/function (_BaseObject) {
       if (!this._cache) {
         this._cache = {};
       }
-
       return this._cache;
     }
     /**
@@ -14033,12 +14094,9 @@ var BaseCacheableObject = /*#__PURE__*/function (_BaseObject) {
       this._cache = cache;
     }
   }]);
-
   return BaseCacheableObject;
 }(_base_object_base_object_js__WEBPACK_IMPORTED_MODULE_3__["default"]);
-
 _defineProperty(BaseCacheableObject, "displayName", 'BaseCacheableObject');
-
 /* harmony default export */ __webpack_exports__["default"] = (BaseCacheableObject);
 
 /***/ }),
@@ -14080,20 +14138,15 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 
 /**
  * The base class for all project objects. Provides data mapping functionality.
  */
-
 var BaseObject = /*#__PURE__*/function () {
   /**
    * @param {object} options Properties to be assigned to the BaseObject. Must match the keys of the
@@ -14102,9 +14155,7 @@ var BaseObject = /*#__PURE__*/function () {
    */
   function BaseObject() {
     var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
     _classCallCheck(this, BaseObject);
-
     if (!lodash_isEmpty__WEBPACK_IMPORTED_MODULE_8___default()(options)) {
       this.constructor._populateObject({
         data: options,
@@ -14113,17 +14164,15 @@ var BaseObject = /*#__PURE__*/function () {
       });
     }
   }
+
   /**
    * The class name. Minification will break `this.constructor.name`; this allows for readable
    * logging even in minified code.
    *
    * @type {string}
    */
-
-
   _createClass(BaseObject, null, [{
     key: "_processObjectValue",
-
     /**
      * Helper for processing items on `responseMap`s that are objects.
      *
@@ -14141,26 +14190,21 @@ var BaseObject = /*#__PURE__*/function () {
      */
     value: function _processObjectValue(_ref) {
       var data = _ref.data,
-          constructorParams = _ref.constructorParams,
-          instance = _ref.instance,
-          value = _ref.value;
-
+        constructorParams = _ref.constructorParams,
+        instance = _ref.instance,
+        value = _ref.value;
       if (!value.key) {
         throw new Error("".concat(this.displayName, ": _populateObject: Invalid responseMap object. Object must define ") + 'key. See docs for typedef of ResponseMapValueObject.');
       }
-
       var responseData = lodash_get__WEBPACK_IMPORTED_MODULE_7___default()(data, value.key);
-
       if (lodash_isFunction__WEBPACK_IMPORTED_MODULE_6___default()(value.manualParse)) {
         return value.manualParse(responseData, data, constructorParams, instance);
       } else if (value.BaseObject) {
         var buildInstance = function buildInstance(passedData) {
           return value.BaseObject.buildFromServer(passedData, constructorParams);
         };
-
         return value.isArray ? lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(responseData, buildInstance) : buildInstance(responseData);
       }
-
       throw new Error("".concat(this.displayName, ": _populateObject: Invalid responseMap object. Object must define ") + '`BaseObject` or `manualParse`. See docs for typedef of ResponseMapValueObject.');
     }
     /**
@@ -14183,17 +14227,15 @@ var BaseObject = /*#__PURE__*/function () {
      * @param options.data.value
      * @param {string} options.value The value of the responseMap entry being parsed.
      */
-
   }, {
     key: "_processResponseMapItem",
     value: function _processResponseMapItem(_ref2) {
       var data = _ref2.data,
-          constructorParams = _ref2.constructorParams,
-          instance = _ref2.instance,
-          isDataFromServer = _ref2.isDataFromServer,
-          key = _ref2.key,
-          value = _ref2.value;
-
+        constructorParams = _ref2.constructorParams,
+        instance = _ref2.instance,
+        isDataFromServer = _ref2.isDataFromServer,
+        key = _ref2.key,
+        value = _ref2.value;
       /**
        * @typedef {object} BaseObject~ResponseMapValueObject
        *
@@ -14238,8 +14280,8 @@ var BaseObject = /*#__PURE__*/function () {
        *   }
        * };
        */
-      var item;
 
+      var item;
       if (!isDataFromServer) {
         item = lodash_get__WEBPACK_IMPORTED_MODULE_7___default()(data, key);
       } else if (lodash_isString__WEBPACK_IMPORTED_MODULE_4___default()(value)) {
@@ -14254,7 +14296,6 @@ var BaseObject = /*#__PURE__*/function () {
       } else {
         throw new Error("".concat(this.displayName, ": _populateObject: Did not recognize responseMap value type for key ") + "".concat(key));
       }
-
       if (!lodash_isUndefined__WEBPACK_IMPORTED_MODULE_2___default()(item)) {
         lodash_set__WEBPACK_IMPORTED_MODULE_1___default()(instance, key, item);
       }
@@ -14274,25 +14315,20 @@ var BaseObject = /*#__PURE__*/function () {
      * data came locally.
      * @returns {BaseObject} The mutated BaseObject instance.
      */
-
   }, {
     key: "_populateObject",
     value: function _populateObject(_ref3) {
       var _this = this;
-
       var data = _ref3.data,
-          constructorParams = _ref3.constructorParams,
-          instance = _ref3.instance,
-          isDataFromServer = _ref3.isDataFromServer;
-
+        constructorParams = _ref3.constructorParams,
+        instance = _ref3.instance,
+        isDataFromServer = _ref3.isDataFromServer;
       if (!instance) {
         throw new Error("".concat(this.displayName, ": _populateObject: Did not receive instance to populate"));
       } else if (lodash_isEmpty__WEBPACK_IMPORTED_MODULE_8___default()(data)) {
         return instance;
       }
-
       var deferredMapItems = {};
-
       lodash_forEach__WEBPACK_IMPORTED_MODULE_0___default()(this.responseMap, function (value, key) {
         if (lodash_isPlainObject__WEBPACK_IMPORTED_MODULE_3___default()(value) && value.defer) {
           lodash_set__WEBPACK_IMPORTED_MODULE_1___default()(deferredMapItems, key, value);
@@ -14307,7 +14343,6 @@ var BaseObject = /*#__PURE__*/function () {
           });
         }
       });
-
       lodash_forEach__WEBPACK_IMPORTED_MODULE_0___default()(deferredMapItems, function (value, key) {
         _this._processResponseMapItem({
           data: data,
@@ -14318,7 +14353,6 @@ var BaseObject = /*#__PURE__*/function () {
           value: value
         });
       });
-
       return instance;
     }
     /**
@@ -14331,29 +14365,23 @@ var BaseObject = /*#__PURE__*/function () {
      *                                    for passing parent data, such as `leagueId`.
      * @returns {BaseObject} A new instance of the BaseObject populated with the passed data.
      */
-
   }, {
     key: "buildFromServer",
     value: function buildFromServer(data, constructorParams) {
       var instance = new this(constructorParams);
       var dataToUse = this.flattenResponse ? Object(_utils_js__WEBPACK_IMPORTED_MODULE_9__["flattenObject"])(data) : data;
-
       this._populateObject({
         data: dataToUse,
         constructorParams: constructorParams,
         instance: instance,
         isDataFromServer: true
       });
-
       return instance;
     }
   }]);
-
   return BaseObject;
 }();
-
 _defineProperty(BaseObject, "displayName", 'BaseObject');
-
 /* harmony default export */ __webpack_exports__["default"] = (BaseObject);
 
 /***/ }),
@@ -14373,26 +14401,16 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _player_player__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../player/player */ "./src/player/player.js");
 /* harmony import */ var _player_stats_player_stats__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../player-stats/player-stats */ "./src/player-stats/player-stats.js");
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants */ "./src/constants.js");
-
-
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
 function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
 function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
-
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 
@@ -14406,23 +14424,16 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
  *
  * @augments {BaseObject}
  */
-
 var BoxscorePlayer = /*#__PURE__*/function (_BaseObject) {
   _inherits(BoxscorePlayer, _BaseObject);
-
   var _super = _createSuper(BoxscorePlayer);
-
   function BoxscorePlayer() {
     _classCallCheck(this, BoxscorePlayer);
-
     return _super.apply(this, arguments);
   }
-
   return BoxscorePlayer;
 }(_base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_1__["default"]);
-
 _defineProperty(BoxscorePlayer, "displayName", 'BoxscorePlayer');
-
 _defineProperty(BoxscorePlayer, "responseMap", {
   player: {
     key: 'playerPoolEntry',
@@ -14488,7 +14499,6 @@ _defineProperty(BoxscorePlayer, "responseMap", {
     }
   }
 });
-
 /* harmony default export */ __webpack_exports__["default"] = (BoxscorePlayer);
 
 /***/ }),
@@ -14508,27 +14518,17 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var lodash_get__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(lodash_get__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var _base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../base-classes/base-object/base-object */ "./src/base-classes/base-object/base-object.js");
 /* harmony import */ var _boxscore_player_boxscore_player__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../boxscore-player/boxscore-player */ "./src/boxscore-player/boxscore-player.js");
-
-
-
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
 function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
 function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
-
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 
@@ -14538,23 +14538,16 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
  *
  * @augments {BaseObject}
  */
-
 var Boxscore = /*#__PURE__*/function (_BaseObject) {
   _inherits(Boxscore, _BaseObject);
-
   var _super = _createSuper(Boxscore);
-
   function Boxscore() {
     _classCallCheck(this, Boxscore);
-
     return _super.apply(this, arguments);
   }
-
   return Boxscore;
 }(_base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_2__["default"]);
-
 _defineProperty(Boxscore, "displayName", 'Boxscore');
-
 _defineProperty(Boxscore, "responseMap", {
   homeScore: {
     key: 'home',
@@ -14589,7 +14582,6 @@ _defineProperty(Boxscore, "responseMap", {
     }
   }
 });
-
 /* harmony default export */ __webpack_exports__["default"] = (Boxscore);
 
 /***/ }),
@@ -14622,23 +14614,18 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
+/* eslint-disable linebreak-style */
+/* eslint-disable jsdoc/require-param-description */
+/* eslint-disable jsdoc/require-param-type */
+/* eslint-disable jsdoc/require-returns-type */
 /* eslint-disable class-methods-use-this */
-
 /* eslint-disable guard-for-in */
-
 /* eslint-disable no-restricted-syntax */
 
 
@@ -14646,20 +14633,18 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
 
 
-axios__WEBPACK_IMPORTED_MODULE_4___default.a.defaults.baseURL = 'https://fantasy.espn.com/apis/v3/games/ffl/seasons/';
+axios__WEBPACK_IMPORTED_MODULE_4___default.a.defaults.baseURL = 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/';
+
 /**
  * Provides functionality to make a variety of API calls to ESPN for a given fantasy football
  * league. This class should be used by consuming projects.
  *
  * @class
  */
-
 var Client = /*#__PURE__*/function () {
   function Client() {
     var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
     _classCallCheck(this, Client);
-
     this.leagueId = options.leagueId;
     this.setCookies({
       espnS2: options.espnS2,
@@ -14677,6 +14662,7 @@ var Client = /*#__PURE__*/function () {
       TRADED: 244
     };
   }
+
   /**
    * Set cookies from ESPN for interacting with private leagues in NodeJS. Both cookie smust be
    * provided to be set. See the README for instructions on how to find these cookies.
@@ -14685,14 +14671,11 @@ var Client = /*#__PURE__*/function () {
    * @param {string} options.espnS2 The value of the `espn_s2` cookie key:value pair to auth with.
    * @param {string} options.SWID The value of the `SWID` cookie key:value pair to auth with.
    */
-
-
   _createClass(Client, [{
     key: "setCookies",
     value: function setCookies(_ref) {
       var espnS2 = _ref.espnS2,
-          SWID = _ref.SWID;
-
+        SWID = _ref.SWID;
       if (espnS2 && SWID) {
         this.espnS2 = espnS2;
         this.SWID = SWID;
@@ -14710,28 +14693,22 @@ var Client = /*#__PURE__*/function () {
      * @param  {number} options.scoringPeriodId The scoring period in which the boxscore occurs.
      * @returns {Boxscore[]} All boxscores for the week
      */
-
   }, {
     key: "getBoxscoreForWeek",
     value: function getBoxscoreForWeek(_ref2) {
       var _this = this;
-
       var seasonId = _ref2.seasonId,
-          matchupPeriodId = _ref2.matchupPeriodId,
-          scoringPeriodId = _ref2.scoringPeriodId;
-
+        matchupPeriodId = _ref2.matchupPeriodId,
+        scoringPeriodId = _ref2.scoringPeriodId;
       var route = this.constructor._buildRoute({
         base: "".concat(seasonId, "/segments/0/leagues/").concat(this.leagueId),
         params: "?view=mMatchup&view=mMatchupScore&scoringPeriodId=".concat(scoringPeriodId)
       });
-
       return axios__WEBPACK_IMPORTED_MODULE_4___default.a.get(route, this._buildAxiosConfig()).then(function (response) {
         var schedule = lodash_get__WEBPACK_IMPORTED_MODULE_3___default()(response.data, 'schedule');
-
         var data = lodash_filter__WEBPACK_IMPORTED_MODULE_2___default()(schedule, {
           matchupPeriodId: matchupPeriodId
         });
-
         return lodash_map__WEBPACK_IMPORTED_MODULE_1___default()(data, function (matchup) {
           return _boxscore_boxscore__WEBPACK_IMPORTED_MODULE_5__["default"].buildFromServer(matchup, {
             leagueId: _this.leagueId,
@@ -14756,33 +14733,25 @@ var Client = /*#__PURE__*/function () {
      * @param  {number} options.scoringPeriodId The scoring period in which the boxscore occurs.
      * @returns {Boxscore[]} All boxscores for the week
      */
-
   }, {
     key: "getHistoricalScoreboardForWeek",
     value: function getHistoricalScoreboardForWeek(_ref3) {
       var _this2 = this;
-
       var seasonId = _ref3.seasonId,
-          matchupPeriodId = _ref3.matchupPeriodId,
-          scoringPeriodId = _ref3.scoringPeriodId;
-
+        matchupPeriodId = _ref3.matchupPeriodId,
+        scoringPeriodId = _ref3.scoringPeriodId;
       var route = this.constructor._buildRoute({
         base: "".concat(this.leagueId),
         params: "?scoringPeriodId=".concat(scoringPeriodId, "&seasonId=").concat(seasonId) + '&view=mMatchupScore&view=mScoreboard&view=mSettings&view=mTopPerformers&view=mTeam'
       });
-
       var axiosConfig = this._buildAxiosConfig({
-        baseURL: 'https://fantasy.espn.com/apis/v3/games/ffl/leagueHistory/'
+        baseURL: 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/leagueHistory/'
       });
-
       return axios__WEBPACK_IMPORTED_MODULE_4___default.a.get(route, axiosConfig).then(function (response) {
         var schedule = lodash_get__WEBPACK_IMPORTED_MODULE_3___default()(response.data[0], 'schedule'); // Data is an array instead of object
-
-
         var data = lodash_filter__WEBPACK_IMPORTED_MODULE_2___default()(schedule, {
           matchupPeriodId: matchupPeriodId
         });
-
         return lodash_map__WEBPACK_IMPORTED_MODULE_1___default()(data, function (matchup) {
           return _boxscore_boxscore__WEBPACK_IMPORTED_MODULE_5__["default"].buildFromServer(matchup, {
             leagueId: _this2.leagueId,
@@ -14801,20 +14770,16 @@ var Client = /*#__PURE__*/function () {
      * @param  {number} options.scoringPeriodId The scoring period to grab free agents from.
      * @returns {FreeAgentPlayer[]} The list of free agents.
      */
-
   }, {
     key: "getFreeAgents",
     value: function getFreeAgents(_ref4) {
       var _this3 = this;
-
       var seasonId = _ref4.seasonId,
-          scoringPeriodId = _ref4.scoringPeriodId;
-
+        scoringPeriodId = _ref4.scoringPeriodId;
       var route = this.constructor._buildRoute({
         base: "".concat(seasonId, "/segments/0/leagues/").concat(this.leagueId),
         params: "?scoringPeriodId=".concat(scoringPeriodId, "&view=kona_player_info")
       });
-
       var config = this._buildAxiosConfig({
         headers: {
           'x-fantasy-filter': JSON.stringify({
@@ -14831,10 +14796,8 @@ var Client = /*#__PURE__*/function () {
           })
         }
       });
-
       return axios__WEBPACK_IMPORTED_MODULE_4___default.a.get(route, config).then(function (response) {
         var data = lodash_get__WEBPACK_IMPORTED_MODULE_3___default()(response.data, 'players');
-
         return lodash_map__WEBPACK_IMPORTED_MODULE_1___default()(data, function (player) {
           return _free_agent_player_free_agent_player__WEBPACK_IMPORTED_MODULE_6__["default"].buildFromServer(player, {
             leagueId: _this3.leagueId,
@@ -14851,23 +14814,18 @@ var Client = /*#__PURE__*/function () {
      * @param  {number} options.scoringPeriodId The scoring period in which to grab teams from.
      * @returns {Team[]} The list of teams.
      */
-
   }, {
     key: "getTeamsAtWeek",
     value: function getTeamsAtWeek(_ref5) {
       var _this4 = this;
-
       var seasonId = _ref5.seasonId,
-          scoringPeriodId = _ref5.scoringPeriodId;
-
+        scoringPeriodId = _ref5.scoringPeriodId;
       var route = this.constructor._buildRoute({
         base: "".concat(seasonId, "/segments/0/leagues/").concat(this.leagueId),
         params: "?scoringPeriodId=".concat(scoringPeriodId, "&view=mRoster&view=mTeam")
       });
-
       return axios__WEBPACK_IMPORTED_MODULE_4___default.a.get(route, this._buildAxiosConfig()).then(function (response) {
         var data = lodash_get__WEBPACK_IMPORTED_MODULE_3___default()(response.data, 'teams');
-
         return lodash_map__WEBPACK_IMPORTED_MODULE_1___default()(data, function (team) {
           return _team_team__WEBPACK_IMPORTED_MODULE_9__["default"].buildFromServer(team, {
             leagueId: _this4.leagueId,
@@ -14884,25 +14842,20 @@ var Client = /*#__PURE__*/function () {
      * @param  {string} options.endDate   Must be in "YYYYMMDD" format.
      * @returns {NFLGame[]} The list of NFL games.
      */
-
   }, {
     key: "getNFLGamesForPeriod",
     value: function getNFLGamesForPeriod(_ref6) {
       var startDate = _ref6.startDate,
-          endDate = _ref6.endDate;
-
+        endDate = _ref6.endDate;
       var route = this.constructor._buildRoute({
         base: 'apis/fantasy/v2/games/ffl/games',
         params: "?dates=".concat(startDate, "-").concat(endDate, "&pbpOnly=true")
       });
-
       var axiosConfig = this._buildAxiosConfig({
         baseURL: 'https://site.api.espn.com/'
       });
-
       return axios__WEBPACK_IMPORTED_MODULE_4___default.a.get(route, axiosConfig).then(function (response) {
         var data = lodash_get__WEBPACK_IMPORTED_MODULE_3___default()(response.data, 'events');
-
         return lodash_map__WEBPACK_IMPORTED_MODULE_1___default()(data, function (game) {
           return _nfl_game_nfl_game__WEBPACK_IMPORTED_MODULE_8__["default"].buildFromServer(game);
         });
@@ -14915,22 +14868,17 @@ var Client = /*#__PURE__*/function () {
      * @param   {number} options.seasonId The season to grab data from.
      * @returns {League} The league info.
      */
-
   }, {
     key: "getLeagueInfo",
     value: function getLeagueInfo(_ref7) {
       var _this5 = this;
-
       var seasonId = _ref7.seasonId;
-
       var route = this.constructor._buildRoute({
         base: "".concat(seasonId, "/segments/0/leagues/").concat(this.leagueId),
         params: '?view=mSettings'
       });
-
       return axios__WEBPACK_IMPORTED_MODULE_4___default.a.get(route, this._buildAxiosConfig()).then(function (response) {
         var data = lodash_get__WEBPACK_IMPORTED_MODULE_3___default()(response.data, 'settings');
-
         return _league_league__WEBPACK_IMPORTED_MODULE_7__["default"].buildFromServer(data, {
           leagueId: _this5.leagueId,
           seasonId: seasonId
@@ -14941,19 +14889,14 @@ var Client = /*#__PURE__*/function () {
     key: "getExtendedLeagueInfo",
     value: function getExtendedLeagueInfo(_ref8) {
       var _this6 = this;
-
-      var seasonId = _ref8.seasonId,
-          scoringPeriodId = _ref8.scoringPeriodId;
-
+      var seasonId = _ref8.seasonId;
       var route = this.constructor._buildRoute({
         base: "apis/v3/games/ffl/seasons/".concat(seasonId, "/segments/0/leagues/").concat(this.leagueId),
         params: '?view=mTeam&view=mRoster&view=mMatchup&view=mSettings&view=mStandings'
       });
-
       var config = this._buildAxiosConfig({
         baseURL: 'https://fantasy.espn.com/'
       });
-
       return axios__WEBPACK_IMPORTED_MODULE_4___default.a.get(route, config).then(function (response) {
         var teams = response.data.teams.map(function (team) {
           return _objectSpread(_objectSpread({}, team), _this6._fetchExtendedTeamData(response.data.teams, team, response.data.schedule));
@@ -14987,7 +14930,6 @@ var Client = /*#__PURE__*/function () {
     key: "_fetchExtendedTeamData",
     value: function _fetchExtendedTeamData(teams, team, data) {
       var _this7 = this;
-
       var outcomes = [];
       var scores = [];
       var schedule = [];
@@ -15022,7 +14964,6 @@ var Client = /*#__PURE__*/function () {
       } else if (isAway && winner === 'AWAY' || !isAway && winner === 'HOME') {
         return 'W';
       }
-
       return 'L';
     }
     /**
@@ -15033,29 +14974,24 @@ var Client = /*#__PURE__*/function () {
      * @param options.msgType
      * @returns Leagues Recent Activity
      */
-
   }, {
     key: "getRecentActivity",
     value: function getRecentActivity(_ref9) {
       var _this8 = this;
-
       var seasonId = _ref9.seasonId,
-          _ref9$msgType = _ref9.msgType,
-          msgType = _ref9$msgType === void 0 ? '' : _ref9$msgType;
+        _ref9$msgType = _ref9.msgType,
+        msgType = _ref9$msgType === void 0 ? '' : _ref9$msgType;
       var topics = [];
       var msgTypes = [178, 180, 179, 239, 181, 244];
       var searchIds = [];
       var activity = [];
-
       if (msgType in this.ACTIVITY_MAP) {
         msgTypes = [this.ACTIVITY_MAP[msgType]];
       }
-
       var route = this.constructor._buildRoute({
         base: "apis/v3/games/ffl/seasons/".concat(seasonId, "/segments/0/leagues/").concat(this.leagueId, "/communication"),
         params: '?view=kona_league_communication'
       });
-
       var config = this._buildAxiosConfig({
         baseURL: 'https://fantasy.espn.com/',
         headers: {
@@ -15084,16 +15020,13 @@ var Client = /*#__PURE__*/function () {
           })
         }
       });
-
       var leagueRoute = this.constructor._buildRoute({
         base: "apis/v3/games/ffl/seasons/".concat(seasonId, "/segments/0/leagues/").concat(this.leagueId),
         params: '?view=mTeam&view=mRoster&view=mMatchup&view=mSettings&view=mStandings'
       });
-
       var leagueConfig = this._buildAxiosConfig({
         baseURL: 'https://fantasy.espn.com/'
       });
-
       return axios__WEBPACK_IMPORTED_MODULE_4___default.a.get(route, config).then(function (response) {
         topics = response.data.topics;
         return axios__WEBPACK_IMPORTED_MODULE_4___default.a.get(leagueRoute, leagueConfig);
@@ -15108,12 +15041,10 @@ var Client = /*#__PURE__*/function () {
             }
           });
         });
-
         var playerRoute = _this8.constructor._buildRoute({
           base: "apis/v3/games/ffl/seasons/".concat(seasonId, "/segments/0/leagues/").concat(_this8.leagueId),
           params: '?view=kona_playercard'
         });
-
         var playerConfig = _this8._buildAxiosConfig({
           baseURL: 'https://fantasy.espn.com/',
           headers: {
@@ -15130,7 +15061,6 @@ var Client = /*#__PURE__*/function () {
             })
           }
         });
-
         return axios__WEBPACK_IMPORTED_MODULE_4___default.a.get(playerRoute, playerConfig);
       }).then(function (resp) {
         var newData = activity.map(function (action) {
@@ -15142,7 +15072,6 @@ var Client = /*#__PURE__*/function () {
                 })
               });
             }
-
             return msg;
           });
         });
@@ -15153,18 +15082,15 @@ var Client = /*#__PURE__*/function () {
     key: "_buildActivity",
     value: function _buildActivity(topic, data) {
       var _this9 = this;
-
       var teams = data.teams;
       var actions = [];
       var date = topic.date;
-
       var _loop = function _loop(msg) {
         var team = '';
         var action = 'UNKNOWN';
         var player = null;
         var bidAmount = 0;
         var msgId = topic.messages[msg].messageTypeId;
-
         if (msgId === 244) {
           team = teams.find(function (x) {
             return x.id === topic.messages[msg].from;
@@ -15178,21 +15104,17 @@ var Client = /*#__PURE__*/function () {
             return x.id === topic.messages[msg].to;
           });
         }
-
         if (_this9.ACTIVITY_MAP[msgId]) {
           action = _this9.ACTIVITY_MAP[msgId];
         }
-
         if (action === 'WAIVER ADDED') {
           bidAmount = topic.messages[msg].from || 0;
         }
-
         if (team) {
           player = team.roster.entries.find(function (x) {
             return x.playerId === topic.messages[msg].targetId;
           });
         }
-
         var ids = {
           from: topic.messages[msg].from,
           "for": topic.messages[msg]["for"],
@@ -15208,11 +15130,9 @@ var Client = /*#__PURE__*/function () {
           ids: ids
         });
       };
-
       for (var msg in topic.messages) {
         _loop(msg);
       }
-
       return actions;
     }
     /**
@@ -15222,7 +15142,6 @@ var Client = /*#__PURE__*/function () {
      * @returns {object} An axios config with cookies added if set on instance
      * @private
      */
-
   }, {
     key: "_buildAxiosConfig",
     value: function _buildAxiosConfig(config) {
@@ -15235,21 +15154,18 @@ var Client = /*#__PURE__*/function () {
           withCredentials: true
         });
       }
-
       return config;
     }
   }], [{
     key: "_buildRoute",
     value: function _buildRoute(_ref10) {
       var base = _ref10.base,
-          params = _ref10.params;
+        params = _ref10.params;
       return "".concat(base).concat(params);
     }
   }]);
-
   return Client;
 }();
-
 /* harmony default export */ __webpack_exports__["default"] = (Client);
 
 /***/ }),
@@ -15267,9 +15183,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "nflTeamIdToNFLTeamAbbreviation", function() { return nflTeamIdToNFLTeamAbbreviation; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "slotCategoryIdToPositionMap", function() { return slotCategoryIdToPositionMap; });
 var _nflTeamIdToNFLTeam, _nflTeamIdToNFLTeamAb;
-
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
 /**
  * Maps `slotCategoryId`'s numerical enum to readable positions.
  * @type {object}
@@ -15301,20 +15215,20 @@ var slotCategoryIdToPositionMap = {
   // TODO: Figure out what this is
   23: 'RB/WR/TE',
   24: 'Unknown?' // TODO: Figure out what this is
-
 };
+
 /**
  * Maps `proTeam` numerical enum to readable team names.
  * @type {object}
  */
-
 var nflTeamIdToNFLTeam = (_nflTeamIdToNFLTeam = {}, _defineProperty(_nflTeamIdToNFLTeam, -1, 'Bye'), _defineProperty(_nflTeamIdToNFLTeam, 1, 'Atlanta Falcons'), _defineProperty(_nflTeamIdToNFLTeam, 2, 'Buffalo Bills'), _defineProperty(_nflTeamIdToNFLTeam, 3, 'Chicago Bears'), _defineProperty(_nflTeamIdToNFLTeam, 4, 'Cincinnati Bengals'), _defineProperty(_nflTeamIdToNFLTeam, 5, 'Cleveland Browns'), _defineProperty(_nflTeamIdToNFLTeam, 6, 'Dallas Cowboys'), _defineProperty(_nflTeamIdToNFLTeam, 7, 'Denver Broncos'), _defineProperty(_nflTeamIdToNFLTeam, 8, 'Detroit Lions'), _defineProperty(_nflTeamIdToNFLTeam, 9, 'Green Bay Packers'), _defineProperty(_nflTeamIdToNFLTeam, 10, 'Tennessee Titans'), _defineProperty(_nflTeamIdToNFLTeam, 11, 'Indianapolis Colts'), _defineProperty(_nflTeamIdToNFLTeam, 12, 'Kansas City Chiefs'), _defineProperty(_nflTeamIdToNFLTeam, 13, 'Oakland Raiders'), _defineProperty(_nflTeamIdToNFLTeam, 14, 'Los Angeles Rams'), _defineProperty(_nflTeamIdToNFLTeam, 15, 'Miami Dolphins'), _defineProperty(_nflTeamIdToNFLTeam, 16, 'Minnesota Vikings'), _defineProperty(_nflTeamIdToNFLTeam, 17, 'New England Patriots'), _defineProperty(_nflTeamIdToNFLTeam, 18, 'New Orleans Saints'), _defineProperty(_nflTeamIdToNFLTeam, 19, 'New York Giants'), _defineProperty(_nflTeamIdToNFLTeam, 20, 'New York Jets'), _defineProperty(_nflTeamIdToNFLTeam, 21, 'Philadelphia Eagles'), _defineProperty(_nflTeamIdToNFLTeam, 22, 'Arizona Cardinals'), _defineProperty(_nflTeamIdToNFLTeam, 23, 'Pittsburgh Steelers'), _defineProperty(_nflTeamIdToNFLTeam, 24, 'Los Angeles Chargers'), _defineProperty(_nflTeamIdToNFLTeam, 25, 'San Francisco 49ers'), _defineProperty(_nflTeamIdToNFLTeam, 26, 'Seattle Seahawks'), _defineProperty(_nflTeamIdToNFLTeam, 27, 'Tampa Bay Buccaneers'), _defineProperty(_nflTeamIdToNFLTeam, 28, 'Washington Redskins'), _defineProperty(_nflTeamIdToNFLTeam, 29, 'Carolina Panthers'), _defineProperty(_nflTeamIdToNFLTeam, 30, 'Jacksonville Jaguars'), _defineProperty(_nflTeamIdToNFLTeam, 33, 'Baltimore Ravens'), _defineProperty(_nflTeamIdToNFLTeam, 34, 'Houston Texans'), _nflTeamIdToNFLTeam);
+
 /**
  * Maps `proTeam` numerical enum to readable team name abbreviations.
  * @type {object}
  */
-
 var nflTeamIdToNFLTeamAbbreviation = (_nflTeamIdToNFLTeamAb = {}, _defineProperty(_nflTeamIdToNFLTeamAb, -1, 'Bye'), _defineProperty(_nflTeamIdToNFLTeamAb, 1, 'ATL'), _defineProperty(_nflTeamIdToNFLTeamAb, 2, 'BUF'), _defineProperty(_nflTeamIdToNFLTeamAb, 3, 'CHI'), _defineProperty(_nflTeamIdToNFLTeamAb, 4, 'CIN'), _defineProperty(_nflTeamIdToNFLTeamAb, 5, 'CLE'), _defineProperty(_nflTeamIdToNFLTeamAb, 6, 'DAL'), _defineProperty(_nflTeamIdToNFLTeamAb, 7, 'DEN'), _defineProperty(_nflTeamIdToNFLTeamAb, 8, 'DET'), _defineProperty(_nflTeamIdToNFLTeamAb, 9, 'GB'), _defineProperty(_nflTeamIdToNFLTeamAb, 10, 'TEN'), _defineProperty(_nflTeamIdToNFLTeamAb, 11, 'IND'), _defineProperty(_nflTeamIdToNFLTeamAb, 12, 'KC'), _defineProperty(_nflTeamIdToNFLTeamAb, 13, 'OAK'), _defineProperty(_nflTeamIdToNFLTeamAb, 14, 'LAR'), _defineProperty(_nflTeamIdToNFLTeamAb, 15, 'MIA'), _defineProperty(_nflTeamIdToNFLTeamAb, 16, 'MIN'), _defineProperty(_nflTeamIdToNFLTeamAb, 17, 'NE'), _defineProperty(_nflTeamIdToNFLTeamAb, 18, 'NO'), _defineProperty(_nflTeamIdToNFLTeamAb, 19, 'NYG'), _defineProperty(_nflTeamIdToNFLTeamAb, 20, 'NYJ'), _defineProperty(_nflTeamIdToNFLTeamAb, 21, 'PHI'), _defineProperty(_nflTeamIdToNFLTeamAb, 22, 'ARI'), _defineProperty(_nflTeamIdToNFLTeamAb, 23, 'PIT'), _defineProperty(_nflTeamIdToNFLTeamAb, 24, 'LAC'), _defineProperty(_nflTeamIdToNFLTeamAb, 25, 'SF'), _defineProperty(_nflTeamIdToNFLTeamAb, 26, 'SEA'), _defineProperty(_nflTeamIdToNFLTeamAb, 27, 'TB'), _defineProperty(_nflTeamIdToNFLTeamAb, 28, 'WSH'), _defineProperty(_nflTeamIdToNFLTeamAb, 29, 'CAR'), _defineProperty(_nflTeamIdToNFLTeamAb, 30, 'JAX'), _defineProperty(_nflTeamIdToNFLTeamAb, 33, 'BAL'), _defineProperty(_nflTeamIdToNFLTeamAb, 34, 'HOU'), _nflTeamIdToNFLTeamAb);
+
 /**
  * All possible ways a player may be acquired onto a fantasy football team roster.
  * @typedef {
@@ -15473,23 +15387,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _player_player__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../player/player */ "./src/player/player.js");
 /* harmony import */ var _player_stats_player_stats__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../player-stats/player-stats */ "./src/player-stats/player-stats.js");
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
 function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
 function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
-
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 
@@ -15502,23 +15407,16 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
  *
  * @augments {BaseObject}
  */
-
 var FreeAgentPlayer = /*#__PURE__*/function (_BaseObject) {
   _inherits(FreeAgentPlayer, _BaseObject);
-
   var _super = _createSuper(FreeAgentPlayer);
-
   function FreeAgentPlayer() {
     _classCallCheck(this, FreeAgentPlayer);
-
     return _super.apply(this, arguments);
   }
-
   return FreeAgentPlayer;
 }(_base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_0__["default"]);
-
 _defineProperty(FreeAgentPlayer, "displayName", 'FreeAgentPlayer');
-
 _defineProperty(FreeAgentPlayer, "responseMap", {
   player: {
     key: 'player',
@@ -15555,7 +15453,6 @@ _defineProperty(FreeAgentPlayer, "responseMap", {
     }
   }
 });
-
 /* harmony default export */ __webpack_exports__["default"] = (FreeAgentPlayer);
 
 /***/ }),
@@ -15618,28 +15515,18 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var lodash_mapKeys__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(lodash_mapKeys__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var _base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../base-classes/base-object/base-object */ "./src/base-classes/base-object/base-object.js");
 /* harmony import */ var _constants_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants.js */ "./src/constants.js");
-
-
-
-
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
+
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
 function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
 function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
-
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 
@@ -15651,23 +15538,16 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
  *
  * @augments {BaseObject}
  */
-
 var League = /*#__PURE__*/function (_BaseObject) {
   _inherits(League, _BaseObject);
-
   var _super = _createSuper(League);
-
   function League() {
     _classCallCheck(this, League);
-
     return _super.apply(this, arguments);
   }
-
   return League;
 }(_base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_3__["default"]);
-
 _defineProperty(League, "displayName", 'League');
-
 _defineProperty(League, "responseMap", {
   name: 'name',
   size: 'size',
@@ -15701,7 +15581,6 @@ _defineProperty(League, "responseMap", {
     key: 'scheduleSettings',
     manualParse: function manualParse(responseData) {
       var numberOfPlayoffMatchups = lodash_toSafeInteger__WEBPACK_IMPORTED_MODULE_0___default()((17 - responseData.matchupPeriodCount * responseData.matchupPeriodLength) / responseData.playoffMatchupPeriodLength);
-
       return {
         numberOfRegularSeasonMatchups: responseData.matchupPeriodCount,
         regularSeasonMatchupLength: responseData.matchupPeriodLength,
@@ -15712,7 +15591,6 @@ _defineProperty(League, "responseMap", {
     }
   }
 });
-
 /* harmony default export */ __webpack_exports__["default"] = (League);
 
 /***/ }),
@@ -15734,32 +15612,20 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var lodash_get__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(lodash_get__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var _base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../base-classes/base-object/base-object */ "./src/base-classes/base-object/base-object.js");
 /* harmony import */ var _constants_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants.js */ "./src/constants.js");
-
-
-
-
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
+
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
 function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
 function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
-
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 
@@ -15769,21 +15635,15 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
  *
  * @augments {BaseObject}
  */
-
 var NFLGame = /*#__PURE__*/function (_BaseObject) {
   _inherits(NFLGame, _BaseObject);
-
   var _super = _createSuper(NFLGame);
-
   function NFLGame() {
     _classCallCheck(this, NFLGame);
-
     return _super.apply(this, arguments);
   }
-
   _createClass(NFLGame, null, [{
     key: "_buildTeamAttribute",
-
     /**
      * @typedef {object} NFLGame~NFLTeam
      *
@@ -15793,7 +15653,6 @@ var NFLGame = /*#__PURE__*/function (_BaseObject) {
      * @property {string} record The win/loss/tie record of the NFL team.
      * @property {number} score The score of the NFL team in the game.
      */
-
     /**
      * @typedef {object} NFLGame~NFLGameMap
      *
@@ -15808,7 +15667,6 @@ var NFLGame = /*#__PURE__*/function (_BaseObject) {
      * @property {NFLGame~NFLTeam} homeTeam The home team in the game.
      * @property {NFLGame~NFLTeam} awayTeam The away team in the game.
      */
-
     /**
      * @type {NFLGame~NFLGameMap}
      */
@@ -15822,18 +15680,14 @@ var NFLGame = /*#__PURE__*/function (_BaseObject) {
       };
     }
   }]);
-
   return NFLGame;
 }(_base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_3__["default"]);
-
 _defineProperty(NFLGame, "displayName", 'NFLGame');
-
 _defineProperty(NFLGame, "GAME_STATUSES", {
   pre: 'Not Started',
   "in": 'In Progress',
   post: 'Final'
 });
-
 _defineProperty(NFLGame, "responseMap", {
   startTime: {
     key: 'date',
@@ -15868,7 +15722,6 @@ _defineProperty(NFLGame, "responseMap", {
     }
   }
 });
-
 /* harmony default export */ __webpack_exports__["default"] = (NFLGame);
 
 /***/ }),
@@ -15890,28 +15743,18 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var lodash_find__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! lodash/find */ "./node_modules/lodash/find.js");
 /* harmony import */ var lodash_find__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(lodash_find__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var _base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../base-classes/base-object/base-object */ "./src/base-classes/base-object/base-object.js");
-
-
-
-
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
+
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
 function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
 function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
-
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 
@@ -15924,29 +15767,100 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
  *
  * @augments {BaseObject}
  */
-
 var PlayerStats = /*#__PURE__*/function (_BaseObject) {
   _inherits(PlayerStats, _BaseObject);
-
   var _super = _createSuper(PlayerStats);
-
   function PlayerStats() {
     var _this;
-
     var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
     _classCallCheck(this, PlayerStats);
-
     _this = _super.call(this, options);
     _this.usesPoints = options.usesPoints;
     return _this;
   }
 
+  /**
+   * @typedef {object} PlayerStats~PlayerStatsMap
+   *
+   * Defensive yards allowed and points allowed are inclusive and only scored when their condition
+   * is met. For example, if a DST allowed 360 yards, then `defensive350To399YardsAllowed` will be
+   * scored (value is 1 when statistical) and the other defensive yard stats will not be populated.
+   *
+   * @property {number} passingYards Total passing yards (typically a QB stat).
+   * @property {number} passingTouchdowns Total passing TDs (typically a QB stat).
+   * @property {number} passing2PtConversion Total passing 2 point conversion (typically a QB stat).
+   * @property {number} passingInterceptions Total passing attempts resulting in an interception
+   *                                         (typically negative points) (typically a QB stat).
+   *
+   * @property {number} rushingYards Total rushing yards.
+   * @property {number} rushingTouchdowns Total rushing touchdowns.
+   * @property {number} rushing2PtConversions Total rushing 2 point conversions.
+   *
+   * @property {number} receivingYards Total receiving yards.
+   * @property {number} receivingTouchdowns Total receiving touchdowns.
+   * @property {number} receiving2PtConversions Total receiving 2 point conversions.
+   * @property {number} receivingReceptions Total receptions (only populated in PPR
+   *                                        leagues).
+   *
+   * @property {number} lostFumbles Total fumbles lost (typically negative points) (applies to all
+   *                                offensive players).
+   *
+   * @property {number} madeFieldGoalsFrom50Plus Total made field goals from 50 yards or further.
+   * @property {number} madeFieldGoalsFrom40To49 Total made field goals from 40 yards to 49 yards.
+   * @property {number} madeFieldGoalsFromUnder40 Total made field goals from under 40 yards.
+   * @property {number} missedFieldGoals Total missed field goals (typically negative or zero
+   *                                     points).
+   *
+   * @property {number} madeExtraPoints Made extra point attempts.
+   * @property {number} missedExtraPoints Missed extra point attempts (typically negative points).
+   *
+   * @property {number} defensive0PointsAllowed When a DST allowed 0 points in their NFL game.
+   * @property {number} defensive1To6PointsAllowed When a DST allowed 1-6 points in their NFL game.
+   * @property {number} defensive7To13PointsAllowed When a DST allowed 7-13 points in their NFL
+   *                                                game.
+   * @property {number} defensive14To17PointsAllowed When a DST allowed 14-17 points in their NFL
+   *                                                 game.
+   * @property {number} defensive28To34PointsAllowed When a DST allowed 28-34 points in their NFL
+   *                                                 game.
+   * @property {number} defensive35To45PointsAllowed When a DST allowed 35-45 points in their NFL
+   *                                                 game.
+   *
+   * @property {number} defensiveBlockedKickForTouchdowns When a DST blocks any kick and returns it
+   *                                                      for a touchdown.
+   * @property {number} defensiveInterceptions When a DST records an interception.
+   * @property {number} defensiveFumbles When a DST recovers a fumble.
+   * @property {number} defensiveBlockedKicks When a DST blocks any kick.
+   * @property {number} defensiveSafeties When a DST records a safety.
+   * @property {number} defensiveSacks When a DST records a sack.
+   *
+   * @property {number} kickoffReturnTouchdown When a DST returns a kickoff for a touchdown.
+   * @property {number} puntReturnTouchdown When a DST returns a punt for a touchdown.
+   * @property {number} fumbleReturnTouchdown When a DST returns a fumble for a touchdown.
+   * @property {number} interceptionReturnTouchdown When a DST returns an interception for a
+   *                                                touchdown.
+   *
+   * @property {number} defensive100To199YardsAllowed When a DST allows 100-199 yards in their NFL
+   *                                                  game.
+   * @property {number} defensive200To299YardsAllowed When a DST allows 200-299 yards in their NFL
+   *                                                  game.
+   * @property {number} defensive350To399YardsAllowed When a DST allows 350-399 yards in their NFL
+   *                                                  game.
+   * @property {number} defensive400To449YardsAllowed When a DST allows 400-449 yards in their NFL
+   *                                                  game.
+   * @property {number} defensive450To499YardsAllowed When a DST allows 450-499 yards in their NFL
+   *                                                  game.
+   * @property {number} defensive500To549YardsAllowed When a DST allows 500-549 yards in their NFL
+   *                                                  game.
+   * @property {number} defensiveOver550YardsAllowed When a DST allows 550 or more yards in their
+   *                                                 NFL game.
+   */
+
+  /**
+   * @type {PlayerStats~PlayerStatsMap}
+   */
   return PlayerStats;
 }(_base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_3__["default"]);
-
 _defineProperty(PlayerStats, "displayName", 'PlayerStats');
-
 _defineProperty(PlayerStats, "responseMap", {
   passingYards: '3',
   passingTouchdowns: '4',
@@ -15990,30 +15904,25 @@ _defineProperty(PlayerStats, "responseMap", {
   defensive500To549YardsAllowed: '135',
   defensiveOver550YardsAllowed: '136'
 });
-
 var parsePlayerStats = function parsePlayerStats(_ref) {
   var responseData = _ref.responseData,
-      constructorParams = _ref.constructorParams,
-      usesPoints = _ref.usesPoints,
-      seasonId = _ref.seasonId,
-      statKey = _ref.statKey,
-      statSourceId = _ref.statSourceId,
-      statSplitTypeId = _ref.statSplitTypeId;
+    constructorParams = _ref.constructorParams,
+    usesPoints = _ref.usesPoints,
+    seasonId = _ref.seasonId,
+    statKey = _ref.statKey,
+    statSourceId = _ref.statSourceId,
+    statSplitTypeId = _ref.statSplitTypeId;
   var filters = {
     statSourceId: statSourceId,
     statSplitTypeId: statSplitTypeId
   };
-
   if (seasonId) {
     filters.seasonId = seasonId;
   }
-
   var statData = lodash_find__WEBPACK_IMPORTED_MODULE_2___default()(responseData.player.stats, filters);
-
   var params = lodash_assign__WEBPACK_IMPORTED_MODULE_1___default()({}, constructorParams, {
     usesPoints: usesPoints
   });
-
   return PlayerStats.buildFromServer(lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(statData, statKey), params);
 };
 /* harmony default export */ __webpack_exports__["default"] = (PlayerStats);
@@ -16037,32 +15946,20 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var lodash_toNumber__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(lodash_toNumber__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var _base_classes_base_cacheable_object_base_cacheable_object_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../base-classes/base-cacheable-object/base-cacheable-object.js */ "./src/base-classes/base-cacheable-object/base-cacheable-object.js");
 /* harmony import */ var _constants_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants.js */ "./src/constants.js");
-
-
-
-
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
+
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
 function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
 function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
-
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 
@@ -16074,27 +15971,19 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
  *
  * @augments {BaseCacheableObject}
  */
-
 var Player = /*#__PURE__*/function (_BaseCacheableObject) {
   _inherits(Player, _BaseCacheableObject);
-
   var _super = _createSuper(Player);
-
   function Player() {
     var _this;
-
     var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
     _classCallCheck(this, Player);
-
     _this = _super.call(this, options);
     _this.seasonId = options.seasonId;
     return _this;
   }
-
   _createClass(Player, null, [{
     key: "getIDParams",
-
     /**
      * Returns valid id params when 'id' and 'seasonId' are passed.
      *
@@ -16103,14 +15992,12 @@ var Player = /*#__PURE__*/function (_BaseCacheableObject) {
      */
     value: function getIDParams() {
       var params = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
       if (params.id && params.seasonId) {
         return {
           id: params.id,
           seasonId: params.seasonId
         };
       }
-
       return undefined;
     }
     /**
@@ -16146,20 +16033,14 @@ var Player = /*#__PURE__*/function (_BaseCacheableObject) {
      * @property {boolean} isInjured Whether or not the player is injured.
      * @property {INJURY_STATUSES} injuryStatus The specific injury status/timeline of the player.
      */
-
     /**
      * @type {Player~PlayerMap}
      */
-
   }]);
-
   return Player;
 }(_base_classes_base_cacheable_object_base_cacheable_object_js__WEBPACK_IMPORTED_MODULE_3__["default"]);
-
 _defineProperty(Player, "displayName", 'Player');
-
 _defineProperty(Player, "flattenResponse", true);
-
 _defineProperty(Player, "responseMap", {
   id: 'id',
   firstName: 'firstName',
@@ -16213,7 +16094,6 @@ _defineProperty(Player, "responseMap", {
   isInjured: 'injured',
   injuryStatus: 'injuryStatus'
 });
-
 /* harmony default export */ __webpack_exports__["default"] = (Player);
 
 /***/ }),
@@ -16235,32 +16115,20 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var lodash_trim__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(lodash_trim__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var _base_classes_base_cacheable_object_base_cacheable_object_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../base-classes/base-cacheable-object/base-cacheable-object.js */ "./src/base-classes/base-cacheable-object/base-cacheable-object.js");
 /* harmony import */ var _player_player__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../player/player */ "./src/player/player.js");
-
-
-
-
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
+
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
 function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
 function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
-
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 
@@ -16270,28 +16138,20 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
  *
  * @augments {BaseCacheableObject}
  */
-
 var Team = /*#__PURE__*/function (_BaseCacheableObject) {
   _inherits(Team, _BaseCacheableObject);
-
   var _super = _createSuper(Team);
-
   function Team() {
     var _this;
-
     var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
     _classCallCheck(this, Team);
-
     _this = _super.call(this, options);
     _this.leagueId = options.leagueId;
     _this.seasonId = options.seasonId;
     return _this;
   }
-
   _createClass(Team, null, [{
     key: "getIDParams",
-
     /**
      * Returns valid id params when 'id', `leagueId`, and 'seasonId' are passed.
      *
@@ -16300,7 +16160,6 @@ var Team = /*#__PURE__*/function (_BaseCacheableObject) {
      */
     value: function getIDParams() {
       var params = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
       if (params.id && params.leagueId && params.seasonId) {
         return {
           id: params.id,
@@ -16308,7 +16167,6 @@ var Team = /*#__PURE__*/function (_BaseCacheableObject) {
           seasonId: params.seasonId
         };
       }
-
       return undefined;
     }
     /**
@@ -16351,18 +16209,13 @@ var Team = /*#__PURE__*/function (_BaseCacheableObject) {
      * @property {number} finalStandingsPosition The final standings position the team ended the
      *                                           season in.
      */
-
     /**
      * @type {Team~TeamMap}
      */
-
   }]);
-
   return Team;
 }(_base_classes_base_cacheable_object_base_cacheable_object_js__WEBPACK_IMPORTED_MODULE_3__["default"]);
-
 _defineProperty(Team, "displayName", 'Team');
-
 _defineProperty(Team, "responseMap", {
   id: 'id',
   abbreviation: 'abbrev',
@@ -16407,7 +16260,6 @@ _defineProperty(Team, "responseMap", {
   playoffSeed: 'playoffSeed',
   finalStandingsPosition: 'rankCalculatedFinal'
 });
-
 /* harmony default export */ __webpack_exports__["default"] = (Team);
 
 /***/ }),
@@ -16434,10 +16286,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
 var flattenObject = function flattenObject(object) {
   var flatObject = {};
-
   lodash_forEach__WEBPACK_IMPORTED_MODULE_3___default()(object, function (value, key) {
     if (lodash_isPlainObject__WEBPACK_IMPORTED_MODULE_2___default()(value)) {
       lodash_assign__WEBPACK_IMPORTED_MODULE_1___default()(flatObject, flattenObject(value));
@@ -16445,10 +16295,8 @@ var flattenObject = function flattenObject(object) {
       lodash_set__WEBPACK_IMPORTED_MODULE_0___default()(flatObject, key, value);
     }
   });
-
   return flatObject;
 };
-
 
 
 /***/ }),
