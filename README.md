@@ -1,8 +1,6 @@
 # ESPN Fantasy Football API
 [![npm](https://img.shields.io/npm/v/espn-fantasy-football-api.svg?colorB=deepskyblue)](https://www.npmjs.com/package/espn-fantasy-football-api) [![node](https://img.shields.io/node/v/espn-fantasy-football-api.svg)](https://www.npmjs.com/package/espn-fantasy-football-api) [![Blazing Fast](https://img.shields.io/badge/speed-blazing%20%F0%9F%94%A5-brightgreen.svg)](https://twitter.com/acdlite/status/974390255393505280)
 
-[![CI](https://github.com/mkreiser/ESPN-Fantasy-Football-API/actions/workflows/ci.yml/badge.svg)](https://github.com/mkreiser/ESPN-Fantasy-Football-API/actions/workflows/ci.yml) [![Maintainability](https://api.codeclimate.com/v1/badges/548bae8930b5efad0418/maintainability)](https://codeclimate.com/github/mkreiser/ESPN-Fantasy-Football-API/maintainability) [![codecov](https://codecov.io/gh/mkreiser/ESPN-Fantasy-Football-API/graph/badge.svg?token=eYPSrLsdXz)](https://codecov.io/gh/mkreiser/ESPN-Fantasy-Football-API) [![Known Vulnerabilities](https://snyk.io/test/github/mkreiser/ESPN-Fantasy-Football-API/badge.svg?targetFile=package.json)](https://snyk.io/test/github/mkreiser/ESPN-Fantasy-Football-API?targetFile=package.json)
-
 
 A Javascript API client for both web and NodeJS that connects to the updated v3 ESPN fantasy football API. Available as an npm package.
 
@@ -31,11 +29,10 @@ no airbnb), Jest 30, jsdoc 4 and cspell 10. Two consequences are worth knowing:
 
 * **Node 22.18+ is required.** Babel 8 and cspell 10 set that floor, and `engines.node` matches
   it rather than claiming something lower: Node 18 and 20 both reached end-of-life (April 2025
-  and April 2026), and CI only exercises 22 and 24, so a lower floor would be advertising
-  support that nothing verifies. The bundles themselves use nothing newer than optional
-  chaining and would run on far older Node — that is just not a configuration this repository
-  tests. CI lints and tests on 22 and 24 and builds on 24; `.nvmrc` pins 24 to match, because
-  the committed bundles are byte-compared against a fresh build.
+  and April 2026), so a lower floor would be advertising support that nothing verifies. The
+  bundles themselves use nothing newer than optional chaining and would run on far older Node —
+  that is just not a configuration this repository tests. `.nvmrc` pins 24, because
+  the committed bundles are byte-compared against a fresh build by `npm run ci`.
 * **The bundles are no longer ES5.** Upstream compiled to ES5 by accident of Babel 7's default
   targets. This repository declares an explicit `browserslist` (`defaults, not op_mini all`),
   so the bundles use modern syntax and drop support for pre-2017 browsers. Node consumers are
@@ -53,6 +50,11 @@ no airbnb), Jest 30, jsdoc 4 and cspell 10. Two consequences are worth knowing:
   maintenance page as an empty result array. And native `fetch` does not read `HTTP_PROXY` /
   `HTTPS_PROXY` automatically the way axios did; on Node 24+, run with `--use-env-proxy` (or set
   `NODE_USE_ENV_PROXY=1`) if you need proxy support.
+* **TypeScript declarations ship with the package.** `node.d.ts` and `types/` are generated from
+  the jsdoc in `src/` by `npm run build`, so the jsdoc stays the single source of truth and the
+  declarations cannot drift from it — `npm run ci` fails if they do. TypeScript consumers get
+  them automatically from `import ... from 'espn-fantasy-football-api/node.js'`; there is no
+  need to hand-maintain an ambient `declare module` block.
 
 ## Features
 
@@ -140,6 +142,12 @@ This will allow you to call the various methods on the `Client` class to grab da
 import { Client } from 'espn-fantasy-football-api';
 const myClient = new Client({ leagueId: 432132 });
 ```
+
+`getBoxscoreForWeek` returns one week's matchups with full rosters.
+`getScheduleForSeason` returns every matchup in the season without rosters, which is what answers
+"who do I play in week 12", strength of schedule, and the shape of the playoff bracket. Note that
+ESPN only adds playoff matchups to the schedule once it has generated them, so before then the
+highest `matchupPeriodId` returned is the last regular season week.
 
 #### Working with Private Leagues
 
@@ -337,15 +345,16 @@ This is my first time writing OSS and picking a license. Feel free to reach out 
 
 | Script           | Description                                                  |
 | ---------------- | ------------------------------------------------------------ |
-| build            | Builds the module.                                           |
+| build            | Builds the bundles and the TypeScript declarations.          |
 | build:docs       | Builds the docs.                                             |
 | clean            | Runs all clean scripts.                                      |
-| clean:dist       | Removes the dist folder.                                     |
+| clean:dist       | Removes the built bundles and declarations.                  |
 | clean:docs       | Removes the docs folder.                                     |
-| ci               | Runs continuous integration tasks: clean, lint, unit tests, build, and build:docs. Does not run the integration tests. |
+| ci               | Runs continuous integration tasks: clean, lint, unit tests, build, build:docs, and verify:artifacts. Does not run the integration tests. |
 | lint             | Runs all lint tasks                                          |
 | lint:js          | Ensures code style is correct. File set comes from `eslint.config.mjs`. |
 | lint:spelling    | Ensures spelling is correct.                                 |
 | serve:docs       | Builds and serves docs. Defaults to port 8080.               |
 | test             | Starts a jest test runner with access to all unit tests. Pass `--watch` to keep jest alive and watching for changes. Pass a string as a file inclusion pattern. |
 | test:integration | Runs the integration tests.                                  |
+| verify:artifacts | Fails if the committed bundles or declarations no longer match `src/`. Run `build` and commit the result. |
