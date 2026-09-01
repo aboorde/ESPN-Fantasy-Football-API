@@ -89,6 +89,22 @@ airbnb), Jest 30, jsdoc 4 and cspell 10. Several consequences are worth knowing:
 Generate the API docs locally with `npm run build:docs`, or `npm run serve:docs` to
 build and serve them on port 8080. Output lands in `docs/` and is not committed.
 
+**jsdoc cannot render every type this project declares, and `npm run ci` no longer runs it.**
+jsdoc 4's type parser predates TypeScript-flavoured JSDoc: it rejects `import('./x').Y`
+expressions and the `(string & {})` intersection that makes ESPN's string enums open unions, and
+it exits non-zero when it meets one. Those annotations are what give TypeScript consumers real
+union types instead of bare `string`, so they stay.
+
+The alternative forms were checked rather than assumed. `Omit<string, never>` parses in jsdoc but
+is not assignable to `string`, which would break any consumer writing
+`const s: string = team.streakType`. Rewriting the jsdoc as closed unions and appending the open
+half during the type build would make the source disagree with the emitted declarations, which is
+the class of trap this project has already been bitten by.
+
+So the generated `.d.ts` is the real API documentation now -- it is what consumers import, and
+`tsc` checks it. The jsdoc HTML remains a local convenience and prints parse errors for the types
+above.
+
 (Upstream publishes hosted docs for its own releases at
 http://espn-fantasy-football-api.s3-website.us-east-2.amazonaws.com/. That bucket is
 mkreiser's and does not reflect this repository, so `getRecentActivity` is absent from it.)
@@ -381,7 +397,7 @@ This is my first time writing OSS and picking a license. Feel free to reach out 
 | clean            | Runs all clean scripts.                                      |
 | clean:dist       | Removes the built bundles and declarations.                  |
 | clean:docs       | Removes the docs folder.                                     |
-| ci               | Runs the full local check: clean, lint, unit tests, build and build:docs. Does not run the integration tests. Nothing runs this automatically -- there is no CI. |
+| ci               | Runs the full local check: clean, lint, unit tests and build. Does not run the integration tests, and no longer runs `build:docs` -- see below. Nothing runs this automatically; there is no CI. |
 | lint             | Runs all lint tasks                                          |
 | lint:js          | Ensures code style is correct. File set comes from `eslint.config.mjs`. |
 | lint:spelling    | Ensures spelling is correct.                                 |

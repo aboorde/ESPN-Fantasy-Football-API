@@ -333,6 +333,14 @@ are fixed: a tuple type in `internal/collections.js`, and an indexed access type
 which is better as a named `ActivityActionType` - now exported, so a consumer can name the union a
 `switch` is exhaustive over.
 
+**`npm run ci` was green on master and this branch broke it** - `build:docs` exits non-zero on
+those parse errors. Checked rather than assumed: `Omit<string, never>` parses in jsdoc and works as
+an open union, but is not assignable to `string`, so `const s: string = team.streakType` would stop
+compiling for consumers. Writing closed unions in the jsdoc and appending the open half during the
+type build would make source and emitted declarations disagree - the trap this branch spent four
+commits fixing. So `build:docs` was removed from the `ci` composite; it still exists and still runs,
+it just no longer decides whether the build passes.
+
 **26 errors remain and are structural.** They are the open unions and the aliases themselves -
 the deliberate part of step 8. Where jsdoc's HTML output and the generated declarations disagree,
 the declarations win: they are what consumers consume, `tsc` checks them, and `docs/` is gitignored
