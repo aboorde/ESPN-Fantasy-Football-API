@@ -43,6 +43,9 @@ class Boxscore extends Matchup {
     homeRoster: {
       key: 'home.rosterForCurrentScoringPeriod.entries',
       isArray: true,
+      // An unplayed week has no roster key at all, and `[]` is what callers iterate. Without this
+      // the absent-key guard would leave the attribute unset instead.
+      parseAbsent: true,
       manualParse: (responseData, data, rawData, constructorParams) => map(
         responseData,
         (playerData) => BoxscorePlayer.buildFromServer(playerData, constructorParams)
@@ -53,6 +56,7 @@ class Boxscore extends Matchup {
     awayRoster: {
       key: 'away.rosterForCurrentScoringPeriod.entries',
       isArray: true,
+      parseAbsent: true,
       manualParse: (responseData, data, rawData, constructorParams) => map(
         responseData,
         (playerData) => BoxscorePlayer.buildFromServer(playerData, constructorParams)

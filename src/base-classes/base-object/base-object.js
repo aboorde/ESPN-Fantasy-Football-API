@@ -71,6 +71,15 @@ class BaseObject {
 
     const responseData = get(data, value.key);
     if (isFunction(value.manualParse)) {
+      // ESPN omits keys constantly -- a settings block for a league that has none, a roster for a
+      // week it has not scored, a member for a departed manager. A parser written to shape a value
+      // throws when handed `undefined`, so every model was growing its own guard: five different
+      // idioms across nine files, and three sites that still had none. Returning `undefined` here
+      // completes the contract the output side already keeps at `_processResponseMapItem`, where
+      // an undefined result leaves the attribute unset. `parseAbsent` opts out.
+      if (isUndefined(responseData) && !value.parseAbsent) {
+        return undefined;
+      }
       return value.manualParse(responseData, data, rawData, constructorParams, instance);
     } else if (value.BaseObject) {
       const buildInstance = (passedData) => (
@@ -119,6 +128,15 @@ class BaseObject {
      * @property {BaseObject} BaseObject The BaseObject to create with the response data.
      * @property {boolean} isArray Whether or not the response data is an array. Useful for
      *                             attributes such as "teams".
+     * @property {boolean} parseAbsent Whether to run `manualParse` even when the response has no
+     *                                 value at `key`. Off by default: a parser is normally written
+     *                                 to shape a value, so calling it with `undefined` is how it
+     *                                 throws, and leaving the attribute unset is what
+     *                                 `_processResponseMapItem` already does with an undefined
+     *                                 result. Turn it on for a parser whose output is meaningful
+     *                                 without input -- `map(undefined)` giving `[]` for a roster
+     *                                 ESPN has not sent, say -- or one that reads `rawData` rather
+     *                                 than its own key.
      * @property {boolean} defer Whether or not to wait to parse the entry until a second pass of
      *                           the map. This is useful for populating items with cached instances
      *                           that are not guaranteed to be parsed/cached during initial parsing.

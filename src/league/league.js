@@ -15,21 +15,6 @@ import {
 } from '../constants';
 
 /**
- * Wraps a settings parser so an absent block leaves the attribute unset instead of throwing.
- *
- * Every one of these parsers reads properties straight off its response data, so a response missing
- * the block -- an older season, a partial view, a league mid-creation -- took down the whole
- * `getLeagueInfo` call. Returning `undefined` is also better than an object of `undefined`s: it is
- * what `_populateObject` does with any other unset value, so the attribute simply does not appear.
- *
- * @param   {Function} parse The parser to guard.
- * @returns {Function} The guarded parser.
- */
-const whenPresent = (parse) => (responseData, ...rest) => (
-  responseData === undefined ? undefined : parse(responseData, ...rest)
-);
-
-/**
  * Represents basic information about an ESPN fantasy football league.
  *
  * @augments {BaseObject}
@@ -168,7 +153,7 @@ class League extends BaseObject {
 
     draftSettings: {
       key: 'draftSettings',
-      manualParse: whenPresent((responseData) => ({
+      manualParse: (responseData) => ({
         date: toDate(responseData.date),
         type: responseData.type,
         timePerPick: responseData.timePerSelection,
@@ -177,12 +162,12 @@ class League extends BaseObject {
         keeperCount: responseData.keeperCount,
         orderType: responseData.orderType,
         pickOrder: responseData.pickOrder
-      }))
+      })
     },
 
     rosterSettings: {
       key: 'rosterSettings',
-      manualParse: whenPresent((responseData) => ({
+      manualParse: (responseData) => ({
         lineupPositionCount: mapKeys(
           responseData.lineupSlotCounts,
           (count, position) => get(slotCategoryIdToPositionMap, position)
@@ -192,12 +177,12 @@ class League extends BaseObject {
           (count, position) => get(slotCategoryIdToPositionMap, position)
         ),
         locktime: responseData.rosterLocktimeType
-      }))
+      })
     },
 
     scheduleSettings: {
       key: 'scheduleSettings',
-      manualParse: whenPresent((responseData, data) => {
+      manualParse: (responseData, data) => {
         // The season length comes from `status.finalScoringPeriod` rather than a literal 17. The
         // two agree on a standard league, but hardcoding the NFL's current season length is how
         // this silently goes wrong the year the league adds a week.
@@ -218,12 +203,12 @@ class League extends BaseObject {
           playoffSeedingRule: responseData.playoffSeedingRule,
           playoffReseed: responseData.playoffReseed
         };
-      })
+      }
     },
 
     acquisitionSettings: {
       key: 'acquisitionSettings',
-      manualParse: whenPresent((responseData) => ({
+      manualParse: (responseData) => ({
         budget: responseData.acquisitionBudget,
         isUsingBudget: responseData.isUsingAcquisitionBudget,
         type: responseData.acquisitionType,
@@ -233,22 +218,22 @@ class League extends BaseObject {
         waiverProcessDays: responseData.waiverProcessDays,
         waiverProcessHour: responseData.waiverProcessHour,
         waiverOrderReset: responseData.waiverOrderReset
-      }))
+      })
     },
 
     tradeSettings: {
       key: 'tradeSettings',
-      manualParse: whenPresent((responseData) => ({
+      manualParse: (responseData) => ({
         deadlineDate: toDate(responseData.deadlineDate),
         max: responseData.max,
         vetoVotesRequired: responseData.vetoVotesRequired,
         revisionHours: responseData.revisionHours
-      }))
+      })
     },
 
     financeSettings: {
       key: 'financeSettings',
-      manualParse: whenPresent((responseData) => ({
+      manualParse: (responseData) => ({
         entryFee: responseData.entryFee,
         miscFee: responseData.miscFee,
         perLoss: responseData.perLoss,
@@ -257,12 +242,12 @@ class League extends BaseObject {
         playerDrop: responseData.playerDrop,
         playerMoveToActive: responseData.playerMoveToActive,
         playerMoveToIR: responseData.playerMoveToIR
-      }))
+      })
     },
 
     scoringSettings: {
       key: 'scoringSettings',
-      manualParse: whenPresent((responseData) => reduce(
+      manualParse: (responseData) => reduce(
         responseData.scoringItems,
         (acc, { points, pointsOverrides, statId }) => {
           const key = scoringIdToItem[statId];
@@ -280,7 +265,7 @@ class League extends BaseObject {
           return acc;
         },
         {}
-      ))
+      )
     }
   };
 }

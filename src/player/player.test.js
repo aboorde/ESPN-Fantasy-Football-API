@@ -51,10 +51,21 @@ describe('Player', () => {
           });
         });
 
-        describe('when a value is not passed', () => {
+        describe('when the key is absent', () => {
           test('returns undefined', () => {
             const data = {};
             const player = buildPlayer(data);
+
+            expect(player.jerseyNumber).toBeUndefined();
+          });
+        });
+
+        describe('when ESPN sends an empty jersey', () => {
+          // A player with no squad number. The key is present, so the base class's absent-key
+          // guard does not fire here -- this is why the parser keeps its own falsy check, and
+          // `toNumber('')` would otherwise report jersey number 0.
+          test('returns undefined rather than 0', () => {
+            const player = buildPlayer({ jersey: '' });
 
             expect(player.jerseyNumber).toBeUndefined();
           });

@@ -128,11 +128,11 @@ class Team extends BaseCacheableObject {
     name: 'name',
     ownerName: {
       key: 'owner',
-      // ESPN sends no `members` entry for a departed manager, and sends members with blank names
-      // for some leagues. Both used to produce `' '` or a TypeError; leaving the attribute unset is
-      // both honest and what `_populateObject` does with any other undefined value.
+      // A departed manager has no `members` entry, and the base class leaves the attribute unset
+      // when the key is absent. This handles the other case: a member ESPN sends with blank names,
+      // which used to produce the string `' '`.
       manualParse: (responseData) => {
-        const name = `${trim(responseData?.firstName)} ${trim(responseData?.lastName)}`.trim();
+        const name = `${trim(responseData.firstName)} ${trim(responseData.lastName)}`.trim();
         return name || undefined;
       }
     },

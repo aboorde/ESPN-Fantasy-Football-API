@@ -8269,6 +8269,15 @@ class BaseObject {
 
     const responseData = lodash_get__WEBPACK_IMPORTED_MODULE_1___default()(data, value.key);
     if (lodash_isFunction__WEBPACK_IMPORTED_MODULE_3___default()(value.manualParse)) {
+      // ESPN omits keys constantly -- a settings block for a league that has none, a roster for a
+      // week it has not scored, a member for a departed manager. A parser written to shape a value
+      // throws when handed `undefined`, so every model was growing its own guard: five different
+      // idioms across nine files, and three sites that still had none. Returning `undefined` here
+      // completes the contract the output side already keeps at `_processResponseMapItem`, where
+      // an undefined result leaves the attribute unset. `parseAbsent` opts out.
+      if (lodash_isUndefined__WEBPACK_IMPORTED_MODULE_6___default()(responseData) && !value.parseAbsent) {
+        return undefined;
+      }
       return value.manualParse(responseData, data, rawData, constructorParams, instance);
     } else if (value.BaseObject) {
       const buildInstance = (passedData) => (
@@ -8317,6 +8326,15 @@ class BaseObject {
      * @property {BaseObject} BaseObject The BaseObject to create with the response data.
      * @property {boolean} isArray Whether or not the response data is an array. Useful for
      *                             attributes such as "teams".
+     * @property {boolean} parseAbsent Whether to run `manualParse` even when the response has no
+     *                                 value at `key`. Off by default: a parser is normally written
+     *                                 to shape a value, so calling it with `undefined` is how it
+     *                                 throws, and leaving the attribute unset is what
+     *                                 `_processResponseMapItem` already does with an undefined
+     *                                 result. Turn it on for a parser whose output is meaningful
+     *                                 without input -- `map(undefined)` giving `[]` for a roster
+     *                                 ESPN has not sent, say -- or one that reads `rawData` rather
+     *                                 than its own key.
      * @property {boolean} defer Whether or not to wait to parse the entry until a second pass of
      *                           the map. This is useful for populating items with cached instances
      *                           that are not guaranteed to be parsed/cached during initial parsing.
@@ -8624,6 +8642,9 @@ class Boxscore extends _matchup_matchup__WEBPACK_IMPORTED_MODULE_2__["default"] 
     homeRoster: {
       key: 'home.rosterForCurrentScoringPeriod.entries',
       isArray: true,
+      // An unplayed week has no roster key at all, and `[]` is what callers iterate. Without this
+      // the absent-key guard would leave the attribute unset instead.
+      parseAbsent: true,
       manualParse: (responseData, data, rawData, constructorParams) => lodash_map__WEBPACK_IMPORTED_MODULE_0___default()(
         responseData,
         (playerData) => _boxscore_player_boxscore_player__WEBPACK_IMPORTED_MODULE_1__["default"].buildFromServer(playerData, constructorParams)
@@ -8634,6 +8655,7 @@ class Boxscore extends _matchup_matchup__WEBPACK_IMPORTED_MODULE_2__["default"] 
     awayRoster: {
       key: 'away.rosterForCurrentScoringPeriod.entries',
       isArray: true,
+      parseAbsent: true,
       manualParse: (responseData, data, rawData, constructorParams) => lodash_map__WEBPACK_IMPORTED_MODULE_0___default()(
         responseData,
         (playerData) => _boxscore_player_boxscore_player__WEBPACK_IMPORTED_MODULE_1__["default"].buildFromServer(playerData, constructorParams)
@@ -10588,21 +10610,6 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
- * Wraps a settings parser so an absent block leaves the attribute unset instead of throwing.
- *
- * Every one of these parsers reads properties straight off its response data, so a response missing
- * the block -- an older season, a partial view, a league mid-creation -- took down the whole
- * `getLeagueInfo` call. Returning `undefined` is also better than an object of `undefined`s: it is
- * what `_populateObject` does with any other unset value, so the attribute simply does not appear.
- *
- * @param   {Function} parse The parser to guard.
- * @returns {Function} The guarded parser.
- */
-const whenPresent = (parse) => (responseData, ...rest) => (
-  responseData === undefined ? undefined : parse(responseData, ...rest)
-);
-
-/**
  * Represents basic information about an ESPN fantasy football league.
  *
  * @augments {BaseObject}
@@ -10741,7 +10748,7 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
 
     draftSettings: {
       key: 'draftSettings',
-      manualParse: whenPresent((responseData) => ({
+      manualParse: (responseData) => ({
         date: (0,_utils__WEBPACK_IMPORTED_MODULE_7__.toDate)(responseData.date),
         type: responseData.type,
         timePerPick: responseData.timePerSelection,
@@ -10750,12 +10757,12 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
         keeperCount: responseData.keeperCount,
         orderType: responseData.orderType,
         pickOrder: responseData.pickOrder
-      }))
+      })
     },
 
     rosterSettings: {
       key: 'rosterSettings',
-      manualParse: whenPresent((responseData) => ({
+      manualParse: (responseData) => ({
         lineupPositionCount: lodash_mapKeys__WEBPACK_IMPORTED_MODULE_2___default()(
           responseData.lineupSlotCounts,
           (count, position) => lodash_get__WEBPACK_IMPORTED_MODULE_1___default()(_constants__WEBPACK_IMPORTED_MODULE_8__.slotCategoryIdToPositionMap, position)
@@ -10765,12 +10772,12 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
           (count, position) => lodash_get__WEBPACK_IMPORTED_MODULE_1___default()(_constants__WEBPACK_IMPORTED_MODULE_8__.slotCategoryIdToPositionMap, position)
         ),
         locktime: responseData.rosterLocktimeType
-      }))
+      })
     },
 
     scheduleSettings: {
       key: 'scheduleSettings',
-      manualParse: whenPresent((responseData, data) => {
+      manualParse: (responseData, data) => {
         // The season length comes from `status.finalScoringPeriod` rather than a literal 17. The
         // two agree on a standard league, but hardcoding the NFL's current season length is how
         // this silently goes wrong the year the league adds a week.
@@ -10791,12 +10798,12 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
           playoffSeedingRule: responseData.playoffSeedingRule,
           playoffReseed: responseData.playoffReseed
         };
-      })
+      }
     },
 
     acquisitionSettings: {
       key: 'acquisitionSettings',
-      manualParse: whenPresent((responseData) => ({
+      manualParse: (responseData) => ({
         budget: responseData.acquisitionBudget,
         isUsingBudget: responseData.isUsingAcquisitionBudget,
         type: responseData.acquisitionType,
@@ -10806,22 +10813,22 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
         waiverProcessDays: responseData.waiverProcessDays,
         waiverProcessHour: responseData.waiverProcessHour,
         waiverOrderReset: responseData.waiverOrderReset
-      }))
+      })
     },
 
     tradeSettings: {
       key: 'tradeSettings',
-      manualParse: whenPresent((responseData) => ({
+      manualParse: (responseData) => ({
         deadlineDate: (0,_utils__WEBPACK_IMPORTED_MODULE_7__.toDate)(responseData.deadlineDate),
         max: responseData.max,
         vetoVotesRequired: responseData.vetoVotesRequired,
         revisionHours: responseData.revisionHours
-      }))
+      })
     },
 
     financeSettings: {
       key: 'financeSettings',
-      manualParse: whenPresent((responseData) => ({
+      manualParse: (responseData) => ({
         entryFee: responseData.entryFee,
         miscFee: responseData.miscFee,
         perLoss: responseData.perLoss,
@@ -10830,12 +10837,12 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
         playerDrop: responseData.playerDrop,
         playerMoveToActive: responseData.playerMoveToActive,
         playerMoveToIR: responseData.playerMoveToIR
-      }))
+      })
     },
 
     scoringSettings: {
       key: 'scoringSettings',
-      manualParse: whenPresent((responseData) => lodash_reduce__WEBPACK_IMPORTED_MODULE_3___default()(
+      manualParse: (responseData) => lodash_reduce__WEBPACK_IMPORTED_MODULE_3___default()(
         responseData.scoringItems,
         (acc, { points, pointsOverrides, statId }) => {
           const key = _constants__WEBPACK_IMPORTED_MODULE_8__.scoringIdToItem[statId];
@@ -10853,7 +10860,7 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
           return acc;
         },
         {}
-      ))
+      )
     }
   };
 }
@@ -11470,11 +11477,11 @@ class Team extends _base_classes_base_cacheable_object_base_cacheable_object_js_
     name: 'name',
     ownerName: {
       key: 'owner',
-      // ESPN sends no `members` entry for a departed manager, and sends members with blank names
-      // for some leagues. Both used to produce `' '` or a TypeError; leaving the attribute unset is
-      // both honest and what `_populateObject` does with any other undefined value.
+      // A departed manager has no `members` entry, and the base class leaves the attribute unset
+      // when the key is absent. This handles the other case: a member ESPN sends with blank names,
+      // which used to produce the string `' '`.
       manualParse: (responseData) => {
-        const name = `${lodash_trim__WEBPACK_IMPORTED_MODULE_2___default()(responseData?.firstName)} ${lodash_trim__WEBPACK_IMPORTED_MODULE_2___default()(responseData?.lastName)}`.trim();
+        const name = `${lodash_trim__WEBPACK_IMPORTED_MODULE_2___default()(responseData.firstName)} ${lodash_trim__WEBPACK_IMPORTED_MODULE_2___default()(responseData.lastName)}`.trim();
         return name || undefined;
       }
     },
