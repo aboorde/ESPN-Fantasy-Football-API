@@ -14895,7 +14895,7 @@ var Client = /*#__PURE__*/function () {
         params: '?view=mTeam&view=mRoster&view=mMatchup&view=mSettings&view=mStandings'
       });
       var config = this._buildAxiosConfig({
-        baseURL: 'https://fantasy.espn.com/'
+        baseURL: 'https://lm-api-reads.fantasy.espn.com/'
       });
       return axios__WEBPACK_IMPORTED_MODULE_4___default.a.get(route, config).then(function (response) {
         var teams = response.data.teams.map(function (team) {
@@ -14993,7 +14993,7 @@ var Client = /*#__PURE__*/function () {
         params: '?view=kona_league_communication'
       });
       var config = this._buildAxiosConfig({
-        baseURL: 'https://fantasy.espn.com/',
+        baseURL: 'https://lm-api-reads.fantasy.espn.com/',
         headers: {
           'x-fantasy-filter': JSON.stringify({
             topics: {
@@ -15025,7 +15025,7 @@ var Client = /*#__PURE__*/function () {
         params: '?view=mTeam&view=mRoster&view=mMatchup&view=mSettings&view=mStandings'
       });
       var leagueConfig = this._buildAxiosConfig({
-        baseURL: 'https://fantasy.espn.com/'
+        baseURL: 'https://lm-api-reads.fantasy.espn.com/'
       });
       return axios__WEBPACK_IMPORTED_MODULE_4___default.a.get(route, config).then(function (response) {
         topics = response.data.topics;
@@ -15046,7 +15046,7 @@ var Client = /*#__PURE__*/function () {
           params: '?view=kona_playercard'
         });
         var playerConfig = _this8._buildAxiosConfig({
-          baseURL: 'https://fantasy.espn.com/',
+          baseURL: 'https://lm-api-reads.fantasy.espn.com/',
           headers: {
             'x-fantasy-filter': JSON.stringify({
               players: {

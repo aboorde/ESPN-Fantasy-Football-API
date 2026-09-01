@@ -231,7 +231,7 @@ class Client {
     });
 
     const config = this._buildAxiosConfig({
-      baseURL: 'https://fantasy.espn.com/'
+      baseURL: 'https://lm-api-reads.fantasy.espn.com/'
     });
 
     return axios.get(route, config).then((response) => {
@@ -332,7 +332,7 @@ class Client {
     });
 
     const config = this._buildAxiosConfig({
-      baseURL: 'https://fantasy.espn.com/',
+      baseURL: 'https://lm-api-reads.fantasy.espn.com/',
       headers: {
         'x-fantasy-filter': JSON.stringify({
           topics: {
@@ -354,7 +354,7 @@ class Client {
     });
 
     const leagueConfig = this._buildAxiosConfig({
-      baseURL: 'https://fantasy.espn.com/'
+      baseURL: 'https://lm-api-reads.fantasy.espn.com/'
     });
     return axios.get(route, config).then((response) => {
       topics = response.data.topics;
@@ -374,7 +374,7 @@ class Client {
       });
 
       const playerConfig = this._buildAxiosConfig({
-        baseURL: 'https://fantasy.espn.com/',
+        baseURL: 'https://lm-api-reads.fantasy.espn.com/',
         headers: {
           'x-fantasy-filter': JSON.stringify({
             players: {
