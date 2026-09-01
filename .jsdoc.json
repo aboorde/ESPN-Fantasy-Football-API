@@ -1,15 +1,16 @@
 {
-    "plugins": [
-      "plugins/markdown"
+  "plugins": [
+    "plugins/markdown"
+  ],
+  "source": {
+    "include": [
+      "src"
     ],
-    "source": {
-      "include": ["src"],
-      "excludePattern": ".+\\.(test|stubs).js(x|doc)?$"
-    },
-    "opts": {
-      "destination": "docs",
-      "readme": "README.md",
-      "recurse": true,
-      "template": "node_modules/@pixi/jsdoc-template"
-    }
+    "excludePattern": ".+\\.(test|stubs).js(x|doc)?$"
+  },
+  "opts": {
+    "destination": "docs",
+    "readme": "README.md",
+    "recurse": true
+  }
 }

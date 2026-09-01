@@ -1,11 +1,10 @@
 module.exports = {
   presets: ['@babel/preset-env'],
-  plugins: [
-    ["@babel/plugin-transform-class-properties", { "loose": true }],
-    ["@babel/plugin-transform-private-methods", { "loose": true }],
-    ["@babel/plugin-transform-private-property-in-object", { "loose": true }],
-    'lodash'
-  ],
+  // Babel 8 removed plugin-level `loose`; `setPublicClassFields` is its replacement and preserves
+  // the assignment semantics the static class fields in `src/` were written against.
+  assumptions: {
+    setPublicClassFields: true
+  },
   env: {
     test: {
       plugins: ['@babel/plugin-transform-runtime']
