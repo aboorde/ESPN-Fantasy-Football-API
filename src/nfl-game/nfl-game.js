@@ -1,6 +1,6 @@
-import find from 'lodash/find';
-import get from 'lodash/get';
-import toSafeInteger from 'lodash/toSafeInteger';
+import { find } from '../internal/collections.js';
+import { getPath } from '../internal/objects.js';
+import { toSafeInt } from '../internal/values.js';
 
 import BaseObject from '../base-classes/base-object/base-object';
 
@@ -64,7 +64,7 @@ class NFLGame extends BaseObject {
 
     gameStatus: {
       key: 'status',
-      manualParse: (responseData) => get(this.GAME_STATUSES, responseData)
+      manualParse: (responseData) => getPath(this.GAME_STATUSES, responseData)
     },
     homeTeam: {
       key: 'competitors',
@@ -82,11 +82,11 @@ class NFLGame extends BaseObject {
 
   static _buildTeamAttribute(teamResponseData) {
     return {
-      id: toSafeInteger(teamResponseData.id),
-      team: get(nflTeamIdToNFLTeam, teamResponseData.id),
-      teamAbbrev: get(nflTeamIdToNFLTeamAbbreviation, teamResponseData.id),
+      id: toSafeInt(teamResponseData.id),
+      team: getPath(nflTeamIdToNFLTeam, teamResponseData.id),
+      teamAbbrev: getPath(nflTeamIdToNFLTeamAbbreviation, teamResponseData.id),
       record: teamResponseData.record,
-      score: toSafeInteger(teamResponseData.score)
+      score: toSafeInt(teamResponseData.score)
     };
   }
 }

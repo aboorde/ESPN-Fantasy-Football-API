@@ -1,4 +1,4 @@
-import forEach from 'lodash/forEach';
+import { each } from '../internal/collections.js';
 
 import BoxscorePlayer from '../boxscore-player/boxscore-player';
 
@@ -98,7 +98,7 @@ describe('Boxscore', () => {
           const boxscore = buildBoxscore(data);
 
           expect.hasAssertions();
-          forEach(boxscore.homeRoster, (player) => {
+          each(boxscore.homeRoster, (player) => {
             expect(player).toBeInstanceOf(BoxscorePlayer);
           });
         });
@@ -111,7 +111,7 @@ describe('Boxscore', () => {
           const boxscore = buildBoxscore(data);
 
           expect.hasAssertions();
-          forEach(boxscore.awayRoster, (player) => {
+          each(boxscore.awayRoster, (player) => {
             expect(player).toBeInstanceOf(BoxscorePlayer);
           });
         });

@@ -1,4 +1,4 @@
-import forEach from 'lodash/forEach';
+import { each } from '../internal/collections.js';
 
 import Matchup from './matchup';
 
@@ -32,7 +32,7 @@ describe('Matchup', () => {
         }
       };
 
-      forEach({
+      each({
         id: 1,
         matchupPeriodId: 1,
         playoffTierType: 'NONE',

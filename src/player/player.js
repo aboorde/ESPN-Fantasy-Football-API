@@ -1,6 +1,5 @@
-import get from 'lodash/get';
-import map from 'lodash/map';
-import toNumber from 'lodash/toNumber';
+import { map } from '../internal/collections.js';
+import { getPath } from '../internal/objects.js';
 
 import BaseObject from '../base-classes/base-object/base-object.js';
 
@@ -78,27 +77,27 @@ class Player extends BaseObject {
     lastName: 'lastName',
     jerseyNumber: {
       key: 'jersey',
-      manualParse: (responseData) => (responseData ? toNumber(responseData) : undefined)
+      manualParse: (responseData) => (responseData ? Number(responseData) : undefined)
     },
     proTeam: {
       key: 'proTeamId',
-      manualParse: (responseData) => get(nflTeamIdToNFLTeam, responseData)
+      manualParse: (responseData) => getPath(nflTeamIdToNFLTeam, responseData)
     },
     proTeamAbbreviation: {
       key: 'proTeamId',
-      manualParse: (responseData) => get(nflTeamIdToNFLTeamAbbreviation, responseData)
+      manualParse: (responseData) => getPath(nflTeamIdToNFLTeamAbbreviation, responseData)
     },
     defaultPosition: {
       key: 'defaultPositionId',
       // `defaultPositionId` and `eligibleSlots` below are two different ESPN enums that overlap on
       // RB and D/ST. Reading this one through the slot map reported Josh Allen as a TQB, Ja'Marr
       // Chase as an RB/WR, Trey McBride as a WR and every kicker as a WR/TE.
-      manualParse: (responseData) => get(defaultPositionIdToPosition, responseData)
+      manualParse: (responseData) => getPath(defaultPositionIdToPosition, responseData)
     },
     eligiblePositions: {
       key: 'eligibleSlots',
       manualParse: (responseData) => map(responseData, (posId) => (
-        get(slotCategoryIdToPositionMap, posId)
+        getPath(slotCategoryIdToPositionMap, posId)
       ))
     },
 

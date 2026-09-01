@@ -1,6 +1,3 @@
-import first from 'lodash/first';
-import values from 'lodash/values';
-
 import Player from '../player/player';
 import { parsePlayerStats } from '../player-stats/player-stats';
 
@@ -63,11 +60,11 @@ class DraftPlayer extends Player {
 
     positionalRanking: {
       key: 'ratings',
-      manualParse: (responseData) => first(values(responseData))?.positionalRanking
+      manualParse: (responseData) => Object.values(responseData)[0]?.positionalRanking
     },
     overallRanking: {
       key: 'ratings',
-      manualParse: (responseData) => first(values(responseData))?.totalRanking
+      manualParse: (responseData) => Object.values(responseData)[0]?.totalRanking
     },
 
     rawStatsForYear: {
@@ -97,7 +94,7 @@ class DraftPlayer extends Player {
 
     pointsScoredThisSeason: {
       key: 'ratings',
-      manualParse: (responseData) => first(values(responseData))?.totalRating
+      manualParse: (responseData) => Object.values(responseData)[0]?.totalRating
     }
   };
 }

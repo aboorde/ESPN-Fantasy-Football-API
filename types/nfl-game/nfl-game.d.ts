@@ -116,11 +116,11 @@ declare class NFLGame extends BaseObject {
         };
     };
     static _buildTeamAttribute(teamResponseData: any): {
-        id: any;
+        id: number;
         team: any;
         teamAbbrev: any;
         record: any;
-        score: any;
+        score: number;
     };
 }
 import BaseObject from '../base-classes/base-object/base-object';

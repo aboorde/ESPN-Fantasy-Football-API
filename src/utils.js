@@ -1,33 +1,32 @@
-import assignWith from 'lodash/assignWith';
-import forEach from 'lodash/forEach';
-import isNaN from 'lodash/isNaN';
-import isPlainObject from 'lodash/isPlainObject';
-import keys from 'lodash/keys';
-import set from 'lodash/set';
-import some from 'lodash/some';
+import { each, isPlainObject } from './internal/collections.js';
+import { setPath } from './internal/objects.js';
 
-const setWithWarning = (objValue, newValue, key, object) => {
-  // istanbul ignore next
-  if (process.env.NODE_ENV === 'development' && object[key] && newValue !== objValue) {
-    console.warn(`espn-fantasy-football-api: Assigning non-empty key ${key}. Set value: ${objValue}, new value: ${newValue}!`);
+/**
+ * Warns when flattening is about to overwrite a key with a different value.
+ *
+ * Development only. Two ESPN sub-objects colliding on a key is a data-shape surprise worth
+ * knowing about, but not worth a runtime cost in a consumer's production build.
+ *
+ * @param {object} flatObject The object being built.
+ * @param {string} key The key about to be written.
+ * @param {*} value The value about to be written.
+ */
+// istanbul ignore next
+const warnOnOverwrite = (flatObject, key, value) => {
+  if (process.env.NODE_ENV === 'development' && flatObject[key] && value !== flatObject[key]) {
+    console.warn(`espn-fantasy-football-api: Assigning non-empty key ${key}. Set value: ${flatObject[key]}, new value: ${value}!`);
   }
-
-  return newValue;
 };
 
 const flattenObject = (object) => {
   const flatObject = {};
 
-  forEach(object, (value, key) => {
+  each(object, (value, key) => {
     if (isPlainObject(value)) {
-      assignWith(flatObject, flattenObject(value), setWithWarning);
+      Object.assign(flatObject, flattenObject(value));
     } else {
-      // istanbul ignore next
-      if (process.env.NODE_ENV === 'development' && flatObject[key] && value !== flatObject[key]) {
-        console.warn(`espn-fantasy-football-api: Assigning non-empty key ${key}. Set value: ${flatObject[key]}, new value: ${value}!`);
-      }
-
-      set(flatObject, key, value);
+      warnOnOverwrite(flatObject, key, value);
+      setPath(flatObject, key, value);
     }
   });
 
@@ -37,16 +36,12 @@ const flattenObject = (object) => {
 const flattenObjectSansNumericKeys = (object) => {
   const flatObject = {};
 
-  forEach(object, (value, key) => {
-    if (isPlainObject(value) && !some(keys(value), (k) => !isNaN(Number(k)))) {
-      assignWith(flatObject, flattenObjectSansNumericKeys(value), setWithWarning);
+  each(object, (value, key) => {
+    if (isPlainObject(value) && !Object.keys(value).some((k) => !Number.isNaN(Number(k)))) {
+      Object.assign(flatObject, flattenObjectSansNumericKeys(value));
     } else {
-      // istanbul ignore next
-      if (process.env.NODE_ENV === 'development' && flatObject[key] && value !== flatObject[key]) {
-        console.warn(`espn-fantasy-football-api: Assigning non-empty key ${key}. Set value: ${flatObject[key]}, new value: ${value}!`);
-      }
-
-      set(flatObject, key, value);
+      warnOnOverwrite(flatObject, key, value);
+      setPath(flatObject, key, value);
     }
   });
 

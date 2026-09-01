@@ -1,4 +1,4 @@
-import get from 'lodash/get';
+import { getPath } from '../internal/objects.js';
 
 import BaseObject from '../base-classes/base-object/base-object';
 
@@ -53,7 +53,7 @@ class Matchup extends BaseObject {
     homeScore: {
       key: 'home',
       manualParse: (responseData) => (
-        get(responseData, 'totalPointsLive') || get(responseData, 'totalPoints')
+        getPath(responseData, 'totalPointsLive') || getPath(responseData, 'totalPoints')
       )
     },
     homeWinProbability: 'home.winProbability',
@@ -62,7 +62,7 @@ class Matchup extends BaseObject {
     awayScore: {
       key: 'away',
       manualParse: (responseData) => (
-        get(responseData, 'totalPointsLive') || get(responseData, 'totalPoints')
+        getPath(responseData, 'totalPointsLive') || getPath(responseData, 'totalPoints')
       )
     },
     awayWinProbability: 'away.winProbability'

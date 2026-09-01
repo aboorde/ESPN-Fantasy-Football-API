@@ -1,5 +1,3 @@
-import reduce from 'lodash/reduce';
-
 /**
  * Maps ESPN's `lineupSlotId` enum to readable positions.
  *
@@ -697,10 +695,9 @@ export const scoringItemToId = {
   teamLossMargin1To4: '167'
 };
 
-export const scoringIdToItem = reduce(scoringItemToId, (acc, value, key) => {
-  acc[value] = key;
-  return acc;
-}, {});
+export const scoringIdToItem = Object.fromEntries(
+  Object.entries(scoringItemToId).map(([item, id]) => [id, item])
+);
 
 /**
  * All possible ways a player may be acquired onto a fantasy football team roster.

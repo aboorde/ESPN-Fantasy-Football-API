@@ -1,12 +1,5 @@
-import forEach from 'lodash/forEach';
-import get from 'lodash/get';
-import isEmpty from 'lodash/isEmpty';
-import isFunction from 'lodash/isFunction';
-import isPlainObject from 'lodash/isPlainObject';
-import isString from 'lodash/isString';
-import isUndefined from 'lodash/isUndefined';
-import map from 'lodash/map';
-import set from 'lodash/set';
+import { each, isEmpty, isPlainObject, map } from '../../internal/collections.js';
+import { getPath, setPath } from '../../internal/objects.js';
 
 import { flattenObjectSansNumericKeys } from '../../utils.js';
 
@@ -69,15 +62,15 @@ class BaseObject {
       );
     }
 
-    const responseData = get(data, value.key);
-    if (isFunction(value.manualParse)) {
+    const responseData = getPath(data, value.key);
+    if (typeof value.manualParse === 'function') {
       // ESPN omits keys constantly -- a settings block for a league that has none, a roster for a
       // week it has not scored, a member for a departed manager. A parser written to shape a value
       // throws when handed `undefined`, so every model was growing its own guard: five different
       // idioms across nine files, and three sites that still had none. Returning `undefined` here
       // completes the contract the output side already keeps at `_processResponseMapItem`, where
       // an undefined result leaves the attribute unset. `parseAbsent` opts out.
-      if (isUndefined(responseData) && !value.parseAbsent) {
+      if (responseData === undefined && !value.parseAbsent) {
         return undefined;
       }
       return value.manualParse(responseData, data, rawData, constructorParams, instance);
@@ -167,9 +160,9 @@ class BaseObject {
     let item;
 
     if (!isDataFromServer) {
-      item = get(data, key);
-    } else if (isString(value)) {
-      item = get(data, value);
+      item = getPath(data, key);
+    } else if (typeof value === 'string') {
+      item = getPath(data, value);
     } else if (isPlainObject(value)) {
       item = this._processObjectValue({
         data, rawData, constructorParams, instance, value
@@ -181,8 +174,8 @@ class BaseObject {
       );
     }
 
-    if (!isUndefined(item)) {
-      set(instance, key, item);
+    if (item !== undefined) {
+      setPath(instance, key, item);
     }
   }
 
@@ -210,7 +203,7 @@ class BaseObject {
       return instance;
     }
 
-    forEach(this.responseMap, (value, key) => {
+    each(this.responseMap, (value, key) => {
       this._processResponseMapItem({
         data, rawData, constructorParams, instance, isDataFromServer, key, value
       });

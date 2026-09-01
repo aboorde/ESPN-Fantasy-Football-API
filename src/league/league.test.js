@@ -1,6 +1,6 @@
-import forEach from 'lodash/forEach';
-import get from 'lodash/get';
-import toSafeInteger from 'lodash/toSafeInteger';
+import { each } from '../internal/collections.js';
+import { getPath } from '../internal/objects.js';
+import { toSafeInt } from '../internal/values.js';
 
 import League from './league';
 
@@ -129,7 +129,7 @@ describe('League', () => {
 
       test('calculates numberOfPlayoffMatchups', () => {
         const league = League.buildFromServer(data);
-        const expected = toSafeInteger(
+        const expected = toSafeInt(
           (
             17 - (scheduleSettings.matchupPeriodCount * scheduleSettings.matchupPeriodLength)
           ) / scheduleSettings.playoffMatchupPeriodLength
@@ -184,6 +184,14 @@ describe('League', () => {
       test('keeps a stat id it has no name for', () => {
         const league = League.buildFromServer(data);
         expect(league.scoringSettings.base.statId999).toBe(75);
+      });
+
+      describe('when ESPN sends scoring settings with no items', () => {
+        test('yields empty base and overrides rather than throwing', () => {
+          const league = League.buildFromServer({ ...data, scoringSettings: {} });
+
+          expect(league.scoringSettings).toStrictEqual({ base: {}, overrides: {} });
+        });
       });
 
       describe('when a position override uses an id the project cannot name', () => {
@@ -318,9 +326,9 @@ describe('League', () => {
         'scheduleSettings.divisions': [{ id: 0, name: 'East', size: 14 }]
       };
 
-      forEach(expectedAttributes, (expectedValue, attribute) => {
+      each(expectedAttributes, (expectedValue, attribute) => {
         test(`${attribute} is populated`, () => {
-          expect(get(League.buildFromServer(measured), attribute)).toEqual(expectedValue);
+          expect(getPath(League.buildFromServer(measured), attribute)).toEqual(expectedValue);
         });
       });
 
@@ -371,10 +379,10 @@ describe('League', () => {
         'acquisitionSettings', 'tradeSettings', 'financeSettings', 'scoringSettings'
       ];
 
-      forEach(settingsAttributes, (attribute) => {
+      each(settingsAttributes, (attribute) => {
         test(`${attribute} is undefined rather than throwing`, () => {
           const league = League.buildFromServer({ name: 'sparse', size: 10 });
-          expect(get(league, attribute)).toBeUndefined();
+          expect(getPath(league, attribute)).toBeUndefined();
         });
       });
     });

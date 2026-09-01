@@ -1,4 +1,4 @@
-import get from 'lodash/get';
+import { getPath } from '../internal/objects.js';
 
 import Player from './player.js';
 
@@ -8,7 +8,7 @@ describe('Player', () => {
       const testPropIsUndefined = (prop) => {
         test(`${prop} is undefined`, () => {
           const newInstance = new Player();
-          expect(get(newInstance, prop)).toBeUndefined();
+          expect(getPath(newInstance, prop)).toBeUndefined();
         });
       };
 
@@ -21,7 +21,7 @@ describe('Player', () => {
         test(`${prop} is set from options`, () => {
           const value = 25;
           const newInstance = new Player({ [prop]: value });
-          expect(get(newInstance, prop)).toBe(value);
+          expect(getPath(newInstance, prop)).toBe(value);
         });
       };
 

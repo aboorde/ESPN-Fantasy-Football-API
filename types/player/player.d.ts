@@ -2,17 +2,10 @@ export default Player;
 /**
  * Represents an NFL player. This model is not directly associated with any fantasy team.
  *
- * @augments {BaseCacheableObject}
+ * @augments {BaseObject}
  */
-declare class Player extends BaseCacheableObject {
+declare class Player extends BaseObject {
     static flattenResponse: boolean;
-    /**
-     * Returns valid id params when 'id' and 'seasonId' are passed.
-     *
-     * @param   {object} params The params to use.
-     * @returns {object|undefined} An object containing the params, or `undefined`.
-     */
-    static getIDParams(params?: object): object | undefined;
     /**
      * @typedef {object} PlayerMap
      *
@@ -23,7 +16,9 @@ declare class Player extends BaseCacheableObject {
      * @property {number} jerseyNumber The jersey number the player wears.
      * @property {string} proTeam The NFL team the player is rostered on.
      * @property {string} proTeamAbbreviation The NFL team abbreviation the player is rostered on.
-     * @property {string} defaultPosition The default position in a fantasy roster for the player.
+     * @property {string} defaultPosition The position the player plays. `undefined` for the IDP
+     *                                     position ids this project cannot verify.
+     *   NOTE: this comes from a different ESPN enum than `eligiblePositions`.
      * @property {string[]} eligiblePositions A list of the eligible positions in a fantasy roster the
      *                                        player may be slotted in.
      *
@@ -81,7 +76,9 @@ declare class Player extends BaseCacheableObject {
          */
         proTeamAbbreviation: string;
         /**
-         * The default position in a fantasy roster for the player.
+         * The position the player plays. `undefined` for the IDP
+         *  position ids this project cannot verify.
+         * NOTE: this comes from a different ESPN enum than `eligiblePositions`.
          */
         defaultPosition: string;
         /**
@@ -145,7 +142,7 @@ declare class Player extends BaseCacheableObject {
     seasonId: any;
     scoringPeriodId: any;
 }
-import BaseCacheableObject from '../base-classes/base-cacheable-object/base-cacheable-object.js';
+import BaseObject from '../base-classes/base-object/base-object.js';
 
 // Instance attributes, projected from the jsdoc by scripts/build-types.mjs.
 

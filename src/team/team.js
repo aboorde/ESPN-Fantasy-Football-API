@@ -1,6 +1,5 @@
-import map from 'lodash/map';
-import round from 'lodash/round';
-import trim from 'lodash/trim';
+import { map } from '../internal/collections.js';
+import { roundTo, trimOrEmpty } from '../internal/values.js';
 
 import BaseObject from '../base-classes/base-object/base-object.js';
 
@@ -114,7 +113,7 @@ class Team extends BaseObject {
       // when the key is absent. This handles the other case: a member ESPN sends with blank names,
       // which used to produce the string `' '`.
       manualParse: (responseData) => {
-        const name = `${trim(responseData.firstName)} ${trim(responseData.lastName)}`.trim();
+        const name = `${trimOrEmpty(responseData.firstName)} ${trimOrEmpty(responseData.lastName)}`.trim();
         return name || undefined;
       }
     },
@@ -155,7 +154,7 @@ class Team extends BaseObject {
     regularSeasonPointsAgainst: 'record.overall.pointsAgainst',
     winningPercentage: {
       key: 'record.overall.percentage',
-      manualParse: (responseData) => round(responseData * 100, 2)
+      manualParse: (responseData) => roundTo(responseData * 100, 2)
     },
     pointsAdjusted: 'pointsAdjusted',
     pointsDelta: 'pointsDelta',

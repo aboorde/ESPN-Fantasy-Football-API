@@ -1,5 +1,5 @@
-import forEach from 'lodash/forEach';
-import get from 'lodash/get';
+import { each } from '../internal/collections.js';
+import { getPath } from '../internal/objects.js';
 
 import Player from '../player/player';
 
@@ -11,7 +11,7 @@ describe('Team', () => {
       const testPropIsUndefined = (prop) => {
         test(`${prop} is undefined`, () => {
           const newInstance = new Team();
-          expect(get(newInstance, prop)).toBeUndefined();
+          expect(getPath(newInstance, prop)).toBeUndefined();
         });
       };
 
@@ -24,7 +24,7 @@ describe('Team', () => {
         test(`${prop} is set from options`, () => {
           const value = 25;
           const newInstance = new Team({ [prop]: value });
-          expect(get(newInstance, prop)).toBe(value);
+          expect(getPath(newInstance, prop)).toBe(value);
         });
       };
 
@@ -59,7 +59,7 @@ describe('Team', () => {
           const team = buildTeam(data, { seasonId: 2018 });
 
           expect.hasAssertions();
-          forEach(team.roster, (player, index) => {
+          each(team.roster, (player, index) => {
             expect(player).toBeInstanceOf(Player);
             expect(player.id).toBe(index);
             expect(player.seasonId).toBe(team.seasonId);
@@ -172,10 +172,10 @@ describe('Team', () => {
         moveToIRCount: 2
       };
 
-      forEach(expectedAttributes, (expectedValue, attribute) => {
+      each(expectedAttributes, (expectedValue, attribute) => {
         test(`${attribute} is populated`, () => {
           const team = buildTeam(responseData, { seasonId: 2026 });
-          expect(get(team, attribute)).toEqual(expectedValue);
+          expect(getPath(team, attribute)).toEqual(expectedValue);
         });
       });
     });
@@ -187,10 +187,10 @@ describe('Team', () => {
         'playoffPct', 'divisionWinPct', 'simulatedRank', 'playoffClinchType'
       ];
 
-      forEach(simulationAttributes, (attribute) => {
+      each(simulationAttributes, (attribute) => {
         test(`${attribute} is undefined`, () => {
           const team = buildTeam({ id: 1, abbrev: 'BALL', playoffSeed: 3 }, { seasonId: 2017 });
-          expect(get(team, attribute)).toBeUndefined();
+          expect(getPath(team, attribute)).toBeUndefined();
         });
       });
     });

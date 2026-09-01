@@ -1,11 +1,5 @@
-import filter from 'lodash/filter';
-import find from 'lodash/find';
-import flatten from 'lodash/flatten';
-import get from 'lodash/get';
-import isEmpty from 'lodash/isEmpty';
-import map from 'lodash/map';
-import merge from 'lodash/merge';
-import uniq from 'lodash/uniq';
+import { filter, find, isEmpty, map, uniq } from '../internal/collections.js';
+import { getPath, mergeConfig } from '../internal/objects.js';
 
 import Boxscore from '../boxscore/boxscore';
 import DraftPlayer from '../draft-player/draft-player';
@@ -196,7 +190,7 @@ class Client {
     });
 
     return this._http.get(route, this._buildRequestConfig()).then((data) => {
-      const schedule = get(data, 'schedule');
+      const schedule = getPath(data, 'schedule');
       const matchups = filter(schedule, { matchupPeriodId });
 
       return map(matchups, (matchup) => (
@@ -232,7 +226,7 @@ class Client {
     });
 
     return this._http.get(route, this._buildRequestConfig()).then((data) => (
-      map(get(data, 'schedule'), (matchup) => (
+      map(getPath(data, 'schedule'), (matchup) => (
         Matchup.buildFromServer(matchup, { leagueId: this.leagueId, seasonId })
       ))
     ));
@@ -324,7 +318,7 @@ class Client {
       baseURL: 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/leagueHistory/'
     });
     return this._http.get(route, requestConfig).then((data) => {
-      const schedule = get(data[0], 'schedule'); // Data is an array instead of object
+      const schedule = getPath(data[0], 'schedule'); // Data is an array instead of object
       const matchups = filter(schedule, { matchupPeriodId });
 
       return map(matchups, (matchup) => (
@@ -369,7 +363,7 @@ class Client {
     });
 
     return this._http.get(route, config).then((data) => {
-      const players = get(data, 'players');
+      const players = getPath(data, 'players');
       return map(players, (player) => (
         FreeAgentPlayer.buildFromServer(player, {
           leagueId: this.leagueId,
@@ -440,12 +434,12 @@ class Client {
 
   _parseTeamResponse(responseData, seasonId, scoringPeriodId) {
     // Join member (owner) information with team data before dumping into builder
-    const teams = get(responseData, 'teams');
-    const members = get(responseData, 'members');
+    const teams = getPath(responseData, 'teams');
+    const members = getPath(responseData, 'members');
 
     const mergedData = map(teams, (team) => {
-      // lodash `find` rather than `Array#find`: a response with no `members` key, or a team whose
-      // `primaryOwner` has left the league, would otherwise throw and take the whole call with it.
+      // The absent-tolerant `find`, not `Array#find`: a response with no `members` key, or a team
+      // whose `primaryOwner` has left the league, would otherwise throw and take the whole call.
       const owner = find(members, (member) => member.id === team.primaryOwner);
       return { owner, ...team }; // Don't spread owner to prevent id and other attributes clashing
     });
@@ -472,7 +466,7 @@ class Client {
     const requestConfig = this._buildRequestConfig({ baseURL: 'https://site.api.espn.com/' });
 
     return this._http.get(route, requestConfig).then((data) => {
-      const events = get(data, 'events');
+      const events = getPath(data, 'events');
       return map(events, (game) => NFLGame.buildFromServer(game));
     });
   }
@@ -496,7 +490,7 @@ class Client {
       // The whole `status` object is handed through rather than picked apart here. League's
       // responseMap is where response paths belong, and reshaping in the client is exactly what
       // left previousSeasons, firstScoringPeriod and the rest unreachable.
-      const leagueData = { ...get(data, 'settings'), status: get(data, 'status') };
+      const leagueData = { ...getPath(data, 'settings'), status: getPath(data, 'status') };
 
       return League.buildFromServer(leagueData, { leagueId: this.leagueId, seasonId });
     });
@@ -518,7 +512,7 @@ class Client {
   getRecentActivity({ seasonId, msgType = '' }) {
     this.constructor._validateV3Params(seasonId, 'getRecentActivity');
 
-    const msgTypes = get(MESSAGE_IDS_BY_ACTIVITY_TYPE, msgType, ALL_ACTIVITY_MESSAGE_IDS);
+    const msgTypes = getPath(MESSAGE_IDS_BY_ACTIVITY_TYPE, msgType, ALL_ACTIVITY_MESSAGE_IDS);
 
     const route = this.constructor._buildRoute({
       base: `apis/v3/games/ffl/seasons/${seasonId}/segments/0/leagues/${this.leagueId}/communication`,
@@ -569,7 +563,7 @@ class Client {
       // Only the players `_buildActivity` could not resolve off a roster need looking up, and a
       // topic set can name the same player more than once.
       const searchIds = uniq(
-        map(filter(flatten(activity), (msg) => !msg.player), 'targetId')
+        map(filter(activity.flat(), (msg) => !msg.player), (msg) => msg.targetId)
       );
 
       // Every player resolved from a roster, so the player-card request would be a round trip
@@ -672,7 +666,7 @@ class Client {
   _buildRequestConfig(config) {
     if ((this.espnS2 && this.SWID)) {
       const headers = { Cookie: `espn_s2=${this.espnS2}; SWID=${this.SWID};` };
-      return merge({}, config, { headers, credentials: 'include' });
+      return mergeConfig(config, { headers, credentials: 'include' });
     }
 
     return config;

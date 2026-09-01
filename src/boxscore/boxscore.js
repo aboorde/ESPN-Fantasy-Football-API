@@ -1,4 +1,4 @@
-import map from 'lodash/map';
+import { map } from '../internal/collections.js';
 
 import BoxscorePlayer from '../boxscore-player/boxscore-player';
 import Matchup from '../matchup/matchup';

@@ -2,16 +2,9 @@ export default Team;
 /**
  * Represents a fantasy football team in a league.
  *
- * @augments {BaseCacheableObject}
+ * @augments {BaseObject}
  */
-declare class Team extends BaseCacheableObject {
-    /**
-     * Returns valid id params when 'id', `leagueId`, and 'seasonId' are passed.
-     *
-     * @param   {object} params The params to use.
-     * @returns {object|undefined} An object containing the params, or `undefined`.
-     */
-    static getIDParams(params?: object): object | undefined;
+declare class Team extends BaseObject {
     /**
      * @typedef  {object} TeamMap
      *
@@ -299,7 +292,7 @@ declare class Team extends BaseCacheableObject {
     leagueId: any;
     seasonId: any;
 }
-import BaseCacheableObject from '../base-classes/base-cacheable-object/base-cacheable-object.js';
+import BaseObject from '../base-classes/base-object/base-object.js';
 import Player from '../player/player';
 
 // Instance attributes, projected from the jsdoc by scripts/build-types.mjs.

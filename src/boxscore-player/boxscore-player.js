@@ -1,4 +1,4 @@
-import get from 'lodash/get';
+import { getPath } from '../internal/objects.js';
 
 import Player from '../player/player';
 import { parsePlayerStats } from '../player-stats/player-stats';
@@ -46,7 +46,7 @@ class BoxscorePlayer extends Player {
     },
     rosteredPosition: {
       key: 'lineupSlotId',
-      manualParse: (responseData) => get(slotCategoryIdToPositionMap, responseData)
+      manualParse: (responseData) => getPath(slotCategoryIdToPositionMap, responseData)
     },
     totalPoints: 'appliedStatTotal',
     pointBreakdown: {

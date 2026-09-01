@@ -13,7 +13,7 @@ Legend: `pending` / `in progress` / `done` / `revised` / `abandoned`
 | 4 | Delete `BaseCacheableObject` and the `defer` pass | done | `PENDING` |
 | 5a | Injectable transport (pure refactor) | done (revised) | `PENDING` |
 | 5b | Timeout, retry, per-Client cache | done | `PENDING` |
-| 6 | Drop lodash | pending | |
+| 6 | Drop lodash | done | `PENDING` |
 | 7 | Fixture layer | pending | |
 | 8 | Types: open unions, exported constants | pending | |
 | 9 | Distribution: `prepare`, drop committed artifacts | pending | |
@@ -181,3 +181,27 @@ Other implementation notes:
 * A 2xx with a non-JSON body is not retried - the request worked.
 
 378 tests green, coverage still 100%, including every branch of the retry and cache logic.
+
+### Step 6 - drop lodash
+
+**done.** `src/internal/` now holds `collections.js`, `objects.js` and `values.js`; lodash is gone
+from source, from tests, and from `package.json`. The package has no runtime dependencies.
+
+Measured: production bundle 61,428 -> 29,974 bytes (-51%); dev bundle 408KB -> 178KB (-56%). The
+only occurrences of the string "lodash" left in the dev bundle are the comments explaining why it
+is not there.
+
+The helpers exist rather than inline natives because three lodash behaviors were load-bearing:
+
+* **Absent-collection tolerance.** `map`/`filter`/`find`/`each` accept `undefined` and return
+  empty. `Boxscore`'s `parseAbsent` rosters depend on `map(undefined)` giving `[]`, and
+  `_parseTeamResponse` has a comment saying it depends on `find` not throwing on absent `members`.
+* **Deep merge.** `mergeConfig` combines `headers` rather than replacing them - the private-leagues-
+  only breakage step 2 built a test for.
+* **`trim` on `undefined`.** A member ESPN sends with no `firstName`.
+
+Every helper is tested for its absent-input case explicitly. `roundTo` shifts by exponent instead
+of multiplying, so `roundTo(1.005, 2)` is `1.01` rather than the `1` that
+`Math.round(1.005 * 100) / 100` gives; there is a test naming that.
+
+459 tests green, coverage back to 100% on all four measures.

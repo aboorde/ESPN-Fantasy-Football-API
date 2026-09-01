@@ -76,6 +76,21 @@ declare class League extends BaseObject {
      * @property {number} playerMoveToIR The fee charged to move a player to injured reserve.
      */
     /**
+     * @typedef {object} ScoringSettings
+     *
+     * A league's scoring rules, in the two parts ESPN actually sends them in.
+     *
+     * Keys are the readable scoring item names from `constants.js`. A stat id the project has no
+     * name for appears as `statId<N>` rather than being dropped -- the name map is incomplete and
+     * ESPN keeps adding ids, so an unreadable rule beats a missing one.
+     *
+     * @property {Record<string, number>} base What each stat is worth for every position.
+     * @property {Record<string, Record<string, number>>} overrides What a stat is worth for one
+     *   position specifically, keyed by position and then by scoring item. A position appears here
+     *   only for the stats it overrides; everything else for that position comes from `base`. In
+     *   practice ESPN uses this for D/ST. An unrecognized position id appears as `positionId<N>`.
+     */
+    /**
      * @typedef {object} LeagueMap
      *
      * @property {string} name The name of the league.
@@ -102,7 +117,7 @@ declare class League extends BaseObject {
      * @property {AcquisitionSettings} acquisitionSettings The waiver and FAAB settings of the league.
      * @property {TradeSettings} tradeSettings The trade settings of the league.
      * @property {FinanceSettings} financeSettings The dues and fees of the league.
-     * @property {object} scoringSettings The scoring settings of the league.
+     * @property {ScoringSettings} scoringSettings The scoring settings of the league.
      */
     /**
      * @type {LeagueMap}
@@ -365,7 +380,19 @@ declare class League extends BaseObject {
         /**
          * The scoring settings of the league.
          */
-        scoringSettings: object;
+        scoringSettings: {
+            /**
+             * What each stat is worth for every position.
+             */
+            base: Record<string, number>;
+            /**
+             * What a stat is worth for one
+             * position specifically, keyed by position and then by scoring item. A position appears here
+             * only for the stats it overrides; everything else for that position comes from `base`. In
+             * practice ESPN uses this for D/ST. An unrecognized position id appears as `positionId<N>`.
+             */
+            overrides: Record<string, Record<string, number>>;
+        };
     };
 }
 import BaseObject from '../base-classes/base-object/base-object';

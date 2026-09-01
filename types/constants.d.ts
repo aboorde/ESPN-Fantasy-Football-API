@@ -1,8 +1,37 @@
 /**
- * Maps `slotCategoryId`'s numerical enum to readable positions.
- * @type {object}
+ * Maps ESPN's `lineupSlotId` enum to readable positions.
+ *
+ * This is the enum used by `eligibleSlots` and by a roster entry's `lineupSlotId` -- the slots a
+ * player may be *started* in. It includes combination slots (`RB/WR`), `Bench` and `IR`, which are
+ * lineup concepts rather than positions.
+ *
+ * NOTE: ESPN has a *second*, incompatible position enum, `defaultPositionId`, which describes what
+ * a player *is* rather than where they may be slotted. The two overlap on `2` (RB) and `16`
+ * (D/ST) and disagree everywhere else, so reading one through the other silently yields a wrong
+ * but plausible position. Use {@link defaultPositionIdToPosition} for that enum.
+ *
+ * @type {Record<number, string>}
  */
-export const slotCategoryIdToPositionMap: object;
+export const slotCategoryIdToPositionMap: Record<number, string>;
+/**
+ * Maps ESPN's `defaultPositionId` enum to readable positions.
+ *
+ * This is the enum on a player object describing the position the player actually plays, and it is
+ * also the enum `pointsOverrides` is keyed by in a league's scoring settings. It is NOT the same
+ * enum as {@link slotCategoryIdToPositionMap}: there, `1` is `TQB`, `3` is `RB/WR`, `4` is `WR`
+ * and `5` is `WR/TE`.
+ *
+ * Verified against real 2026 player payloads: Josh Allen is `1`, Jahmyr Gibbs `2`, Ja'Marr Chase
+ * `3`, Trey McBride `4`, Brandon Aubrey `5`, and a D/ST `16`.
+ *
+ * Only those six ids are listed, because only those six are confirmed. ESPN issues further ids for
+ * IDP positions, and this project has no payload to verify them against. An unlisted id resolves to
+ * `undefined` rather than to a guess -- an absent position is recoverable, a confidently wrong one
+ * is not.
+ *
+ * @type {Record<number, string>}
+ */
+export const defaultPositionIdToPosition: Record<number, string>;
 /**
  * Maps `proTeam` numerical enum to readable team names.
  * @type {object}
@@ -358,7 +387,9 @@ export const nflTeamIdToNFLTeamAbbreviation: object;
  * @type {ScoringItems}
  */
 export const scoringItemToId: ScoringItems;
-export const scoringIdToItem: any;
+export const scoringIdToItem: {
+    [k: string]: string;
+};
 /**
  * `scoringItemToId` and `scoringIdToItem` map between numerical ids and human-readable attribute
  * names. While some attributes are straight-forward (yards, attempts, completions, etc.), some

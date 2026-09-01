@@ -1,5 +1,5 @@
-import forEach from 'lodash/forEach';
-import get from 'lodash/get';
+import { each } from '../internal/collections.js';
+import { getPath } from '../internal/objects.js';
 
 import Boxscore from '../boxscore/boxscore';
 import DraftPlayer from '../draft-player/draft-player';
@@ -25,7 +25,7 @@ describe('Client', () => {
       const testPropIsUndefined = (prop) => {
         test(`${prop} is undefined`, () => {
           const newInstance = new Client();
-          expect(get(newInstance, prop)).toBeUndefined();
+          expect(getPath(newInstance, prop)).toBeUndefined();
         });
       };
 
@@ -37,7 +37,7 @@ describe('Client', () => {
         test(`${prop} is set from options`, () => {
           const value = 203123;
           const newInstance = new Client({ [prop]: value });
-          expect(get(newInstance, prop)).toBe(value);
+          expect(getPath(newInstance, prop)).toBe(value);
         });
       };
 
@@ -314,7 +314,7 @@ describe('Client', () => {
 
             expect.hasAssertions();
             expect(boxscores.length).toBe(2);
-            forEach(boxscores, (boxscore, index) => {
+            each(boxscores, (boxscore, index) => {
               expect(boxscore).toBeInstanceOf(Boxscore);
               expect(boxscore.homeTeamId).toBe(response.schedule[index].home.teamId);
               expect(boxscore.awayTeamId).toBe(response.schedule[index].away.teamId);
@@ -394,7 +394,7 @@ describe('Client', () => {
 
             // getBoxscoreForWeek filters this same array down to one period. This must not.
             expect(schedule.length).toBe(3);
-            forEach(schedule, (matchup) => expect(matchup).toBeInstanceOf(Matchup));
+            each(schedule, (matchup) => expect(matchup).toBeInstanceOf(Matchup));
             expect(schedule[0].winner).toBe('HOME');
             expect(schedule[2].matchupPeriodId).toBe(2);
             expect(schedule[2].winner).toBe('UNDECIDED');
@@ -530,7 +530,7 @@ describe('Client', () => {
 
             expect.hasAssertions();
             expect(draftPlayers.length).toBe(2);
-            forEach(draftPlayers, (draftPlayer) => {
+            each(draftPlayers, (draftPlayer) => {
               expect(draftPlayer).toBeInstanceOf(DraftPlayer);
             });
           });
@@ -616,7 +616,7 @@ describe('Client', () => {
 
             expect.hasAssertions();
             expect(boxscores.length).toBe(2);
-            forEach(boxscores, (boxscore, index) => {
+            each(boxscores, (boxscore, index) => {
               expect(boxscore).toBeInstanceOf(Boxscore);
               expect(boxscore.homeTeamId).toBe(response[0].schedule[index].home.teamId);
               expect(boxscore.awayTeamId).toBe(response[0].schedule[index].away.teamId);
@@ -762,7 +762,7 @@ describe('Client', () => {
 
             expect.hasAssertions();
             expect(freeAgents.length).toBe(2);
-            forEach(freeAgents, (freeAgent, index) => {
+            each(freeAgents, (freeAgent, index) => {
               expect(freeAgent).toBeInstanceOf(FreeAgentPlayer);
               expect(freeAgent.firstName).toBe(
                 response.players[index].player.firstName
@@ -918,7 +918,7 @@ describe('Client', () => {
 
             expect.hasAssertions();
             expect(teams.length).toBe(3);
-            forEach(teams, (team, index) => {
+            each(teams, (team, index) => {
               expect(team).toBeInstanceOf(Team);
               expect(team.abbreviation).toBe(response.teams[index].abbrev);
               expect(team.ownerName).toBe('Owner Dude');
@@ -1101,7 +1101,7 @@ describe('Client', () => {
 
             expect.hasAssertions();
             expect(teams.length).toBe(3);
-            forEach(teams, (team, index) => {
+            each(teams, (team, index) => {
               expect(team).toBeInstanceOf(Team);
               expect(team.abbreviation).toBe(response[0].teams[index].abbrev);
 
@@ -1197,7 +1197,7 @@ describe('Client', () => {
 
           expect.hasAssertions();
           expect(games.length).toBe(3);
-          forEach(games, (game) => {
+          each(games, (game) => {
             expect(game).toBeInstanceOf(NFLGame);
           });
         });

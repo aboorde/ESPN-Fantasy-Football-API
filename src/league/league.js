@@ -1,8 +1,6 @@
-import forEach from 'lodash/forEach';
-import get from 'lodash/get';
-import mapKeys from 'lodash/mapKeys';
-import reduce from 'lodash/reduce';
-import toSafeInteger from 'lodash/toSafeInteger';
+import { each, mapKeys } from '../internal/collections.js';
+import { getPath } from '../internal/objects.js';
+import { toSafeInt } from '../internal/values.js';
 
 import BaseObject from '../base-classes/base-object/base-object';
 
@@ -186,11 +184,11 @@ class League extends BaseObject {
       manualParse: (responseData) => ({
         lineupPositionCount: mapKeys(
           responseData.lineupSlotCounts,
-          (count, position) => get(slotCategoryIdToPositionMap, position)
+          (count, position) => getPath(slotCategoryIdToPositionMap, position)
         ),
         positionLimits: mapKeys(
           responseData.positionLimits,
-          (count, position) => get(slotCategoryIdToPositionMap, position)
+          (count, position) => getPath(slotCategoryIdToPositionMap, position)
         ),
         locktime: responseData.rosterLocktimeType
       })
@@ -202,10 +200,10 @@ class League extends BaseObject {
         // The season length comes from `status.finalScoringPeriod` rather than a literal 17. The
         // two agree on a standard league, but hardcoding the NFL's current season length is how
         // this silently goes wrong the year the league adds a week.
-        const finalScoringPeriod = get(data, 'status.finalScoringPeriod', 17);
+        const finalScoringPeriod = getPath(data, 'status.finalScoringPeriod', 17);
         const regularSeasonPeriods =
           responseData.matchupPeriodCount * responseData.matchupPeriodLength;
-        const numberOfPlayoffMatchups = toSafeInteger(
+        const numberOfPlayoffMatchups = toSafeInt(
           (finalScoringPeriod - regularSeasonPeriods) / responseData.playoffMatchupPeriodLength
         );
 
@@ -263,8 +261,7 @@ class League extends BaseObject {
 
     scoringSettings: {
       key: 'scoringSettings',
-      manualParse: (responseData) => reduce(
-        responseData.scoringItems,
+      manualParse: (responseData) => (responseData.scoringItems ?? []).reduce(
         ({ base, overrides }, { points, pointsOverrides, statId }) => {
           // An unrecognized stat id becomes `statId<N>` rather than being dropped. The previous
           // `if (!key) return acc` discarded them silently: measured against a real 14-team
@@ -284,8 +281,8 @@ class League extends BaseObject {
           //
           // NOTE: these keys are in the `defaultPositionId` enum, not `lineupSlotId`. See the note
           // on `defaultPositionIdToPosition`.
-          forEach(pointsOverrides, (overridePoints, positionId) => {
-            const position = get(defaultPositionIdToPosition, positionId) ||
+          each(pointsOverrides, (overridePoints, positionId) => {
+            const position = getPath(defaultPositionIdToPosition, positionId) ||
               `positionId${positionId}`;
 
             if (!overrides[position]) {
