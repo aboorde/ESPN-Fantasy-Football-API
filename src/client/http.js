@@ -36,6 +36,20 @@ const DEFAULT_RETRIES = 2;
 const DEFAULT_RETRY_DELAY = 250;
 
 /**
+ * How long a cached response stays fresh, and how many are kept, when the caller turns the cache on
+ * without saying.
+ *
+ * Both need a default rather than being left undefined: `size > undefined` and `Date.now() +
+ * undefined <= Date.now()` are both false, so a half-specified cache never evicted and never
+ * expired -- it just grew, holding whole ESPN payloads.
+ * @type {number}
+ */
+const DEFAULT_CACHE_TTL = 60000;
+
+/** @type {number} */
+const DEFAULT_CACHE_MAX = 50;
+
+/**
  * Statuses worth trying again. A 4xx is the caller's problem -- bad league id, expired cookies, a
  * route that no longer exists -- and retrying it just spends time to fail identically.
  *
@@ -109,14 +123,26 @@ const retryDelayFor = (error, attempt, baseDelay) => {
  * waivers, the other for the top 3000 by ownership. Keyed on URL alone, one method would be served
  * the other's response.
  *
- * The `Cookie` header is deliberately not part of the key: a Client holds one credential set for
- * its whole life, so it cannot vary within a cache.
+ * Every header takes part rather than that one by name. Naming it would fix today's collision and
+ * leave the next one -- a request varying by some other header gets a silent wrong hit, with no
+ * error and nothing to test against.
+ *
+ * `Cookie` is the deliberate exception: a Client holds one credential set for its whole life, so it
+ * cannot vary within a cache, and leaving it out keeps credentials from sitting in a map key.
  *
  * @param   {string} url The resolved URL.
  * @param   {Record<string, string>} [headers] The request headers.
  * @returns {string} The cache key.
  */
-const cacheKeyFor = (url, headers) => `${url}\n${headers?.['x-fantasy-filter'] ?? ''}`;
+const cacheKeyFor = (url, headers) => {
+  const relevant = Object.keys(headers ?? {})
+    .filter((name) => name.toLowerCase() !== 'cookie')
+    .sort()
+    .map((name) => `${name}:${headers[name]}`)
+    .join('\n');
+
+  return `${url}\n${relevant}`;
+};
 
 /**
  * Thrown when a request does not produce a parseable JSON body with a 2xx status.
@@ -163,8 +189,9 @@ class HttpError extends Error {
  * @param   {number} [options.timeout] Per-attempt timeout in milliseconds. `0` disables it.
  * @param   {number} [options.retries] How many times to retry a failed request.
  * @param   {number} [options.retryDelay] Base backoff in milliseconds, doubled per attempt.
- * @param   {false|{ttl: number, max: number}} [options.cache] Response cache. Off by default. When
- *   on, successful responses are held for `ttl` milliseconds, at most `max` of them.
+ * @param   {boolean|{ttl?: number, max?: number}} [options.cache] Response cache. Off by default.
+ *   When on, successful responses are held for `ttl` milliseconds, at most `max` of them; either
+ *   may be omitted, and `true` takes both defaults (60s, 50 entries).
  * @returns {{get: Function}} An HTTP client.
  */
 const createHttp = ({
@@ -174,6 +201,15 @@ const createHttp = ({
   retryDelay = DEFAULT_RETRY_DELAY,
   cache = false
 } = {}) => {
+  // Normalized once so that a partial config cannot produce a cache that grows without bound.
+  // `cache: true` and `cache: {ttl}` were both reachable and both did exactly that.
+  const cacheConfig = cache ?
+      {
+        ttl: cache.ttl ?? DEFAULT_CACHE_TTL,
+        max: cache.max ?? DEFAULT_CACHE_MAX
+      } :
+    false;
+
   // Insertion-ordered, which is what makes the eviction below least-recently-*stored*. Held on the
   // closure rather than at module scope: the previous cache in this project was a static that
   // outlived every object that wrote to it, and that is the mistake not being repeated.
@@ -194,9 +230,9 @@ const createHttp = ({
   };
 
   const writeCache = (key, data) => {
-    responses.set(key, { data, expiresAt: Date.now() + cache.ttl });
+    responses.set(key, { data, expiresAt: Date.now() + cacheConfig.ttl });
 
-    while (responses.size > cache.max) {
+    while (responses.size > cacheConfig.max) {
       responses.delete(responses.keys().next().value);
     }
   };
@@ -277,7 +313,7 @@ const createHttp = ({
       const url = new URL(route, baseURL).toString();
       const key = cacheKeyFor(url, headers);
 
-      if (cache) {
+      if (cacheConfig) {
         const hit = readCache(key);
         if (hit) {
           return hit.data;
@@ -304,7 +340,7 @@ const createHttp = ({
             signal: signals.length ? AbortSignal.any(signals) : undefined
           });
 
-          if (cache) {
+          if (cacheConfig) {
             writeCache(key, data);
           }
 

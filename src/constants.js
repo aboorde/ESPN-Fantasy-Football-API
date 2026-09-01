@@ -72,6 +72,33 @@ export const defaultPositionIdToPosition = {
  * Maps `proTeam` numerical enum to readable team names.
  * @type {object}
  */
+/**
+ * Resolves a `lineupSlotId` to a position name, degrading to a unique `slotId<N>` when ESPN sends
+ * a slot this map does not know.
+ *
+ * The fallback matters specifically where the result becomes an object *key*. Two unresolved ids
+ * both answering `undefined` collapse into a single `"undefined"` entry and the earlier one's value
+ * is lost outright -- which is what `League#rosterSettings` did before this existed. Reading an
+ * unknown id as `undefined` is fine for a value, where it honestly says "not known"; it is never
+ * fine for a key.
+ *
+ * @param   {number|string} slotId The `lineupSlotId` to resolve.
+ * @returns {string} The position name, or `slotId<N>`.
+ */
+export const positionForSlotId = (slotId) => slotCategoryIdToPositionMap[slotId] || `slotId${slotId}`;
+
+/**
+ * Resolves a `defaultPositionId` to a position name, degrading to a unique `positionId<N>`.
+ *
+ * Note this is a different enum from `positionForSlotId`'s. See `defaultPositionIdToPosition`.
+ *
+ * @param   {number|string} positionId The `defaultPositionId` to resolve.
+ * @returns {string} The position name, or `positionId<N>`.
+ */
+export const positionForDefaultPositionId = (positionId) => (
+  defaultPositionIdToPosition[positionId] || `positionId${positionId}`
+);
+
 export const nflTeamIdToNFLTeam = {
   [-1]: 'Bye',
   1: 'Atlanta Falcons',

@@ -101,6 +101,18 @@ describe('League', () => {
         expect(league.rosterSettings.positionLimits).toEqual({ TQB: 2, 'RB/WR': 3 });
       });
 
+      // Two slot ids the map does not know both used to resolve to `undefined`, so they became one
+      // `"undefined"` key and the first one's count was dropped on the floor. ESPN adds slot ids.
+      test('keeps unknown lineup slot ids distinct instead of collapsing them', () => {
+        const league = League.buildFromServer({
+          rosterSettings: { lineupSlotCounts: { 0: 1, 26: 2, 27: 3 } }
+        });
+
+        expect(league.rosterSettings.lineupPositionCount).toEqual({
+          QB: 1, slotId26: 2, slotId27: 3
+        });
+      });
+
       test('maps locktime directly', () => {
         const league = League.buildFromServer(data);
         expect(league.rosterSettings.locktime).toBe(rosterSettings.rosterLocktimeType);

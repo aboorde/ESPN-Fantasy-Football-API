@@ -382,6 +382,64 @@ describe('http', () => {
       expect(fetchMock).toHaveBeenCalledTimes(4);
     });
 
+    // `cache: {ttl}` left `max` undefined, and `size > undefined` is false, so nothing was ever
+    // evicted -- an unbounded cache of whole ESPN payloads. Same for `cache: true`, which also made
+    // `expiresAt` NaN, so entries never expired either.
+    test.each([
+      ['a ttl with no max', { ttl: 60000 }],
+      ['true', true]
+    ])('still bounds the cache when configured with %s', async (_label, cache) => {
+      const fetchMock = jest.fn().mockResolvedValue(buildResponse({ body: '{"n":1}' }));
+      const client = createHttp({ fetch: fetchMock, cache });
+
+      for (let i = 0; i < 60; i += 1) {
+        await client.get(`route${i}`);
+      }
+      await client.get('route0'); // past the default max of 50, so this refetches
+
+      expect(fetchMock).toHaveBeenCalledTimes(61);
+    });
+
+    test('expires an entry when configured with true', async () => {
+      const fetchMock = jest.fn().mockResolvedValue(buildResponse({ body: '{"n":1}' }));
+      const client = createHttp({ fetch: fetchMock, cache: true });
+
+      await client.get('route');
+      await client.get('route');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      jest.spyOn(Date, 'now').mockReturnValue(Date.now() + 60001);
+      await client.get('route');
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      Date.now.mockRestore();
+    });
+
+    // The URL is identical; only the header differs. Keyed on one header by name this passed, and
+    // would have gone on passing while any other varying header collided silently.
+    test('keys on headers other than the one the client happens to vary', async () => {
+      const fetchMock = jest.fn()
+        .mockResolvedValueOnce(buildResponse({ body: '{"n":1}' }))
+        .mockResolvedValueOnce(buildResponse({ body: '{"n":2}' }));
+      const client = createHttp({ fetch: fetchMock, cache: { ttl: 60000, max: 8 } });
+
+      const first = await client.get('route', { headers: { 'x-some-other': 'a' } });
+      const second = await client.get('route', { headers: { 'x-some-other': 'b' } });
+
+      expect(first).toEqual({ n: 1 });
+      expect(second).toEqual({ n: 2 });
+    });
+
+    // Keys are held in memory for the cache's lifetime; credentials should not be among them.
+    test('does not put the Cookie header in the key', async () => {
+      const fetchMock = jest.fn().mockResolvedValue(buildResponse({ body: '{"n":1}' }));
+      const client = createHttp({ fetch: fetchMock, cache: { ttl: 60000, max: 8 } });
+
+      await client.get('route', { headers: { Cookie: 'espn_s2=secret' } });
+      await client.get('route', { headers: { Cookie: 'espn_s2=different' } });
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
     test('does not cache a failed request', async () => {
       const fetchMock = jest.fn()
         .mockResolvedValueOnce(buildResponse({ ok: false, status: 404, body: '{}' }))

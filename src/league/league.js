@@ -7,9 +7,9 @@ import BaseObject from '../base-classes/base-object/base-object';
 import { toDate } from '../utils';
 
 import {
-  defaultPositionIdToPosition,
-  scoringIdToItem,
-  slotCategoryIdToPositionMap
+  positionForDefaultPositionId,
+  positionForSlotId,
+  scoringIdToItem
 } from '../constants';
 
 /**
@@ -210,13 +210,16 @@ class League extends BaseObject {
     rosterSettings: {
       key: 'rosterSettings',
       manualParse: (responseData) => ({
+        // Both of these turn an id into an object *key*, so an unresolved id has to stay unique.
+        // Reading it straight off the map gave `undefined`, and two unknown slots then collided
+        // into one `"undefined"` entry with the first one's count silently dropped.
         lineupPositionCount: mapKeys(
           responseData.lineupSlotCounts,
-          (count, position) => getPath(slotCategoryIdToPositionMap, position)
+          (count, slotId) => positionForSlotId(slotId)
         ),
         positionLimits: mapKeys(
           responseData.positionLimits,
-          (count, position) => getPath(slotCategoryIdToPositionMap, position)
+          (count, slotId) => positionForSlotId(slotId)
         ),
         locktime: responseData.rosterLocktimeType
       })
@@ -310,8 +313,7 @@ class League extends BaseObject {
           // NOTE: these keys are in the `defaultPositionId` enum, not `lineupSlotId`. See the note
           // on `defaultPositionIdToPosition`.
           each(pointsOverrides, (overridePoints, positionId) => {
-            const position = getPath(defaultPositionIdToPosition, positionId) ||
-              `positionId${positionId}`;
+            const position = positionForDefaultPositionId(positionId);
 
             if (!overrides[position]) {
               overrides[position] = {};
