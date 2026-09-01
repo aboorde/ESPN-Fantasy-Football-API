@@ -29,9 +29,13 @@ When re-syncing with upstream, run `npm run build` and commit the regenerated bu
 The build and test tooling has been modernized past upstream: Babel 8, ESLint 10 (flat config,
 no airbnb), Jest 30, jsdoc 4 and cspell 10. Two consequences are worth knowing:
 
-* **Building requires Node >= 22.18** (Babel 8 and cspell 10 both demand it). Running the
-  library does not — `engines.node` stays at `>=18` because the shipped bundles are what
-  consumers execute. CI builds on Node 22 and 24.
+* **Node 22.18+ is required.** Babel 8 and cspell 10 set that floor, and `engines.node` matches
+  it rather than claiming something lower: Node 18 and 20 both reached end-of-life (April 2025
+  and April 2026), and CI only exercises 22 and 24, so a lower floor would be advertising
+  support that nothing verifies. The bundles themselves use nothing newer than optional
+  chaining and would run on far older Node — that is just not a configuration this repository
+  tests. CI lints and tests on 22 and 24 and builds on 24; `.nvmrc` pins 24 to match, because
+  the committed bundles are byte-compared against a fresh build.
 * **`web.js` is no longer ES5.** Upstream compiled to ES5 by accident of Babel 7's default
   targets. This repository declares an explicit `browserslist` (`defaults, not op_mini all`),
   so the bundles use modern syntax and drop support for pre-2017 browsers. Node consumers are
