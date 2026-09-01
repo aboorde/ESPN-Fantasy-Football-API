@@ -30,7 +30,10 @@ class DraftPlayer extends Player {
   }
 
   /**
-   * @typedef {PlayerMap} DraftPlayerMap
+   * @typedef {object} DraftPlayerMap
+   *
+   * The attributes DraftPlayer adds. Everything on Player is inherited through the class hierarchy
+   * rather than restated here.
    *
    * @property {number} id The id of the player in the ESPN universe.
    * @property {number} teamId The teamId of the fantasy team that drafted the player. Use
@@ -46,6 +49,15 @@ class DraftPlayer extends Player {
    * @property {number} bidAmount FOR AUCTION DRAFTS ONLY: How much the winning bid was
    * @property {number} nominatingTeamId FOR AUCTION DRAFTS ONLY: The teamId of the fantasy team
    *   that nominatied the player. Use `Client#getTeamAtWeek` to access fantasy team data.
+   *
+   * @property {number} positionalRanking ESPN's ranking of the player within their position.
+   * @property {number} overallRanking ESPN's overall ranking of the player.
+   * @property {number} pointsScoredThisSeason The total points the player scored across the season.
+   *
+   * @property {PlayerStats} rawStatsForYear The PlayerStats model with the raw statistics
+   *                                         registered by the player over the season.
+   * @property {PlayerStats} projectedRawStatsForYear The PlayerStats model with the raw statistics
+   *                                                  ESPN projected for the player over the season.
    */
 
   /**

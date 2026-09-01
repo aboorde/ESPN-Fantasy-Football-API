@@ -76,6 +76,10 @@ export default defineConfig([
   globalIgnores([
     'node.js',
     'node-dev.js',
+    // Generated declarations. `node.d.ts` is matched explicitly rather than by `*.d.ts` so a
+    // hand-written declaration added later is still linted.
+    'node.d.ts',
+    'types/',
     '**/*.map',
     'docs/',
     'coverage/'

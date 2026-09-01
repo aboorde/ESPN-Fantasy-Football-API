@@ -11,12 +11,21 @@ class FreeAgentPlayer extends Player {
   static displayName = 'FreeAgentPlayer';
 
   /**
-   * @typedef {PlayerMap} FreeAgentPlayerMap
+   * @typedef {object} FreeAgentPlayerMap
    *
-   * @property {PlayerStats} rawStats The PlayerStats model with the raw statistics registered by
-   *                                  the player over the season.
-   * @property {PlayerStats} projectedRawStats The PlayerStats model with the raw statistics
-   *                                           projected by the player over the season.
+   * The attributes FreeAgentPlayer adds. Everything on Player is inherited through the class
+   * hierarchy rather than restated here.
+   *
+   * @property {PlayerStats} rawStatsForYear The PlayerStats model with the raw statistics
+   *                                         registered by the player over the season.
+   * @property {PlayerStats} projectedRawStatsForYear The PlayerStats model with the raw statistics
+   *                                                  ESPN projected for the player over the season.
+   * @property {PlayerStats} rawStatsForScoringPeriod The PlayerStats model with the raw statistics
+   *                                                  registered by the player in the scoring
+   *                                                  period.
+   * @property {PlayerStats} projectedRawStatsForScoringPeriod The PlayerStats model with the raw
+   *                                                           statistics ESPN projected for the
+   *                                                           player in the scoring period.
    */
 
   /**

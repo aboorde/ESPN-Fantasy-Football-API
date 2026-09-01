@@ -62,7 +62,7 @@ class Player extends BaseCacheableObject {
    *
    * @property {number} averageDraftPosition The average position the player was drafted at in ESPN
    *                                         snake drafts.
-   * @property {number} averageAuctionValue The average auction price the player fetched in ESPN
+   * @property {number} auctionValueAverage The average auction price the player fetched in ESPN
    *                                         auction drafts.
    * @property {number} percentChange The change in player ownership percentage in the last
    *                                  week across all ESPN leagues.
@@ -78,6 +78,8 @@ class Player extends BaseCacheableObject {
    * @property {boolean} isDroppable Whether or not the player can be dropped from a team.
    * @property {boolean} isInjured Whether or not the player is injured.
    * @property {INJURY_STATUSES} injuryStatus The specific injury status/timeline of the player.
+   * @property {object} outlooksByWeek ESPN's written outlook for the player, keyed by scoring
+   *                                   period.
    */
 
   /**

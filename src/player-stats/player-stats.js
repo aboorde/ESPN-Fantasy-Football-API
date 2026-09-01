@@ -24,6 +24,18 @@ class PlayerStats extends BaseObject {
   static displayName = 'PlayerStats';
 
   /**
+   * @typedef {Record<string, string>} ScoringItems
+   *
+   * Maps each readable scoring item name onto the ESPN stat id it is found at. Referenced by the
+   * `@type` below, which previously named a type defined nowhere -- harmless while the jsdoc was
+   * only read by humans, a dangling reference once declarations are generated from it.
+   *
+   * NOTE: this describes the *map*, not an instance. A populated PlayerStats holds numbers at these
+   * keys, which is why its instance type is declared separately by scripts/build-types.mjs rather
+   * than projected from this map like every other model's.
+   */
+
+  /**
    * @type {ScoringItems}
    */
   static responseMap = {

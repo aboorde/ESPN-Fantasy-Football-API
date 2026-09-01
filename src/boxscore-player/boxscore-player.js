@@ -14,15 +14,24 @@ class BoxscorePlayer extends Player {
   static displayName = 'BoxscorePlayer';
 
   /**
-   * @typedef {PlayerMap} BoxscorePlayerMap
+   * @typedef {object} BoxscorePlayerMap
    *
-   * @property {Player} player The player model representing the NFL player.
-   * @property {string} rosteredPosition The position the player is slotted at in the fantasy lineup
+   * The attributes BoxscorePlayer adds. Everything on Player is inherited through the class
+   * hierarchy rather than restated here.
+   *
+   * @property {PLAYER_AVAILABILITY_STATUSES} availabilityStatus The fantasy roster status of the
+   *                                                             player.
+   * @property {string} rosteredPosition The position the player is slotted at in the fantasy
+   *                                     lineup.
    * @property {number} totalPoints The total points scored by the player.
    * @property {PlayerStats} pointBreakdown The PlayerStats model with the points scored by the
    *                                        player.
+   * @property {PlayerStats} projectedPointBreakdown The PlayerStats model with the points ESPN
+   *                                                 projected for the player.
    * @property {PlayerStats} rawStats The PlayerStats model with the raw statistics registered by
    *                                  the player.
+   * @property {PlayerStats} projectedRawStats The PlayerStats model with the raw statistics ESPN
+   *                                           projected for the player.
    */
 
   /**

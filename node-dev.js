@@ -474,15 +474,24 @@ class BoxscorePlayer extends _player_player__WEBPACK_IMPORTED_MODULE_1__["defaul
   static displayName = 'BoxscorePlayer';
 
   /**
-   * @typedef {PlayerMap} BoxscorePlayerMap
+   * @typedef {object} BoxscorePlayerMap
    *
-   * @property {Player} player The player model representing the NFL player.
-   * @property {string} rosteredPosition The position the player is slotted at in the fantasy lineup
+   * The attributes BoxscorePlayer adds. Everything on Player is inherited through the class
+   * hierarchy rather than restated here.
+   *
+   * @property {PLAYER_AVAILABILITY_STATUSES} availabilityStatus The fantasy roster status of the
+   *                                                             player.
+   * @property {string} rosteredPosition The position the player is slotted at in the fantasy
+   *                                     lineup.
    * @property {number} totalPoints The total points scored by the player.
    * @property {PlayerStats} pointBreakdown The PlayerStats model with the points scored by the
    *                                        player.
+   * @property {PlayerStats} projectedPointBreakdown The PlayerStats model with the points ESPN
+   *                                                 projected for the player.
    * @property {PlayerStats} rawStats The PlayerStats model with the raw statistics registered by
    *                                  the player.
+   * @property {PlayerStats} projectedRawStats The PlayerStats model with the raw statistics ESPN
+   *                                           projected for the player.
    */
 
   /**
@@ -582,12 +591,20 @@ class Boxscore extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_M
   /**
    * @typedef {object} BoxscoreMap
    *
+   * @property {number} matchupPeriodId The matchup period this boxscore belongs to.
+   * @property {string} winner Which side won: `HOME`, `AWAY`, `TIE`, or `UNDECIDED` while the
+   *                           matchup is unplayed or in progress.
+   * @property {string} playoffTierType Which bracket the matchup belongs to. `NONE` for a regular
+   *                                    season game, otherwise a playoff or consolation tier.
+   *
    * @property {number} homeScore The total points scored by the home team.
    * @property {number} homeProjectedScore The projected total points scored by the home team.
    *   NOTE: This field is only populated in the boxscore for the current matchup period!
    * @property {number} homeTeamId The home team's id. Can be used to load a cached Team.
    * @property {BoxscorePlayer[]} homeRoster The home team's roster, containing player info and
    *                                         stats.
+   * @property {number} homeWinProbability ESPN's live probability the home team wins, from 0 to 1.
+   *   NOTE: This field is only populated in the boxscore for the current matchup period!
    *
    * @property {number} awayScore The total points scored by the away team.
    * @property {number} awayProjectedScore The projected total points scored by the away team.
@@ -595,17 +612,23 @@ class Boxscore extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_M
    * @property {number} awayTeamId The away team's id. Can be used to load a cached Team.
    * @property {BoxscorePlayer[]} awayRoster The away team's roster, containing player info and
    *                                         stats.
+   * @property {number} awayWinProbability ESPN's live probability the away team wins, from 0 to 1.
+   *   NOTE: This field is only populated in the boxscore for the current matchup period!
    */
 
   /**
    * @type {BoxscoreMap}
    */
   static responseMap = {
+    matchupPeriodId: 'matchupPeriodId',
+    winner: 'winner',
+    playoffTierType: 'playoffTierType',
     homeScore: {
       key: 'home',
       manualParse: responseData => lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPointsLive') || lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPoints')
     },
     homeProjectedScore: 'home.totalProjectedPointsLive',
+    homeWinProbability: 'home.winProbability',
     homeTeamId: 'home.teamId',
     homeRoster: {
       key: 'home.rosterForCurrentScoringPeriod.entries',
@@ -617,6 +640,7 @@ class Boxscore extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_M
       manualParse: responseData => lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPointsLive') || lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPoints')
     },
     awayProjectedScore: 'away.totalProjectedPointsLive',
+    awayWinProbability: 'away.winProbability',
     awayTeamId: 'away.teamId',
     awayRoster: {
       key: 'away.rosterForCurrentScoringPeriod.entries',
@@ -648,18 +672,23 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var lodash_forEach__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(lodash_forEach__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var lodash_get__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! lodash/get */ "./node_modules/lodash/get.js");
 /* harmony import */ var lodash_get__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(lodash_get__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var lodash_map__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! lodash/map */ "./node_modules/lodash/map.js");
-/* harmony import */ var lodash_map__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(lodash_map__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var lodash_merge__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! lodash/merge */ "./node_modules/lodash/merge.js");
-/* harmony import */ var lodash_merge__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(lodash_merge__WEBPACK_IMPORTED_MODULE_5__);
-/* harmony import */ var _boxscore_boxscore__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../boxscore/boxscore */ "./src/boxscore/boxscore.js");
-/* harmony import */ var _draft_player_draft_player__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../draft-player/draft-player */ "./src/draft-player/draft-player.js");
-/* harmony import */ var _free_agent_player_free_agent_player__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../free-agent-player/free-agent-player */ "./src/free-agent-player/free-agent-player.js");
-/* harmony import */ var _league_league__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../league/league */ "./src/league/league.js");
-/* harmony import */ var _nfl_game_nfl_game__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../nfl-game/nfl-game */ "./src/nfl-game/nfl-game.js");
-/* harmony import */ var _team_team__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../team/team */ "./src/team/team.js");
-/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../utils */ "./src/utils.js");
-/* harmony import */ var _http__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./http */ "./src/client/http.js");
+/* harmony import */ var lodash_keys__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! lodash/keys */ "./node_modules/lodash/keys.js");
+/* harmony import */ var lodash_keys__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(lodash_keys__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var lodash_map__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! lodash/map */ "./node_modules/lodash/map.js");
+/* harmony import */ var lodash_map__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(lodash_map__WEBPACK_IMPORTED_MODULE_5__);
+/* harmony import */ var lodash_merge__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! lodash/merge */ "./node_modules/lodash/merge.js");
+/* harmony import */ var lodash_merge__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(lodash_merge__WEBPACK_IMPORTED_MODULE_6__);
+/* harmony import */ var lodash_toSafeInteger__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! lodash/toSafeInteger */ "./node_modules/lodash/toSafeInteger.js");
+/* harmony import */ var lodash_toSafeInteger__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(lodash_toSafeInteger__WEBPACK_IMPORTED_MODULE_7__);
+/* harmony import */ var _boxscore_boxscore__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../boxscore/boxscore */ "./src/boxscore/boxscore.js");
+/* harmony import */ var _draft_player_draft_player__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../draft-player/draft-player */ "./src/draft-player/draft-player.js");
+/* harmony import */ var _free_agent_player_free_agent_player__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../free-agent-player/free-agent-player */ "./src/free-agent-player/free-agent-player.js");
+/* harmony import */ var _league_league__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../league/league */ "./src/league/league.js");
+/* harmony import */ var _matchup_matchup__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../matchup/matchup */ "./src/matchup/matchup.js");
+/* harmony import */ var _nfl_game_nfl_game__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../nfl-game/nfl-game */ "./src/nfl-game/nfl-game.js");
+/* harmony import */ var _team_team__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../team/team */ "./src/team/team.js");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../utils */ "./src/utils.js");
+/* harmony import */ var _http__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ./http */ "./src/client/http.js");
 
 
 
@@ -674,6 +703,39 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
+
+
+/**
+ * Maps ESPN's numeric `messageTypeId` onto the readable label `getRecentActivity` reports.
+ *
+ * ESPN uses three separate ids for a drop depending on how it happened.
+ */
+const ACTIVITY_TYPE_BY_MESSAGE_ID = {
+  178: 'FA ADDED',
+  179: 'DROPPED',
+  180: 'WAIVER ADDED',
+  181: 'DROPPED',
+  239: 'DROPPED',
+  244: 'TRADED'
+};
+
+/**
+ * Maps a caller's `msgType` onto every `messageTypeId` it covers.
+ *
+ * This was previously folded into the same object as the id-to-label map, which had two
+ * consequences: `'178' in map` was true, so a numeric string filtered by the *label* rather than
+ * by an id, and there was no reverse key for DROPPED at all -- so drops could not be filtered to,
+ * because they span three ids and the flat map could only hold one.
+ */
+const MESSAGE_IDS_BY_ACTIVITY_TYPE = {
+  FA: [178],
+  WAIVER: [180],
+  DROPPED: [179, 181, 239],
+  TRADED: [244]
+};
+const ALL_ACTIVITY_MESSAGE_IDS = lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(lodash_keys__WEBPACK_IMPORTED_MODULE_4___default()(ACTIVITY_TYPE_BY_MESSAGE_ID), (lodash_toSafeInteger__WEBPACK_IMPORTED_MODULE_7___default()));
 
 /**
  * Provides functionality to make a variety of API calls to ESPN for a given fantasy football
@@ -699,20 +761,6 @@ class Client {
       espnS2: options.espnS2,
       SWID: options.SWID
     });
-
-    // Maps ESPN's numeric `messageTypeId`s onto readable transaction labels, and readable keys
-    // back onto the ids `getRecentActivity` filters by.
-    this.ACTIVITY_MAP = {
-      178: 'FA ADDED',
-      180: 'WAIVER ADDED',
-      179: 'DROPPED',
-      181: 'DROPPED',
-      239: 'DROPPED',
-      244: 'TRADED',
-      FA: 178,
-      WAIVER: 180,
-      TRADED: 244
-    };
   }
 
   /**
@@ -755,17 +803,49 @@ class Client {
       base: `${seasonId}/segments/0/leagues/${this.leagueId}`,
       params: `?view=mMatchup&view=mMatchupScore&scoringPeriodId=${scoringPeriodId}`
     });
-    return _http__WEBPACK_IMPORTED_MODULE_13__["default"].get(route, this._buildRequestConfig()).then(data => {
+    return _http__WEBPACK_IMPORTED_MODULE_16__["default"].get(route, this._buildRequestConfig()).then(data => {
       const schedule = lodash_get__WEBPACK_IMPORTED_MODULE_3___default()(data, 'schedule');
       const matchups = lodash_filter__WEBPACK_IMPORTED_MODULE_0___default()(schedule, {
         matchupPeriodId
       });
-      return lodash_map__WEBPACK_IMPORTED_MODULE_4___default()(matchups, matchup => _boxscore_boxscore__WEBPACK_IMPORTED_MODULE_6__["default"].buildFromServer(matchup, {
+      return lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(matchups, matchup => _boxscore_boxscore__WEBPACK_IMPORTED_MODULE_8__["default"].buildFromServer(matchup, {
         leagueId: this.leagueId,
         seasonId,
         scoringPeriodId
       }));
     });
+  }
+
+  /**
+   * Returns every matchup on the league's schedule for a season, played or not.
+   *
+   * `getBoxscoreForWeek` fetches this same schedule and filters it down to a single matchup period,
+   * discarding the rest. This returns all of it, which is what answers "who do I play in week 12",
+   * strength of schedule, and the shape of the playoff bracket.
+   *
+   * NOTE: ESPN only puts playoff matchups on the schedule once it has generated them. Before then
+   * the schedule covers the regular season only, so the highest `matchupPeriodId` returned equals
+   * `League#scheduleSettings.numberOfRegularSeasonMatchups`.
+   *
+   * NOTE: The response carries roster data that Matchup does not map. Use `getBoxscoreForWeek` when
+   * lineups are what you are after.
+   *
+   * @param  {object} options Required options object.
+   * @param  {number} options.seasonId The season to grab the schedule from.
+   * @returns {Matchup[]} Every matchup in the season, in ESPN's schedule order.
+   */
+  getScheduleForSeason({
+    seasonId
+  }) {
+    this.constructor._validateV3Params(seasonId, 'getScheduleForSeason');
+    const route = this.constructor._buildRoute({
+      base: `${seasonId}/segments/0/leagues/${this.leagueId}`,
+      params: '?view=mMatchup&view=mMatchupScore'
+    });
+    return _http__WEBPACK_IMPORTED_MODULE_16__["default"].get(route, this._buildRequestConfig()).then(data => lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(lodash_get__WEBPACK_IMPORTED_MODULE_3___default()(data, 'schedule'), matchup => _matchup_matchup__WEBPACK_IMPORTED_MODULE_12__["default"].buildFromServer(matchup, {
+      leagueId: this.leagueId,
+      seasonId
+    })));
   }
 
   /**
@@ -790,7 +870,7 @@ class Client {
       base: `${seasonId}/segments/0/leagues/${this.leagueId}`,
       params: `?scoringPeriodId=${scoringPeriodId}&view=kona_player_info`
     });
-    return Promise.all([_http__WEBPACK_IMPORTED_MODULE_13__["default"].get(draftRoute, this._buildRequestConfig()), _http__WEBPACK_IMPORTED_MODULE_13__["default"].get(playerRoute, this._buildRequestConfig({
+    return Promise.all([_http__WEBPACK_IMPORTED_MODULE_16__["default"].get(draftRoute, this._buildRequestConfig()), _http__WEBPACK_IMPORTED_MODULE_16__["default"].get(playerRoute, this._buildRequestConfig({
       headers: {
         'x-fantasy-filter': JSON.stringify({
           players: {
@@ -802,13 +882,13 @@ class Client {
           }
         })
       }
-    }))]).then(([draftData, playerData]) => lodash_map__WEBPACK_IMPORTED_MODULE_4___default()(draftData.draftDetail.picks, draftPick => {
+    }))]).then(([draftData, playerData]) => lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(draftData.draftDetail.picks, draftPick => {
       const playerInfo = lodash_find__WEBPACK_IMPORTED_MODULE_1___default()(playerData.players, player => player.player.id === draftPick.playerId);
       const data = {
         ...draftPick,
-        ...(0,_utils__WEBPACK_IMPORTED_MODULE_12__.flattenObjectSansNumericKeys)(playerInfo)
+        ...(0,_utils__WEBPACK_IMPORTED_MODULE_15__.flattenObjectSansNumericKeys)(playerInfo)
       };
-      return _draft_player_draft_player__WEBPACK_IMPORTED_MODULE_7__["default"].buildFromServer(data, {
+      return _draft_player_draft_player__WEBPACK_IMPORTED_MODULE_9__["default"].buildFromServer(data, {
         seasonId,
         scoringPeriodId
       });
@@ -844,12 +924,12 @@ class Client {
     const requestConfig = this._buildRequestConfig({
       baseURL: 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/leagueHistory/'
     });
-    return _http__WEBPACK_IMPORTED_MODULE_13__["default"].get(route, requestConfig).then(data => {
+    return _http__WEBPACK_IMPORTED_MODULE_16__["default"].get(route, requestConfig).then(data => {
       const schedule = lodash_get__WEBPACK_IMPORTED_MODULE_3___default()(data[0], 'schedule'); // Data is an array instead of object
       const matchups = lodash_filter__WEBPACK_IMPORTED_MODULE_0___default()(schedule, {
         matchupPeriodId
       });
-      return lodash_map__WEBPACK_IMPORTED_MODULE_4___default()(matchups, matchup => _boxscore_boxscore__WEBPACK_IMPORTED_MODULE_6__["default"].buildFromServer(matchup, {
+      return lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(matchups, matchup => _boxscore_boxscore__WEBPACK_IMPORTED_MODULE_8__["default"].buildFromServer(matchup, {
         leagueId: this.leagueId,
         seasonId,
         scoringPeriodId
@@ -892,9 +972,9 @@ class Client {
         })
       }
     });
-    return _http__WEBPACK_IMPORTED_MODULE_13__["default"].get(route, config).then(data => {
+    return _http__WEBPACK_IMPORTED_MODULE_16__["default"].get(route, config).then(data => {
       const players = lodash_get__WEBPACK_IMPORTED_MODULE_3___default()(data, 'players');
-      return lodash_map__WEBPACK_IMPORTED_MODULE_4___default()(players, player => _free_agent_player_free_agent_player__WEBPACK_IMPORTED_MODULE_8__["default"].buildFromServer(player, {
+      return lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(players, player => _free_agent_player_free_agent_player__WEBPACK_IMPORTED_MODULE_10__["default"].buildFromServer(player, {
         leagueId: this.leagueId,
         seasonId,
         scoringPeriodId
@@ -917,9 +997,11 @@ class Client {
     this.constructor._validateV3Params(seasonId, 'getTeamsAtWeek', 'getHistoricalTeamsAtWeek');
     const route = this.constructor._buildRoute({
       base: `${seasonId}/segments/0/leagues/${this.leagueId}`,
-      params: `?scoringPeriodId=${scoringPeriodId}&view=mRoster&view=mTeam`
+      // `mStandings` is what carries `currentSimulationResults` and `playoffClinchType`. Measured:
+      // it adds those two keys to every team and nothing else, for 1.3% more payload.
+      params: `?scoringPeriodId=${scoringPeriodId}&view=mRoster&view=mTeam&view=mStandings`
     });
-    return _http__WEBPACK_IMPORTED_MODULE_13__["default"].get(route, this._buildRequestConfig()).then(data => this._parseTeamResponse(data, seasonId, scoringPeriodId));
+    return _http__WEBPACK_IMPORTED_MODULE_16__["default"].get(route, this._buildRequestConfig()).then(data => this._parseTeamResponse(data, seasonId, scoringPeriodId));
   }
 
   /**
@@ -946,7 +1028,7 @@ class Client {
     const requestConfig = this._buildRequestConfig({
       baseURL: 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/leagueHistory/'
     });
-    return _http__WEBPACK_IMPORTED_MODULE_13__["default"].get(route, requestConfig).then(data =>
+    return _http__WEBPACK_IMPORTED_MODULE_16__["default"].get(route, requestConfig).then(data =>
     // Data returns an array for historical teams (??)
     this._parseTeamResponse(data[0], seasonId, scoringPeriodId));
   }
@@ -954,14 +1036,16 @@ class Client {
     // Join member (owner) information with team data before dumping into builder
     const teams = lodash_get__WEBPACK_IMPORTED_MODULE_3___default()(responseData, 'teams');
     const members = lodash_get__WEBPACK_IMPORTED_MODULE_3___default()(responseData, 'members');
-    const mergedData = lodash_map__WEBPACK_IMPORTED_MODULE_4___default()(teams, team => {
-      const owner = members.find(member => member.id === team.primaryOwner);
+    const mergedData = lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(teams, team => {
+      // lodash `find` rather than `Array#find`: a response with no `members` key, or a team whose
+      // `primaryOwner` has left the league, would otherwise throw and take the whole call with it.
+      const owner = lodash_find__WEBPACK_IMPORTED_MODULE_1___default()(members, member => member.id === team.primaryOwner);
       return {
         owner,
         ...team
       }; // Don't spread owner to prevent id and other attributes clashing
     });
-    return lodash_map__WEBPACK_IMPORTED_MODULE_4___default()(mergedData, team => _team_team__WEBPACK_IMPORTED_MODULE_11__["default"].buildFromServer(team, {
+    return lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(mergedData, team => _team_team__WEBPACK_IMPORTED_MODULE_14__["default"].buildFromServer(team, {
       leagueId: this.leagueId,
       seasonId,
       scoringPeriodId
@@ -987,9 +1071,9 @@ class Client {
     const requestConfig = this._buildRequestConfig({
       baseURL: 'https://site.api.espn.com/'
     });
-    return _http__WEBPACK_IMPORTED_MODULE_13__["default"].get(route, requestConfig).then(data => {
+    return _http__WEBPACK_IMPORTED_MODULE_16__["default"].get(route, requestConfig).then(data => {
       const events = lodash_get__WEBPACK_IMPORTED_MODULE_3___default()(data, 'events');
-      return lodash_map__WEBPACK_IMPORTED_MODULE_4___default()(events, game => _nfl_game_nfl_game__WEBPACK_IMPORTED_MODULE_10__["default"].buildFromServer(game));
+      return lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(events, game => _nfl_game_nfl_game__WEBPACK_IMPORTED_MODULE_13__["default"].buildFromServer(game));
     });
   }
 
@@ -1008,15 +1092,15 @@ class Client {
       base: `${seasonId}/segments/0/leagues/${this.leagueId}`,
       params: '?view=mSettings'
     });
-    return _http__WEBPACK_IMPORTED_MODULE_13__["default"].get(route, this._buildRequestConfig()).then(data => {
-      const settingsData = lodash_get__WEBPACK_IMPORTED_MODULE_3___default()(data, 'settings');
-      const statusData = lodash_get__WEBPACK_IMPORTED_MODULE_3___default()(data, 'status');
+    return _http__WEBPACK_IMPORTED_MODULE_16__["default"].get(route, this._buildRequestConfig()).then(data => {
+      // The whole `status` object is handed through rather than picked apart here. League's
+      // responseMap is where response paths belong, and reshaping in the client is exactly what
+      // left previousSeasons, firstScoringPeriod and the rest unreachable.
       const leagueData = {
-        currentMatchupPeriodId: statusData.currentMatchupPeriod,
-        currentScoringPeriodId: statusData.latestScoringPeriod,
-        ...settingsData
+        ...lodash_get__WEBPACK_IMPORTED_MODULE_3___default()(data, 'settings'),
+        status: lodash_get__WEBPACK_IMPORTED_MODULE_3___default()(data, 'status')
       };
-      return _league_league__WEBPACK_IMPORTED_MODULE_9__["default"].buildFromServer(leagueData, {
+      return _league_league__WEBPACK_IMPORTED_MODULE_11__["default"].buildFromServer(leagueData, {
         leagueId: this.leagueId,
         seasonId
       });
@@ -1028,25 +1112,42 @@ class Client {
    * fantasy football league, newest first. Each element of the returned array corresponds to one
    * activity topic and holds one action per message within that topic.
    *
+   * @typedef  {object} ActivityAction
+   *
+   * One transaction within an activity topic. These are plain objects rather than a BaseObject:
+   * `team` and `player` are ESPN's own raw shapes, passed through so a caller can read whatever it
+   * needs from them.
+   *
+   * @property {object} team The raw ESPN team object that made the move, resolved from the
+   *                         message's `from`, `for` or `to` id depending on the action.
+   * @property {string} action One of `FA ADDED`, `WAIVER ADDED`, `DROPPED`, `TRADED`, or `UNKNOWN`
+   *                          when ESPN sends a message type this client does not label.
+   * @property {object} player The raw ESPN player entry the action targeted. Resolved from the
+   *                           team's roster where the player is still on it, and from the player
+   *                           card endpoint otherwise.
+   * @property {number} bidAmount The winning FAAB bid, for a `WAIVER ADDED`. Zero otherwise.
+   * @property {number} date Epoch milliseconds for the topic the action belongs to.
+   * @property {number} targetId The ESPN id of the player the action targeted.
+   * @property {object} ids The message's raw `from`, `for` and `to` ids.
+   */
+
+  /**
    * @param   {object} options Required options object.
    * @param   {number} options.seasonId The season to grab data from.
-   * @param   {string} [options.msgType] Restricts results to a single activity type. Accepts a key
-   *                                     of `ACTIVITY_MAP`: `FA`, `WAIVER` or `TRADED`. When
-   *                                     omitted, every transaction type is returned.
-   * @returns {Promise<object[][]>} A promise resolving to the league's recent activity.
+   * @param   {string} [options.msgType] Restricts results to one activity type: `FA`, `WAIVER`,
+   *                                     `DROPPED` or `TRADED`. Anything else, including a numeric
+   *                                     message id, returns every transaction type.
+   * @returns {Promise<ActivityAction[][]>} A promise resolving to the league's recent activity,
+   *                                        one inner array per activity topic.
    */
   getRecentActivity({
     seasonId,
     msgType = ''
   }) {
     this.constructor._validateV3Params(seasonId, 'getRecentActivity');
-    let topics = [];
-    let msgTypes = [178, 180, 179, 239, 181, 244];
     const searchIds = [];
     let activity = [];
-    if (msgType in this.ACTIVITY_MAP) {
-      msgTypes = [this.ACTIVITY_MAP[msgType]];
-    }
+    const msgTypes = lodash_get__WEBPACK_IMPORTED_MODULE_3___default()(MESSAGE_IDS_BY_ACTIVITY_TYPE, msgType, ALL_ACTIVITY_MESSAGE_IDS);
     const route = this.constructor._buildRoute({
       base: `apis/v3/games/ffl/seasons/${seasonId}/segments/0/leagues/${this.leagueId}/communication`,
       params: '?view=kona_league_communication'
@@ -1086,11 +1187,12 @@ class Client {
     const leagueConfig = this._buildRequestConfig({
       baseURL: 'https://lm-api-reads.fantasy.espn.com/'
     });
-    return _http__WEBPACK_IMPORTED_MODULE_13__["default"].get(route, config).then(communicationData => {
-      topics = communicationData.topics;
-      return _http__WEBPACK_IMPORTED_MODULE_13__["default"].get(leagueRoute, leagueConfig);
-    }).then(leagueData => {
-      activity = lodash_map__WEBPACK_IMPORTED_MODULE_4___default()(topics, topic => this._buildActivity(topic, leagueData));
+
+    // The league fetch does not depend on the communication fetch -- only the player-card fetch
+    // below does, because it needs the target ids the topics resolve to. Running the first two
+    // together takes a round trip off every call.
+    return Promise.all([_http__WEBPACK_IMPORTED_MODULE_16__["default"].get(route, config), _http__WEBPACK_IMPORTED_MODULE_16__["default"].get(leagueRoute, leagueConfig)]).then(([communicationData, leagueData]) => {
+      activity = lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(communicationData.topics, topic => this._buildActivity(topic, leagueData));
       lodash_forEach__WEBPACK_IMPORTED_MODULE_2___default()(activity, action => {
         lodash_forEach__WEBPACK_IMPORTED_MODULE_2___default()(action, msg => {
           if (!msg.player) {
@@ -1118,8 +1220,8 @@ class Client {
           })
         }
       });
-      return _http__WEBPACK_IMPORTED_MODULE_13__["default"].get(playerRoute, playerConfig);
-    }).then(playerData => lodash_map__WEBPACK_IMPORTED_MODULE_4___default()(activity, action => lodash_map__WEBPACK_IMPORTED_MODULE_4___default()(action, msg => {
+      return _http__WEBPACK_IMPORTED_MODULE_16__["default"].get(playerRoute, playerConfig);
+    }).then(playerData => lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(activity, action => lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(action, msg => {
       if (!msg.player) {
         return {
           ...msg,
@@ -1147,7 +1249,7 @@ class Client {
     const {
       date
     } = topic;
-    return lodash_map__WEBPACK_IMPORTED_MODULE_4___default()(topic.messages, message => {
+    return lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(topic.messages, message => {
       let team;
       let action = 'UNKNOWN';
       let player = null;
@@ -1160,8 +1262,8 @@ class Client {
       } else {
         team = lodash_find__WEBPACK_IMPORTED_MODULE_1___default()(teams, x => x.id === message.to);
       }
-      if (this.ACTIVITY_MAP[msgId]) {
-        action = this.ACTIVITY_MAP[msgId];
+      if (ACTIVITY_TYPE_BY_MESSAGE_ID[msgId]) {
+        action = ACTIVITY_TYPE_BY_MESSAGE_ID[msgId];
       }
       if (action === 'WAIVER ADDED') {
         bidAmount = message.from || 0;
@@ -1198,7 +1300,7 @@ class Client {
       const headers = {
         Cookie: `espn_s2=${this.espnS2}; SWID=${this.SWID};`
       };
-      return lodash_merge__WEBPACK_IMPORTED_MODULE_5___default()({}, config, {
+      return lodash_merge__WEBPACK_IMPORTED_MODULE_6___default()({}, config, {
         headers,
         credentials: 'include'
       });
@@ -2181,7 +2283,10 @@ class DraftPlayer extends _player_player__WEBPACK_IMPORTED_MODULE_2__["default"]
   }
 
   /**
-   * @typedef {PlayerMap} DraftPlayerMap
+   * @typedef {object} DraftPlayerMap
+   *
+   * The attributes DraftPlayer adds. Everything on Player is inherited through the class hierarchy
+   * rather than restated here.
    *
    * @property {number} id The id of the player in the ESPN universe.
    * @property {number} teamId The teamId of the fantasy team that drafted the player. Use
@@ -2197,6 +2302,15 @@ class DraftPlayer extends _player_player__WEBPACK_IMPORTED_MODULE_2__["default"]
    * @property {number} bidAmount FOR AUCTION DRAFTS ONLY: How much the winning bid was
    * @property {number} nominatingTeamId FOR AUCTION DRAFTS ONLY: The teamId of the fantasy team
    *   that nominatied the player. Use `Client#getTeamAtWeek` to access fantasy team data.
+   *
+   * @property {number} positionalRanking ESPN's ranking of the player within their position.
+   * @property {number} overallRanking ESPN's overall ranking of the player.
+   * @property {number} pointsScoredThisSeason The total points the player scored across the season.
+   *
+   * @property {PlayerStats} rawStatsForYear The PlayerStats model with the raw statistics
+   *                                         registered by the player over the season.
+   * @property {PlayerStats} projectedRawStatsForYear The PlayerStats model with the raw statistics
+   *                                                  ESPN projected for the player over the season.
    */
 
   /**
@@ -2279,12 +2393,21 @@ class FreeAgentPlayer extends _player_player__WEBPACK_IMPORTED_MODULE_0__["defau
   static displayName = 'FreeAgentPlayer';
 
   /**
-   * @typedef {PlayerMap} FreeAgentPlayerMap
+   * @typedef {object} FreeAgentPlayerMap
    *
-   * @property {PlayerStats} rawStats The PlayerStats model with the raw statistics registered by
-   *                                  the player over the season.
-   * @property {PlayerStats} projectedRawStats The PlayerStats model with the raw statistics
-   *                                           projected by the player over the season.
+   * The attributes FreeAgentPlayer adds. Everything on Player is inherited through the class
+   * hierarchy rather than restated here.
+   *
+   * @property {PlayerStats} rawStatsForYear The PlayerStats model with the raw statistics
+   *                                         registered by the player over the season.
+   * @property {PlayerStats} projectedRawStatsForYear The PlayerStats model with the raw statistics
+   *                                                  ESPN projected for the player over the season.
+   * @property {PlayerStats} rawStatsForScoringPeriod The PlayerStats model with the raw statistics
+   *                                                  registered by the player in the scoring
+   *                                                  period.
+   * @property {PlayerStats} projectedRawStatsForScoringPeriod The PlayerStats model with the raw
+   *                                                           statistics ESPN projected for the
+   *                                                           player in the scoring period.
    */
 
   /**
@@ -2383,6 +2506,27 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
+ * ESPN sends epoch milliseconds, and omits the key entirely when unset.
+ *
+ * @param   {number} value The epoch milliseconds to convert.
+ * @returns {Date|undefined} The date, or `undefined` when ESPN sent nothing.
+ */
+const toDate = value => value ? new Date(value) : undefined;
+
+/**
+ * Wraps a settings parser so an absent block leaves the attribute unset instead of throwing.
+ *
+ * Every one of these parsers reads properties straight off its response data, so a response missing
+ * the block -- an older season, a partial view, a league mid-creation -- took down the whole
+ * `getLeagueInfo` call. Returning `undefined` is also better than an object of `undefined`s: it is
+ * what `_populateObject` does with any other unset value, so the attribute simply does not appear.
+ *
+ * @param   {Function} parse The parser to guard.
+ * @returns {Function} The guarded parser.
+ */
+const whenPresent = parse => (responseData, ...rest) => responseData === undefined ? undefined : parse(responseData, ...rest);
+
+/**
  * Represents basic information about an ESPN fantasy football league.
  *
  * @augments {BaseObject}
@@ -2397,10 +2541,10 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
    * @property {DRAFT_TYPE} type The type of draft.
    * @property {number} timePerPick The amount of time to make a selection.
    * @property {boolean} canTradeDraftPicks Whether or not draft picks can be traded.
-   * @property {number} currentMatchupPeriodId The current matchup period id (see README.md for
-   *   matchupPeriod v. scoringPeriod)
-   * @property {number} currentScoringPeriodId The current scoring period id (see README.md for
-   *   matchupPeriod v. scoringPeriod)
+   * @property {number} auctionBudget The budget each team bids with in an auction draft.
+   * @property {number} keeperCount The number of players each team may keep.
+   * @property {string} orderType How the draft order was determined.
+   * @property {number[]} pickOrder The team ids in draft order.
    */
 
   /**
@@ -2423,6 +2567,47 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
    *                                            on the schedule.
    * @property {number} playoffMatchupLength How many weeks each playoff matchup lasts.
    * @property {number} numberOfPlayoffTeams The number of playoff teams there will be.
+   * @property {object[]} divisions The league's divisions. Each has an `id`, `name` and `size`.
+   * @property {string} playoffSeedingRule The tiebreak used to seed the playoffs.
+   * @property {boolean} playoffReseed Whether the bracket reseeds between playoff rounds.
+   */
+
+  /**
+   * @typedef {object} AcquisitionSettings
+   *
+   * @property {number} budget The FAAB each team starts the season with. Pair with
+   *                           `Team#acquisitionBudgetSpent` for a team's remaining budget.
+   * @property {boolean} isUsingBudget Whether the league bids FAAB rather than running a waiver
+   *                                  order.
+   * @property {string} type How players are acquired, e.g. `WAIVERS_TRADITIONAL`.
+   * @property {number} limit The season-long acquisition cap, or -1 when unlimited.
+   * @property {number} minimumBid The smallest FAAB bid the league accepts.
+   * @property {number} waiverHours How long a dropped player sits on waivers.
+   * @property {string[]} waiverProcessDays The days waivers are processed on.
+   * @property {number} waiverProcessHour The hour of the day waivers are processed.
+   * @property {boolean} waiverOrderReset Whether the waiver order resets after a claim.
+   */
+
+  /**
+   * @typedef {object} TradeSettings
+   *
+   * @property {Date} deadlineDate The date after which trades may no longer be proposed.
+   * @property {number} max The maximum number of trades a team may make, or -1 when unlimited.
+   * @property {number} vetoVotesRequired How many votes are needed to veto a trade.
+   * @property {number} revisionHours How long a trade sits pending before it processes.
+   */
+
+  /**
+   * @typedef {object} FinanceSettings
+   *
+   * @property {number} entryFee The cost to join the league.
+   * @property {number} miscFee A miscellaneous fee applied to each team.
+   * @property {number} perLoss The fee charged for each loss.
+   * @property {number} perTrade The fee charged for each trade.
+   * @property {number} playerAcquisition The fee charged for each acquisition.
+   * @property {number} playerDrop The fee charged for each drop.
+   * @property {number} playerMoveToActive The fee charged to activate a player.
+   * @property {number} playerMoveToIR The fee charged to move a player to injured reserve.
    */
 
   /**
@@ -2432,9 +2617,26 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
    * @property {number} size The number of teams in the league.
    * @property {boolean} isPublic Whether or not the league is publically visible and accessible.
    *
+   * @property {number} currentMatchupPeriodId The current matchup period id (see README.md for
+   *   matchupPeriod v. scoringPeriod)
+   * @property {number} currentScoringPeriodId The current scoring period id (see README.md for
+   *   matchupPeriod v. scoringPeriod)
+   * @property {number} firstScoringPeriodId The first scoring period of the season.
+   * @property {number} finalScoringPeriodId The last scoring period of the season.
+   * @property {number[]} previousSeasons The seasons this league has history for.
+   * @property {boolean} isActive Whether the league is currently active.
+   * @property {boolean} isFull Whether every team slot has been claimed.
+   * @property {number} teamsJoined The number of teams that have joined.
+   * @property {string} scoringType How matchups are scored, e.g. `H2H_POINTS`.
+   * @property {string} matchupTieRule The tiebreak applied to a tied regular season matchup.
+   * @property {string} playoffMatchupTieRule The tiebreak applied to a tied playoff matchup.
+   *
    * @property {DraftSettings} draftSettings The draft settings of the league.
    * @property {RosterSettings} rosterSettings The roster settings of the league.
    * @property {ScheduleSettings} scheduleSettings The schedule settings of the league.
+   * @property {AcquisitionSettings} acquisitionSettings The waiver and FAAB settings of the league.
+   * @property {TradeSettings} tradeSettings The trade settings of the league.
+   * @property {FinanceSettings} financeSettings The dues and fees of the league.
    * @property {object} scoringSettings The scoring settings of the league.
    */
 
@@ -2445,41 +2647,100 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
     name: 'name',
     size: 'size',
     isPublic: 'isPublic',
-    currentMatchupPeriodId: 'currentMatchupPeriodId',
-    currentScoringPeriodId: 'currentScoringPeriodId',
+    // `Client#getLeagueInfo` hands the whole `status` object through, so everything derived from it
+    // is mapped here rather than reshaped in the client.
+    currentMatchupPeriodId: 'status.currentMatchupPeriod',
+    currentScoringPeriodId: 'status.latestScoringPeriod',
+    firstScoringPeriodId: 'status.firstScoringPeriod',
+    finalScoringPeriodId: 'status.finalScoringPeriod',
+    previousSeasons: 'status.previousSeasons',
+    isActive: 'status.isActive',
+    isFull: 'status.isFull',
+    teamsJoined: 'status.teamsJoined',
+    scoringType: 'scoringSettings.scoringType',
+    matchupTieRule: 'scoringSettings.matchupTieRule',
+    playoffMatchupTieRule: 'scoringSettings.playoffMatchupTieRule',
     draftSettings: {
       key: 'draftSettings',
-      manualParse: responseData => ({
-        date: new Date(responseData.date),
+      manualParse: whenPresent(responseData => ({
+        date: toDate(responseData.date),
         type: responseData.type,
         timePerPick: responseData.timePerSelection,
-        canTradeDraftPicks: responseData.isTradingEnabled
-      })
+        canTradeDraftPicks: responseData.isTradingEnabled,
+        auctionBudget: responseData.auctionBudget,
+        keeperCount: responseData.keeperCount,
+        orderType: responseData.orderType,
+        pickOrder: responseData.pickOrder
+      }))
     },
     rosterSettings: {
       key: 'rosterSettings',
-      manualParse: responseData => ({
+      manualParse: whenPresent(responseData => ({
         lineupPositionCount: lodash_mapKeys__WEBPACK_IMPORTED_MODULE_2___default()(responseData.lineupSlotCounts, (count, position) => lodash_get__WEBPACK_IMPORTED_MODULE_1___default()(_constants__WEBPACK_IMPORTED_MODULE_7__.slotCategoryIdToPositionMap, position)),
         positionLimits: lodash_mapKeys__WEBPACK_IMPORTED_MODULE_2___default()(responseData.positionLimits, (count, position) => lodash_get__WEBPACK_IMPORTED_MODULE_1___default()(_constants__WEBPACK_IMPORTED_MODULE_7__.slotCategoryIdToPositionMap, position)),
         locktime: responseData.rosterLocktimeType
-      })
+      }))
     },
     scheduleSettings: {
       key: 'scheduleSettings',
-      manualParse: responseData => {
-        const numberOfPlayoffMatchups = lodash_toSafeInteger__WEBPACK_IMPORTED_MODULE_4___default()((17 - responseData.matchupPeriodCount * responseData.matchupPeriodLength) / responseData.playoffMatchupPeriodLength);
+      manualParse: whenPresent((responseData, data) => {
+        // The season length comes from `status.finalScoringPeriod` rather than a literal 17. The
+        // two agree on a standard league, but hardcoding the NFL's current season length is how
+        // this silently goes wrong the year the league adds a week.
+        const finalScoringPeriod = lodash_get__WEBPACK_IMPORTED_MODULE_1___default()(data, 'status.finalScoringPeriod', 17);
+        const regularSeasonPeriods = responseData.matchupPeriodCount * responseData.matchupPeriodLength;
+        const numberOfPlayoffMatchups = lodash_toSafeInteger__WEBPACK_IMPORTED_MODULE_4___default()((finalScoringPeriod - regularSeasonPeriods) / responseData.playoffMatchupPeriodLength);
         return {
           numberOfRegularSeasonMatchups: responseData.matchupPeriodCount,
           regularSeasonMatchupLength: responseData.matchupPeriodLength,
           numberOfPlayoffMatchups,
           playoffMatchupLength: responseData.playoffMatchupPeriodLength,
-          numberOfPlayoffTeams: responseData.playoffTeamCount
+          numberOfPlayoffTeams: responseData.playoffTeamCount,
+          divisions: responseData.divisions,
+          playoffSeedingRule: responseData.playoffSeedingRule,
+          playoffReseed: responseData.playoffReseed
         };
-      }
+      })
+    },
+    acquisitionSettings: {
+      key: 'acquisitionSettings',
+      manualParse: whenPresent(responseData => ({
+        budget: responseData.acquisitionBudget,
+        isUsingBudget: responseData.isUsingAcquisitionBudget,
+        type: responseData.acquisitionType,
+        limit: responseData.acquisitionLimit,
+        minimumBid: responseData.minimumBid,
+        waiverHours: responseData.waiverHours,
+        waiverProcessDays: responseData.waiverProcessDays,
+        waiverProcessHour: responseData.waiverProcessHour,
+        waiverOrderReset: responseData.waiverOrderReset
+      }))
+    },
+    tradeSettings: {
+      key: 'tradeSettings',
+      manualParse: whenPresent(responseData => ({
+        deadlineDate: toDate(responseData.deadlineDate),
+        max: responseData.max,
+        vetoVotesRequired: responseData.vetoVotesRequired,
+        revisionHours: responseData.revisionHours
+      }))
+    },
+    financeSettings: {
+      key: 'financeSettings',
+      manualParse: whenPresent(responseData => ({
+        entryFee: responseData.entryFee,
+        miscFee: responseData.miscFee,
+        perLoss: responseData.perLoss,
+        perTrade: responseData.perTrade,
+        playerAcquisition: responseData.playerAcquisition,
+        playerDrop: responseData.playerDrop,
+        playerMoveToActive: responseData.playerMoveToActive,
+        playerMoveToIR: responseData.playerMoveToIR
+      }))
     },
     scoringSettings: {
       key: 'scoringSettings',
-      manualParse: responseData => lodash_reduce__WEBPACK_IMPORTED_MODULE_3___default()(responseData.scoringItems, (acc, {
+      manualParse: whenPresent(responseData => lodash_reduce__WEBPACK_IMPORTED_MODULE_3___default()(responseData.scoringItems, (acc, {
         points,
         pointsOverrides,
         statId
@@ -2494,11 +2755,91 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
           acc[key] = points;
         }
         return acc;
-      }, {})
+      }, {}))
     }
   };
 }
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (League);
+
+/***/ },
+
+/***/ "./src/matchup/matchup.js"
+/*!********************************!*\
+  !*** ./src/matchup/matchup.js ***!
+  \********************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var lodash_get__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! lodash/get */ "./node_modules/lodash/get.js");
+/* harmony import */ var lodash_get__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(lodash_get__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../base-classes/base-object/base-object */ "./src/base-classes/base-object/base-object.js");
+
+
+
+/**
+ * Represents a single matchup on a league's season schedule.
+ *
+ * This is the lightweight counterpart to `Boxscore`: same source data, but no rosters. A
+ * Boxscore answers "who scored what in week 4"; a Matchup answers "who plays whom, all season" --
+ * including weeks that have not been played, where ESPN sends no rosters, no projections and no win
+ * probabilities at all.
+ *
+ * @augments {BaseObject}
+ */
+class Matchup extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_1__["default"] {
+  static displayName = 'Matchup';
+
+  /**
+   * @typedef {object} MatchupMap
+   *
+   * @property {number} id The matchup's id on the schedule.
+   * @property {number} matchupPeriodId The matchup period the matchup is played in.
+   * @property {string} winner Which side won: `HOME`, `AWAY`, `TIE`, or `UNDECIDED` while the
+   *                           matchup is unplayed or in progress.
+   * @property {string} playoffTierType Which bracket the matchup belongs to. `NONE` for a regular
+   *                                    season game, otherwise a playoff or consolation tier.
+   *
+   * @property {number} homeTeamId The home team's id. Can be used to load a cached Team.
+   * @property {number} homeScore The total points scored by the home team, live where ESPN is
+   *                              scoring the matchup now.
+   * @property {number} homeWinProbability ESPN's live probability the home team wins, from 0 to 1.
+   *   NOTE: Only populated for the current matchup period.
+   *
+   * @property {number} awayTeamId The away team's id. Can be used to load a cached Team. Absent on
+   *                               a bye, which leagues with an odd number of teams will have.
+   * @property {number} awayScore The total points scored by the away team, live where ESPN is
+   *                              scoring the matchup now.
+   * @property {number} awayWinProbability ESPN's live probability the away team wins, from 0 to 1.
+   *   NOTE: Only populated for the current matchup period.
+   */
+
+  /**
+   * @type {MatchupMap}
+   */
+  static responseMap = {
+    id: 'id',
+    matchupPeriodId: 'matchupPeriodId',
+    winner: 'winner',
+    playoffTierType: 'playoffTierType',
+    homeTeamId: 'home.teamId',
+    homeScore: {
+      key: 'home',
+      manualParse: responseData => lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPointsLive') || lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPoints')
+    },
+    homeWinProbability: 'home.winProbability',
+    awayTeamId: 'away.teamId',
+    awayScore: {
+      key: 'away',
+      manualParse: responseData => lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPointsLive') || lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPoints')
+    },
+    awayWinProbability: 'away.winProbability'
+  };
+}
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Matchup);
 
 /***/ },
 
@@ -2652,6 +2993,18 @@ class PlayerStats extends _base_classes_base_object_base_object__WEBPACK_IMPORTE
   static displayName = 'PlayerStats';
 
   /**
+   * @typedef {Record<string, string>} ScoringItems
+   *
+   * Maps each readable scoring item name onto the ESPN stat id it is found at. Referenced by the
+   * `@type` below, which previously named a type defined nowhere -- harmless while the jsdoc was
+   * only read by humans, a dangling reference once declarations are generated from it.
+   *
+   * NOTE: this describes the *map*, not an instance. A populated PlayerStats holds numbers at these
+   * keys, which is why its instance type is declared separately by scripts/build-types.mjs rather
+   * than projected from this map like every other model's.
+   */
+
+  /**
    * @type {ScoringItems}
    */
   static responseMap = {
@@ -2760,7 +3113,7 @@ class Player extends _base_classes_base_cacheable_object_base_cacheable_object_j
    *
    * @property {number} averageDraftPosition The average position the player was drafted at in ESPN
    *                                         snake drafts.
-   * @property {number} averageAuctionValue The average auction price the player fetched in ESPN
+   * @property {number} auctionValueAverage The average auction price the player fetched in ESPN
    *                                         auction drafts.
    * @property {number} percentChange The change in player ownership percentage in the last
    *                                  week across all ESPN leagues.
@@ -2776,6 +3129,8 @@ class Player extends _base_classes_base_cacheable_object_base_cacheable_object_j
    * @property {boolean} isDroppable Whether or not the player can be dropped from a team.
    * @property {boolean} isInjured Whether or not the player is injured.
    * @property {INJURY_STATUSES} injuryStatus The specific injury status/timeline of the player.
+   * @property {object} outlooksByWeek ESPN's written outlook for the player, keyed by scoring
+   *                                   period.
    */
 
   /**
@@ -2884,12 +3239,22 @@ class Team extends _base_classes_base_cacheable_object_base_cacheable_object_js_
   /**
    * @typedef  {object} TeamMap
    *
+   * NOTE: `playoffPct`, `divisionWinPct`, `simulatedRank` and `playoffClinchType` are only present
+   * on ESPN's `mStandings` view. `Client#getTeamsAtWeek` requests it, so they are populated there.
+   * `Client#getHistoricalTeamsAtWeek` does not, because ESPN runs no live playoff simulation for a
+   * completed season: on historical teams these are `undefined` by design, and
+   * `finalStandingsPosition` is the field that carries the answer instead.
+   *
    * @property {number} id The id of the team in the ESPN universe.
    * @property {string} abbreviation The team's abbreviation.
    * @property {string} name The team's name.
-   * @property {string} ownerName The team's primary owner's name
+   * @property {string} ownerName The team's primary owner's name. `undefined` when ESPN sends no
+   *                              matching league member, or sends one with no name on it.
+   * @property {string} primaryOwnerId The SWID of the team's primary owner.
+   * @property {string[]} ownerIds The SWIDs of every owner of the team.
    * @property {string} logoURL The URL for the team's uploaded logo.
-   * @property {number} wavierRank The team's position in the current wavier order.
+   * @property {number} waiverRank The team's position in the current waiver order.
+   * @property {number} divisionId The id of the division the team plays in.
    *
    * @property {Player[]} roster The team's roster of players.
    *
@@ -2909,6 +3274,11 @@ class Team extends _base_classes_base_cacheable_object_base_cacheable_object_js_
    * @property {number} awayLosses The number of regular season match-ups the team has lost away.
    * @property {number} awayTies The number of regular season match-ups the team has tied away.
    *
+   * @property {string} streakType Whether the team's current run of results is a `WIN`, a `LOSS`,
+   *                               or `NONE` when no games have been played.
+   * @property {number} streakLength How many consecutive results the `streakType` covers.
+   * @property {number} gamesBack How far the team trails the leader, in games.
+   *
    * @property {number} totalPointsScored The total points scored by the team in the regular season
    *                                      and playoffs combined.
    * @property {number} regularSeasonPointsFor The total points scored by the team in the regular
@@ -2917,10 +3287,32 @@ class Team extends _base_classes_base_cacheable_object_base_cacheable_object_js_
    *                                               regular season.
    * @property {number} winningPercentage The percentage of games won by the team in the regular
    *                                      season.
+   * @property {number} pointsAdjusted Points added to or removed from the team by the commissioner.
+   * @property {number} pointsDelta The change in the team's points from the previous scoring
+   *                                period.
    *
    * @property {number} playoffSeed The seeding for the team entering the playoffs.
    * @property {number} finalStandingsPosition The final standings position the team ended the
    *                                           season in.
+   * @property {number} playoffPct ESPN's simulated probability the team reaches the playoffs, from
+   *                               0 to 1.
+   * @property {number} divisionWinPct ESPN's simulated probability the team wins its division, from
+   *                                   0 to 1.
+   * @property {number} simulatedRank The final rank ESPN's simulation most often produces.
+   * @property {number} currentProjectedRank The rank ESPN currently projects the team to finish in.
+   * @property {number} draftDayProjectedRank The rank ESPN projected on draft day.
+   * @property {string} playoffClinchType Whether the team has clinched a playoff spot, a bye, or a
+   *                                      division. `UNKNOWN` until ESPN can determine it.
+   * @property {boolean} isEliminated Whether the team is mathematically out of the playoff race.
+   * @property {number} eliminationMatchupPeriod The matchup period in which the team was
+   *                                             eliminated, or 0 if it has not been.
+   *
+   * @property {number} acquisitionBudgetSpent The FAAB the team has spent on waiver claims. Pair
+   *                                           with `League#acquisitionBudget` for the remainder.
+   * @property {number} acquisitionCount The number of players the team has acquired.
+   * @property {number} dropCount The number of players the team has dropped.
+   * @property {number} tradeCount The number of trades the team has completed.
+   * @property {number} moveToIRCount The number of players the team has moved to injured reserve.
    */
 
   /**
@@ -2932,13 +3324,19 @@ class Team extends _base_classes_base_cacheable_object_base_cacheable_object_js_
     name: 'name',
     ownerName: {
       key: 'owner',
-      manualParse: ({
-        firstName,
-        lastName
-      }) => `${lodash_trim__WEBPACK_IMPORTED_MODULE_2___default()(firstName)} ${lodash_trim__WEBPACK_IMPORTED_MODULE_2___default()(lastName)}`
+      // ESPN sends no `members` entry for a departed manager, and sends members with blank names
+      // for some leagues. Both used to produce `' '` or a TypeError; leaving the attribute unset is
+      // both honest and what `_populateObject` does with any other undefined value.
+      manualParse: responseData => {
+        const name = `${lodash_trim__WEBPACK_IMPORTED_MODULE_2___default()(responseData?.firstName)} ${lodash_trim__WEBPACK_IMPORTED_MODULE_2___default()(responseData?.lastName)}`.trim();
+        return name || undefined;
+      }
     },
+    primaryOwnerId: 'primaryOwner',
+    ownerIds: 'owners',
     logoURL: 'logo',
-    wavierRank: 'wavierRank',
+    waiverRank: 'waiverRank',
+    divisionId: 'divisionId',
     roster: {
       key: 'roster.entries',
       isArray: true,
@@ -2956,6 +3354,9 @@ class Team extends _base_classes_base_cacheable_object_base_cacheable_object_js_
     awayWins: 'record.away.wins',
     awayLosses: 'record.away.losses',
     awayTies: 'record.away.ties',
+    streakType: 'record.overall.streakType',
+    streakLength: 'record.overall.streakLength',
+    gamesBack: 'record.overall.gamesBack',
     totalPointsScored: 'points',
     regularSeasonPointsFor: 'record.overall.pointsFor',
     regularSeasonPointsAgainst: 'record.overall.pointsAgainst',
@@ -2963,8 +3364,23 @@ class Team extends _base_classes_base_cacheable_object_base_cacheable_object_js_
       key: 'record.overall.percentage',
       manualParse: responseData => lodash_round__WEBPACK_IMPORTED_MODULE_1___default()(responseData * 100, 2)
     },
+    pointsAdjusted: 'pointsAdjusted',
+    pointsDelta: 'pointsDelta',
     playoffSeed: 'playoffSeed',
-    finalStandingsPosition: 'rankCalculatedFinal'
+    finalStandingsPosition: 'rankCalculatedFinal',
+    playoffPct: 'currentSimulationResults.playoffPct',
+    divisionWinPct: 'currentSimulationResults.divisionWinPct',
+    simulatedRank: 'currentSimulationResults.rank',
+    currentProjectedRank: 'currentProjectedRank',
+    draftDayProjectedRank: 'draftDayProjectedRank',
+    playoffClinchType: 'playoffClinchType',
+    isEliminated: 'eliminated',
+    eliminationMatchupPeriod: 'eliminationMatchupPeriod',
+    acquisitionBudgetSpent: 'transactionCounter.acquisitionBudgetSpent',
+    acquisitionCount: 'transactionCounter.acquisitions',
+    dropCount: 'transactionCounter.drops',
+    tradeCount: 'transactionCounter.trades',
+    moveToIRCount: 'transactionCounter.moveToIR'
   };
 }
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Team);
@@ -10811,10 +11227,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   FreeAgentPlayer: () => (/* reexport safe */ _free_agent_player_free_agent_player__WEBPACK_IMPORTED_MODULE_4__["default"]),
 /* harmony export */   HttpError: () => (/* reexport safe */ _client_http__WEBPACK_IMPORTED_MODULE_5__.HttpError),
 /* harmony export */   League: () => (/* reexport safe */ _league_league__WEBPACK_IMPORTED_MODULE_6__["default"]),
-/* harmony export */   NFLGame: () => (/* reexport safe */ _nfl_game_nfl_game__WEBPACK_IMPORTED_MODULE_7__["default"]),
-/* harmony export */   Player: () => (/* reexport safe */ _player_player__WEBPACK_IMPORTED_MODULE_8__["default"]),
-/* harmony export */   PlayerStats: () => (/* reexport safe */ _player_stats_player_stats__WEBPACK_IMPORTED_MODULE_9__["default"]),
-/* harmony export */   Team: () => (/* reexport safe */ _team_team__WEBPACK_IMPORTED_MODULE_10__["default"])
+/* harmony export */   Matchup: () => (/* reexport safe */ _matchup_matchup__WEBPACK_IMPORTED_MODULE_7__["default"]),
+/* harmony export */   NFLGame: () => (/* reexport safe */ _nfl_game_nfl_game__WEBPACK_IMPORTED_MODULE_8__["default"]),
+/* harmony export */   Player: () => (/* reexport safe */ _player_player__WEBPACK_IMPORTED_MODULE_9__["default"]),
+/* harmony export */   PlayerStats: () => (/* reexport safe */ _player_stats_player_stats__WEBPACK_IMPORTED_MODULE_10__["default"]),
+/* harmony export */   Team: () => (/* reexport safe */ _team_team__WEBPACK_IMPORTED_MODULE_11__["default"])
 /* harmony export */ });
 /* harmony import */ var _boxscore_boxscore__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./boxscore/boxscore */ "./src/boxscore/boxscore.js");
 /* harmony import */ var _boxscore_player_boxscore_player__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./boxscore-player/boxscore-player */ "./src/boxscore-player/boxscore-player.js");
@@ -10823,10 +11240,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _free_agent_player_free_agent_player__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./free-agent-player/free-agent-player */ "./src/free-agent-player/free-agent-player.js");
 /* harmony import */ var _client_http__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./client/http */ "./src/client/http.js");
 /* harmony import */ var _league_league__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./league/league */ "./src/league/league.js");
-/* harmony import */ var _nfl_game_nfl_game__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./nfl-game/nfl-game */ "./src/nfl-game/nfl-game.js");
-/* harmony import */ var _player_player__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./player/player */ "./src/player/player.js");
-/* harmony import */ var _player_stats_player_stats__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./player-stats/player-stats */ "./src/player-stats/player-stats.js");
-/* harmony import */ var _team_team__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./team/team */ "./src/team/team.js");
+/* harmony import */ var _matchup_matchup__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./matchup/matchup */ "./src/matchup/matchup.js");
+/* harmony import */ var _nfl_game_nfl_game__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./nfl-game/nfl-game */ "./src/nfl-game/nfl-game.js");
+/* harmony import */ var _player_player__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./player/player */ "./src/player/player.js");
+/* harmony import */ var _player_stats_player_stats__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./player-stats/player-stats */ "./src/player-stats/player-stats.js");
+/* harmony import */ var _team_team__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./team/team */ "./src/team/team.js");
+
 
 
 

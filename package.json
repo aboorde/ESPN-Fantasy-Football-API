@@ -6,7 +6,9 @@
   "files": [
     "node.js",
     "node.js.LICENSE.txt",
-    "node-dev.js"
+    "node-dev.js",
+    "node.d.ts",
+    "types"
   ],
   "author": {
     "name": "Mike Kreiser",
@@ -19,19 +21,20 @@
   },
   "license": "LGPL-3.0-only",
   "scripts": {
-    "build": "npm run clean:dist && webpack",
+    "build": "npm run clean:dist && webpack && node scripts/build-types.mjs",
     "build:docs": "npm run clean:docs && jsdoc -c .jsdoc.json",
     "clean": "npm run clean:dist && npm run clean:docs",
-    "clean:dist": "rm -rf node.js node.js.map node-dev.js",
+    "clean:dist": "rm -rf node.js node.js.map node-dev.js node.d.ts types",
     "clean:docs": "rm -rf docs",
-    "ci": "npm run clean && npm run lint && npm run test && npm run build && npm run build:docs",
+    "ci": "npm run clean && npm run lint && npm run test && npm run build && npm run build:docs && npm run verify:artifacts",
     "lint": "npm run lint:js && npm run lint:spelling",
     "lint:js": "eslint --cache",
     "lint:spelling": "cspell \"src/**/*.js\" \"integration-tests/**/*.js\" --quiet --cache",
     "prepublishOnly": "npm run build",
     "serve:docs": "npm run build:docs && http-server ./docs -c-1",
     "test": "jest --maxWorkers=2",
-    "test:integration": "jest --maxWorkers=2 --config=jest-integration-tests.config.js"
+    "test:integration": "jest --maxWorkers=2 --config=jest-integration-tests.config.js",
+    "verify:artifacts": "git diff --exit-code -- node.js node.js.map node-dev.js node.js.LICENSE.txt node.d.ts types"
   },
   "repository": {
     "type": "git",
@@ -74,11 +77,13 @@
     "http-server": "^14.1.1",
     "jest": "30.5.0",
     "jsdoc": "^4.0.5",
+    "typescript": "^5.9.3",
     "webpack": "^5.110.2",
     "webpack-cli": "^7.2.3"
   },
   "browserslist": [
     "defaults",
     "not op_mini all"
-  ]
+  ],
+  "types": "node.d.ts"
 }
