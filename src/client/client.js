@@ -19,6 +19,26 @@ import { flattenObjectSansNumericKeys } from '../utils';
 import http from './http';
 
 /**
+ * @typedef  {object} ActivityAction
+ *
+ * One transaction within an activity topic. These are plain objects rather than a BaseObject:
+ * `team` and `player` are ESPN's own raw shapes, passed through so a caller can read whatever it
+ * needs from them.
+ *
+ * @property {object} team The raw ESPN team object that made the move, resolved from the
+ *                         message's `from`, `for` or `to` id depending on the action.
+ * @property {string} action One of `FA ADDED`, `WAIVER ADDED`, `DROPPED`, `TRADED`, or `UNKNOWN`
+ *                          when ESPN sends a message type this client does not label.
+ * @property {object} player The raw ESPN player entry the action targeted. Resolved from the
+ *                           team's roster where the player is still on it, and from the player
+ *                           card endpoint otherwise.
+ * @property {number} bidAmount The winning FAAB bid, for a `WAIVER ADDED`. Zero otherwise.
+ * @property {number} date Epoch milliseconds for the topic the action belongs to.
+ * @property {number} targetId The ESPN id of the player the action targeted.
+ * @property {object} ids The message's raw `from`, `for` and `to` ids.
+ */
+
+/**
  * Maps ESPN's numeric `messageTypeId` onto the readable label `getRecentActivity` reports.
  *
  * ESPN uses three separate ids for a drop depending on how it happened.
@@ -426,26 +446,6 @@ class Client {
    * fantasy football league, newest first. Each element of the returned array corresponds to one
    * activity topic and holds one action per message within that topic.
    *
-   * @typedef  {object} ActivityAction
-   *
-   * One transaction within an activity topic. These are plain objects rather than a BaseObject:
-   * `team` and `player` are ESPN's own raw shapes, passed through so a caller can read whatever it
-   * needs from them.
-   *
-   * @property {object} team The raw ESPN team object that made the move, resolved from the
-   *                         message's `from`, `for` or `to` id depending on the action.
-   * @property {string} action One of `FA ADDED`, `WAIVER ADDED`, `DROPPED`, `TRADED`, or `UNKNOWN`
-   *                          when ESPN sends a message type this client does not label.
-   * @property {object} player The raw ESPN player entry the action targeted. Resolved from the
-   *                           team's roster where the player is still on it, and from the player
-   *                           card endpoint otherwise.
-   * @property {number} bidAmount The winning FAAB bid, for a `WAIVER ADDED`. Zero otherwise.
-   * @property {number} date Epoch milliseconds for the topic the action belongs to.
-   * @property {number} targetId The ESPN id of the player the action targeted.
-   * @property {object} ids The message's raw `from`, `for` and `to` ids.
-   */
-
-  /**
    * @param   {object} options Required options object.
    * @param   {number} options.seasonId The season to grab data from.
    * @param   {string} [options.msgType] Restricts results to one activity type: `FA`, `WAIVER`,
