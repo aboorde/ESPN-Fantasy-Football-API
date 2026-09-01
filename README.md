@@ -70,7 +70,6 @@ airbnb), Jest 30, jsdoc 4 and cspell 10. Several consequences are worth knowing:
 * Supports pulling data from ESPN
 * Private league support (NodeJS version only, see [Important Notes](#important-notes))
 * Highly documented
-* Built for speed and efficiency with caching support
 * Built for extensibility by using ES6 classes
 
 ## Documentation Reference

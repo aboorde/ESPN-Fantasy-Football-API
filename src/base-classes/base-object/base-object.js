@@ -137,10 +137,6 @@ class BaseObject {
      *                                 without input -- `map(undefined)` giving `[]` for a roster
      *                                 ESPN has not sent, say -- or one that reads `rawData` rather
      *                                 than its own key.
-     * @property {boolean} defer Whether or not to wait to parse the entry until a second pass of
-     *                           the map. This is useful for populating items with cached instances
-     *                           that are not guaranteed to be parsed/cached during initial parsing.
-     *                           Example: Using Team instances on League.
      * @property {Function} manualParse A function to manually apply logic to the response. This
      *                                  function must return its result to be attached to the
      *                                  populated BaseObject. The arguments to this function are:
@@ -214,18 +210,7 @@ class BaseObject {
       return instance;
     }
 
-    const deferredMapItems = {};
     forEach(this.responseMap, (value, key) => {
-      if (isPlainObject(value) && value.defer) {
-        set(deferredMapItems, key, value);
-      } else {
-        this._processResponseMapItem({
-          data, rawData, constructorParams, instance, isDataFromServer, key, value
-        });
-      }
-    });
-
-    forEach(deferredMapItems, (value, key) => {
       this._processResponseMapItem({
         data, rawData, constructorParams, instance, isDataFromServer, key, value
       });

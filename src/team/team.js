@@ -2,16 +2,16 @@ import map from 'lodash/map';
 import round from 'lodash/round';
 import trim from 'lodash/trim';
 
-import BaseCacheableObject from '../base-classes/base-cacheable-object/base-cacheable-object.js';
+import BaseObject from '../base-classes/base-object/base-object.js';
 
 import Player from '../player/player';
 
 /**
  * Represents a fantasy football team in a league.
  *
- * @augments {BaseCacheableObject}
+ * @augments {BaseObject}
  */
-class Team extends BaseCacheableObject {
+class Team extends BaseObject {
   constructor(options = {}) {
     super(options);
 
@@ -21,24 +21,6 @@ class Team extends BaseCacheableObject {
   }
 
   static displayName = 'Team';
-
-  /**
-   * Returns valid id params when 'id', `leagueId`, and 'seasonId' are passed.
-   *
-   * @param   {object} params The params to use.
-   * @returns {object|undefined} An object containing the params, or `undefined`.
-   */
-  static getIDParams(params = {}) {
-    if (params.id && params.leagueId && params.seasonId) {
-      return {
-        id: params.id,
-        leagueId: params.leagueId,
-        seasonId: params.seasonId
-      };
-    }
-
-    return undefined;
-  }
 
   /**
    * @typedef  {object} TeamMap

@@ -13,23 +13,6 @@ class DraftPlayer extends Player {
   static displayName = 'DraftPlayer';
 
   /**
-   * Returns valid id params when 'id' and 'seasonId' are passed.
-   *
-   * @param   {object} params The params to use.
-   * @returns {object|undefined} An object containing the params, or `undefined`.
-   */
-  static getIDParams(params = {}) {
-    if (params.playerId && params.seasonId) {
-      return {
-        playerId: params.playerId,
-        seasonId: params.seasonId
-      };
-    }
-
-    return undefined;
-  }
-
-  /**
    * @typedef {object} DraftPlayerMap
    *
    * The attributes DraftPlayer adds. Everything on Player is inherited through the class hierarchy

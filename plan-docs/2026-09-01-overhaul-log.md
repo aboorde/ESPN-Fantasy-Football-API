@@ -10,7 +10,7 @@ Legend: `pending` / `in progress` / `done` / `revised` / `abandoned`
 | 1 | Fix `defaultPosition`; split the position enums | done | `PENDING` |
 | 2 | De-tautologize self-referential assertions | done | `PENDING` |
 | 3 | Reshape `League#scoringSettings` | done | `PENDING` |
-| 4 | Delete `BaseCacheableObject` and the `defer` pass | pending | |
+| 4 | Delete `BaseCacheableObject` and the `defer` pass | done | `PENDING` |
 | 5a | Injectable transport (pure refactor) | pending | |
 | 5b | Timeout, retry, per-Client cache | pending | |
 | 6 | Drop lodash | pending | |
@@ -108,3 +108,27 @@ exercises: a plain rule (53), a D/ST-only rule (89, base 0 override 5), the case
 outright wrong (206, worth 2 to every position *except* D/ST), and an unnamed id (63, worth 6).
 
 393 tests green, coverage still 100%.
+
+### Step 4 - delete the cache
+
+**done.** Removed `BaseCacheableObject` (125 lines), its test file (258 lines), the `defer` pass in
+`_populateObject`, and `getIDParams` from `Team`, `Player` and `DraftPlayer`. `Team` and `Player`
+now extend `BaseObject` directly.
+
+Everything deleted here served one feature that was write-only, unbounded, and broken:
+
+* Nothing in `src/` ever read the cache. It was written on every parse and never evicted.
+* `static get cache()` resolved `this._cache` through the prototype chain, so a subclass returned
+  its *parent's* cache whenever the parent had been populated first. `BoxscorePlayer.cache ===
+  Player.cache` was `true`, directly contradicting the class doc's claim that each class gets a
+  cache "that does not overlap with other BaseCacheableObject classes".
+* `defer` existed to populate entries from cached instances. Zero models used it; only the base
+  class's own tests exercised the two-pass loop.
+
+Neither consumer touches any of it - no `clearCache`, `getCacheId`, `getIDParams`, `.cache` or
+`Team.get(...)` anywhere.
+
+Also dropped the README's "Built for speed and efficiency with caching support" feature bullet,
+which was describing this.
+
+348 tests green (45 fewer, all of them cache tests), coverage still 100%.

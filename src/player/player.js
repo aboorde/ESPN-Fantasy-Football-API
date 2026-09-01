@@ -2,7 +2,7 @@ import get from 'lodash/get';
 import map from 'lodash/map';
 import toNumber from 'lodash/toNumber';
 
-import BaseCacheableObject from '../base-classes/base-cacheable-object/base-cacheable-object.js';
+import BaseObject from '../base-classes/base-object/base-object.js';
 
 import {
   defaultPositionIdToPosition,
@@ -15,9 +15,9 @@ import { toDate } from '../utils';
 /**
  * Represents an NFL player. This model is not directly associated with any fantasy team.
  *
- * @augments {BaseCacheableObject}
+ * @augments {BaseObject}
  */
-class Player extends BaseCacheableObject {
+class Player extends BaseObject {
   constructor(options = {}) {
     super(options);
 
@@ -29,24 +29,6 @@ class Player extends BaseCacheableObject {
   static displayName = 'Player';
 
   static flattenResponse = true;
-
-  /**
-   * Returns valid id params when 'id' and 'seasonId' are passed.
-   *
-   * @param   {object} params The params to use.
-   * @returns {object|undefined} An object containing the params, or `undefined`.
-   */
-  static getIDParams(params = {}) {
-    if (params.id && params.seasonId && params.scoringPeriodId) {
-      return {
-        id: params.id,
-        seasonId: params.seasonId,
-        scoringPeriodId: params.scoringPeriodId
-      };
-    }
-
-    return undefined;
-  }
 
   /**
    * @typedef {object} PlayerMap

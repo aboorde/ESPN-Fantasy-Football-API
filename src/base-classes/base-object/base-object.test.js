@@ -73,12 +73,6 @@ class TestBaseObject extends BaseObject {
       key: 'both',
       BaseObject: MappingTestBaseObject,
       manualParse: jest.fn()
-    },
-    someDeferredObject: {
-      key: 'deferred',
-      BaseObject: MappingTestBaseObject,
-      defer: true,
-      manualParse: jest.fn()
     }
   };
 
@@ -242,32 +236,6 @@ describe('BaseObject', () => {
             });
 
             describe('when the object defines key', () => {
-              describe('when the object defines defer as true', () => {
-                test('processes deferred entries after all non-deferred entries', () => {
-                  data = {
-                    manual: {
-                      mapping_id: 1,
-                      some_value: 'works recursively too'
-                    },
-                    deferred: {
-                      mapping_id: 4,
-                      some_value: 'works recursively too'
-                    }
-                  };
-
-                  expect.assertions(2);
-                  TestBaseObject.responseMap.someManualObject.manualParse.mockImplementation(() => {
-                    expect(
-                      TestBaseObject.responseMap.someDeferredObject.manualParse
-                    ).not.toHaveBeenCalled();
-                  });
-
-                  callPopulate();
-                  expect(TestBaseObject.responseMap.someDeferredObject.manualParse)
-                    .toHaveBeenCalled();
-                });
-              });
-
               describe('when the object defines a manualParse function', () => {
                 beforeEach(() => {
                   data = {
