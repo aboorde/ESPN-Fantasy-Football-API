@@ -11,6 +11,7 @@ import Player from '../player/player';
 import Team from '../team/team';
 
 import Client from './client';
+import { buildResponse, respondWithJson } from './response.stubs.js';
 
 // A response stand-in for the assertions that only care how a request was built, not how its
 // response is parsed. It never settles, so the client assembles and returns its promise chain
@@ -1718,12 +1719,8 @@ describe('Client', () => {
   });
 
   describe('request options', () => {
-    const okResponse = (body) => ({
-      ok: true, status: 200, statusText: 'OK', text: () => Promise.resolve(body)
-    });
-
     test('a configured cache serves a repeated call without a second request', async () => {
-      const fetchMock = jest.fn().mockResolvedValue(okResponse('{"settings":{},"status":{}}'));
+      const fetchMock = jest.fn().mockResolvedValue(buildResponse({ body: '{"settings":{},"status":{}}' }));
       const client = new Client({
         leagueId: 213213, fetch: fetchMock, cache: { ttl: 60000, max: 8 }
       });
@@ -1735,7 +1732,7 @@ describe('Client', () => {
     });
 
     test('no cache is configured by default', async () => {
-      const fetchMock = jest.fn().mockResolvedValue(okResponse('{"settings":{},"status":{}}'));
+      const fetchMock = jest.fn().mockResolvedValue(buildResponse({ body: '{"settings":{},"status":{}}' }));
       const client = new Client({ leagueId: 213213, fetch: fetchMock });
 
       await client.getLeagueInfo({ seasonId: 2018 });
@@ -1747,9 +1744,9 @@ describe('Client', () => {
     test('retries reach the http client', async () => {
       const fetchMock = jest.fn()
         .mockResolvedValueOnce({
-          ok: false, status: 500, statusText: 'boom', text: () => Promise.resolve('{}')
+          ...buildResponse({ ok: false, status: 500, statusText: 'boom' })
         })
-        .mockResolvedValue(okResponse('{"settings":{},"status":{}}'));
+        .mockResolvedValue(buildResponse({ body: '{"settings":{},"status":{}}' }));
       const client = new Client({ leagueId: 213213, fetch: fetchMock });
 
       await client.getLeagueInfo({ seasonId: 2018 });
@@ -1759,7 +1756,7 @@ describe('Client', () => {
 
     test('a 4xx surfaces immediately rather than being retried', async () => {
       const fetchMock = jest.fn().mockResolvedValue({
-        ok: false, status: 401, statusText: 'Unauthorized', text: () => Promise.resolve('{}')
+        ...buildResponse({ ok: false, status: 401, statusText: 'Unauthorized' })
       });
       const client = new Client({ leagueId: 213213, fetch: fetchMock });
 
@@ -1781,9 +1778,7 @@ describe('Client', () => {
     let client;
 
     const respondWith = (body) => {
-      fetchMock.mockResolvedValue({
-        ok: true, status: 200, statusText: 'OK', text: () => Promise.resolve(JSON.stringify(body))
-      });
+      fetchMock.mockResolvedValue(respondWithJson(body));
     };
 
     const urlOfCall = (index = 0) => fetchMock.mock.calls[index][0];
@@ -1836,10 +1831,10 @@ describe('Client', () => {
     test('getRecentActivity resolves the communication route off the host root', async () => {
       fetchMock
         .mockResolvedValueOnce({
-          ok: true, status: 200, statusText: 'OK', text: () => Promise.resolve('{"topics":[]}')
+          ...buildResponse({ body: '{"topics":[]}' })
         })
         .mockResolvedValueOnce({
-          ok: true, status: 200, statusText: 'OK', text: () => Promise.resolve('{"teams":[]}')
+          ...buildResponse({ body: '{"teams":[]}' })
         });
 
       await client.getRecentActivity({ seasonId });

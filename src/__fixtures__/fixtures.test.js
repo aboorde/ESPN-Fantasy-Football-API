@@ -6,6 +6,7 @@ import Client from '../client/client.js';
 import FreeAgentPlayer from '../free-agent-player/free-agent-player.js';
 import League from '../league/league.js';
 import Team from '../team/team.js';
+import { respondWithJson } from '../client/response.stubs.js';
 
 import activity from './activity.json';
 import boxscores from './boxscores.json';
@@ -26,13 +27,9 @@ import teams from './teams.json';
  * SWIDs, because this repository is public -- see the personal-data guard at the bottom.
  */
 describe('recorded ESPN payloads', () => {
-  const respond = (body) => ({
-    ok: true, status: 200, statusText: 'OK', text: () => Promise.resolve(JSON.stringify(body))
-  });
-
   const clientReturning = (...bodies) => {
     const fetchMock = jest.fn();
-    bodies.forEach((body) => fetchMock.mockResolvedValueOnce(respond(body)));
+    bodies.forEach((body) => fetchMock.mockResolvedValueOnce(respondWithJson(body)));
     return new Client({ leagueId: 213213, fetch: fetchMock });
   };
 

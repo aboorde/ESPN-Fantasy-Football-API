@@ -292,8 +292,11 @@ class League extends BaseObject {
 
     scoringSettings: {
       key: 'scoringSettings',
-      manualParse: (responseData) => (responseData.scoringItems ?? []).reduce(
-        ({ base, overrides }, { points, pointsOverrides, statId }) => {
+      manualParse: (responseData) => {
+        const base = {};
+        const overrides = {};
+
+        each(responseData.scoringItems, ({ points, pointsOverrides, statId }) => {
           // An unrecognized stat id becomes `statId<N>` rather than being dropped. The previous
           // `if (!key) return acc` discarded them silently: measured against a real 14-team
           // league, that lost 4 of its 45 scoring rules, one of them worth 6 points a go. The map
@@ -320,11 +323,10 @@ class League extends BaseObject {
             }
             overrides[position][key] = overridePoints;
           });
+        });
 
-          return { base, overrides };
-        },
-        { base: {}, overrides: {} }
-      )
+        return { base, overrides };
+      }
     }
   };
 }

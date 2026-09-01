@@ -1,26 +1,10 @@
 import createHttp, { DEFAULT_BASE_URL, HttpError } from './http';
+import { buildResponse } from './response.stubs.js';
 
 describe('http', () => {
   // The factory takes a fetch, but these tests exercise the default path -- no fetch passed, so
   // the platform's is resolved per request and the global spy below is what answers.
   const http = createHttp();
-
-  /**
-   * Builds a stand-in for a `fetch` Response. Only the members `http.get` reads are defined, so a
-   * test that starts depending on more of the interface fails loudly rather than silently.
-   *
-   * @param   {object} options Response attributes to simulate.
-   * @param   {boolean} [options.ok] Whether the status is in the 2xx range.
-   * @param   {number} [options.status] The HTTP status code.
-   * @param   {string} [options.statusText] The HTTP status text.
-   * @param   {string} [options.body] The raw response body.
-   * @returns {object} The Response stand-in.
-   */
-  const buildResponse = ({
-    ok = true, status = 200, statusText = 'OK', body = '{}'
-  } = {}) => ({
-    ok, status, statusText, text: () => Promise.resolve(body)
-  });
 
   beforeEach(() => {
     jest.spyOn(globalThis, 'fetch').mockResolvedValue(buildResponse());

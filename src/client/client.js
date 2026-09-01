@@ -503,7 +503,7 @@ class Client {
     const mergedData = map(teams, (team) => {
       // The absent-tolerant `find`, not `Array#find`: a response with no `members` key, or a team
       // whose `primaryOwner` has left the league, would otherwise throw and take the whole call.
-      const owner = find(members, (member) => member.id === team.primaryOwner);
+      const owner = find(members, { id: team.primaryOwner });
       return { owner, ...team }; // Don't spread owner to prevent id and other attributes clashing
     });
 
@@ -664,7 +664,7 @@ class Client {
       return this._http.get(playerRoute, playerConfig).then((playerData) => (
         map(activity, (action) => map(action, (msg) => {
           if (!msg.player) {
-            const player = find(playerData.players, (card) => card.id === msg.targetId);
+            const player = find(playerData.players, { id: msg.targetId });
             return { ...msg, player, playerName: activityPlayerName(player) };
           }
           return msg;
@@ -695,11 +695,11 @@ class Client {
       const msgId = message.messageTypeId;
 
       if (msgId === 244) {
-        team = find(teams, (x) => x.id === message.from);
+        team = find(teams, { id: message.from });
       } else if (msgId === 239) {
-        team = find(teams, (x) => x.id === message.for);
+        team = find(teams, { id: message.for });
       } else {
-        team = find(teams, (x) => x.id === message.to);
+        team = find(teams, { id: message.to });
       }
 
       if (ACTIVITY_TYPE_BY_MESSAGE_ID[msgId]) {
@@ -709,7 +709,7 @@ class Client {
         bidAmount = message.from || 0;
       }
       if (team) {
-        player = find(team.roster.entries, (x) => x.playerId === message.targetId);
+        player = find(team.roster.entries, { playerId: message.targetId });
       }
 
       const ids = {
