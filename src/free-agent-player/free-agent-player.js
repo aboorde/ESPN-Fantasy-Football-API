@@ -23,6 +23,8 @@ class FreeAgentPlayer extends Player {
    * @type {FreeAgentPlayerMap}
    */
   static responseMap = {
+    ...Player.responseMap,
+
     rawStatsForYear: {
       key: 'stats',
       manualParse: (responseData, data, rawData, constructorParams) => parsePlayerStats({

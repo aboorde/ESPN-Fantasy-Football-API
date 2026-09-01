@@ -1,4 +1,3 @@
-import assignWith from 'lodash/assignWith';
 import forEach from 'lodash/forEach';
 import get from 'lodash/get';
 import isEmpty from 'lodash/isEmpty';
@@ -15,13 +14,15 @@ import { flattenObjectSansNumericKeys } from '../../utils.js';
  * The base class for all project objects. Provides data mapping functionality.
  */
 class BaseObject {
-  static get responseMap() {
-    return this._responseMap;
-  }
-
-  static set responseMap(_responseMap) {
-    this._responseMap = assignWith({}, this._responseMap, _responseMap);
-  }
+  /**
+   * Maps keys on the instance to where their data lives on an API response. Subclasses override
+   * this, and a subclass that extends another mapped class spreads its parent's map explicitly:
+   *
+   *     static responseMap = { ...Player.responseMap, ownKey: 'own_key' };
+   *
+   * @type {Record<string, (string|ResponseMapValueObject)>}
+   */
+  static responseMap = {};
 
   /**
    * @param {object} options Properties to be assigned to the BaseObject. Must match the keys of the

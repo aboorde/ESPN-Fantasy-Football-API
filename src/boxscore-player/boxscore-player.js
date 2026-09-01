@@ -29,6 +29,8 @@ class BoxscorePlayer extends Player {
    * @type {BoxscorePlayerMap}
    */
   static responseMap = {
+    ...Player.responseMap,
+
     availabilityStatus: {
       key: 'status',
       manualParse: (responseData, data, rawData) => rawData.playerPoolEntry.status

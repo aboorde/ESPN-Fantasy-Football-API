@@ -52,6 +52,8 @@ class DraftPlayer extends Player {
    * @type {DraftPlayerMap}
    */
   static responseMap = {
+    ...Player.responseMap,
+
     id: 'playerId',
     teamId: 'teamId',
 

@@ -762,6 +762,8 @@ __webpack_require__.r(__webpack_exports__);
  * @augments {BaseObject}
  */
 class BaseCacheableObject extends _base_object_base_object_js__WEBPACK_IMPORTED_MODULE_3__["default"] {
+  static displayName = 'BaseCacheableObject';
+
   /**
    * Defers to `BaseObject._populateObject` and then caches the instance using the caching id from
    * `getCacheId`.
@@ -866,7 +868,6 @@ class BaseCacheableObject extends _base_object_base_object_js__WEBPACK_IMPORTED_
     return this.constructor.getCacheId(this);
   }
 }
-BaseCacheableObject.displayName = 'BaseCacheableObject';
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (BaseCacheableObject);
 
 /***/ },
@@ -882,28 +883,25 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var lodash_assignWith__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! lodash/assignWith */ "./node_modules/lodash/assignWith.js");
-/* harmony import */ var lodash_assignWith__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(lodash_assignWith__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var lodash_forEach__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! lodash/forEach */ "./node_modules/lodash/forEach.js");
-/* harmony import */ var lodash_forEach__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(lodash_forEach__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var lodash_get__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! lodash/get */ "./node_modules/lodash/get.js");
-/* harmony import */ var lodash_get__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(lodash_get__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var lodash_isEmpty__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! lodash/isEmpty */ "./node_modules/lodash/isEmpty.js");
-/* harmony import */ var lodash_isEmpty__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(lodash_isEmpty__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var lodash_isFunction__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! lodash/isFunction */ "./node_modules/lodash/isFunction.js");
-/* harmony import */ var lodash_isFunction__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(lodash_isFunction__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var lodash_isPlainObject__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! lodash/isPlainObject */ "./node_modules/lodash/isPlainObject.js");
-/* harmony import */ var lodash_isPlainObject__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(lodash_isPlainObject__WEBPACK_IMPORTED_MODULE_5__);
-/* harmony import */ var lodash_isString__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! lodash/isString */ "./node_modules/lodash/isString.js");
-/* harmony import */ var lodash_isString__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(lodash_isString__WEBPACK_IMPORTED_MODULE_6__);
-/* harmony import */ var lodash_isUndefined__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! lodash/isUndefined */ "./node_modules/lodash/isUndefined.js");
-/* harmony import */ var lodash_isUndefined__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(lodash_isUndefined__WEBPACK_IMPORTED_MODULE_7__);
-/* harmony import */ var lodash_map__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! lodash/map */ "./node_modules/lodash/map.js");
-/* harmony import */ var lodash_map__WEBPACK_IMPORTED_MODULE_8___default = /*#__PURE__*/__webpack_require__.n(lodash_map__WEBPACK_IMPORTED_MODULE_8__);
-/* harmony import */ var lodash_set__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! lodash/set */ "./node_modules/lodash/set.js");
-/* harmony import */ var lodash_set__WEBPACK_IMPORTED_MODULE_9___default = /*#__PURE__*/__webpack_require__.n(lodash_set__WEBPACK_IMPORTED_MODULE_9__);
-/* harmony import */ var _utils_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../../utils.js */ "./src/utils.js");
-
+/* harmony import */ var lodash_forEach__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! lodash/forEach */ "./node_modules/lodash/forEach.js");
+/* harmony import */ var lodash_forEach__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(lodash_forEach__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var lodash_get__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! lodash/get */ "./node_modules/lodash/get.js");
+/* harmony import */ var lodash_get__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(lodash_get__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var lodash_isEmpty__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! lodash/isEmpty */ "./node_modules/lodash/isEmpty.js");
+/* harmony import */ var lodash_isEmpty__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(lodash_isEmpty__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var lodash_isFunction__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! lodash/isFunction */ "./node_modules/lodash/isFunction.js");
+/* harmony import */ var lodash_isFunction__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(lodash_isFunction__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var lodash_isPlainObject__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! lodash/isPlainObject */ "./node_modules/lodash/isPlainObject.js");
+/* harmony import */ var lodash_isPlainObject__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(lodash_isPlainObject__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var lodash_isString__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! lodash/isString */ "./node_modules/lodash/isString.js");
+/* harmony import */ var lodash_isString__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(lodash_isString__WEBPACK_IMPORTED_MODULE_5__);
+/* harmony import */ var lodash_isUndefined__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! lodash/isUndefined */ "./node_modules/lodash/isUndefined.js");
+/* harmony import */ var lodash_isUndefined__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(lodash_isUndefined__WEBPACK_IMPORTED_MODULE_6__);
+/* harmony import */ var lodash_map__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! lodash/map */ "./node_modules/lodash/map.js");
+/* harmony import */ var lodash_map__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(lodash_map__WEBPACK_IMPORTED_MODULE_7__);
+/* harmony import */ var lodash_set__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! lodash/set */ "./node_modules/lodash/set.js");
+/* harmony import */ var lodash_set__WEBPACK_IMPORTED_MODULE_8___default = /*#__PURE__*/__webpack_require__.n(lodash_set__WEBPACK_IMPORTED_MODULE_8__);
+/* harmony import */ var _utils_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../../utils.js */ "./src/utils.js");
 
 
 
@@ -919,12 +917,15 @@ __webpack_require__.r(__webpack_exports__);
  * The base class for all project objects. Provides data mapping functionality.
  */
 class BaseObject {
-  static get responseMap() {
-    return this._responseMap;
-  }
-  static set responseMap(_responseMap) {
-    this._responseMap = lodash_assignWith__WEBPACK_IMPORTED_MODULE_0___default()({}, this._responseMap, _responseMap);
-  }
+  /**
+   * Maps keys on the instance to where their data lives on an API response. Subclasses override
+   * this, and a subclass that extends another mapped class spreads its parent's map explicitly:
+   *
+   *     static responseMap = { ...Player.responseMap, ownKey: 'own_key' };
+   *
+   * @type {Record<string, (string|ResponseMapValueObject)>}
+   */
+  static responseMap = {};
 
   /**
    * @param {object} options Properties to be assigned to the BaseObject. Must match the keys of the
@@ -932,7 +933,7 @@ class BaseObject {
    *                         `constructor`.
    */
   constructor(options = {}) {
-    if (!lodash_isEmpty__WEBPACK_IMPORTED_MODULE_3___default()(options)) {
+    if (!lodash_isEmpty__WEBPACK_IMPORTED_MODULE_2___default()(options)) {
       this.constructor._populateObject({
         data: options,
         instance: this,
@@ -946,6 +947,7 @@ class BaseObject {
    * logging even in minified code.
    * @type {string}
    */
+  static displayName = 'BaseObject';
 
   /**
    * Helper for processing items on `responseMap`s that are objects.
@@ -970,12 +972,12 @@ class BaseObject {
     if (!value.key) {
       throw new Error(`${this.displayName}: _populateObject: Invalid responseMap object. Object must define ` + 'key. See docs for typedef of ResponseMapValueObject.');
     }
-    const responseData = lodash_get__WEBPACK_IMPORTED_MODULE_2___default()(data, value.key);
-    if (lodash_isFunction__WEBPACK_IMPORTED_MODULE_4___default()(value.manualParse)) {
+    const responseData = lodash_get__WEBPACK_IMPORTED_MODULE_1___default()(data, value.key);
+    if (lodash_isFunction__WEBPACK_IMPORTED_MODULE_3___default()(value.manualParse)) {
       return value.manualParse(responseData, data, rawData, constructorParams, instance);
     } else if (value.BaseObject) {
       const buildInstance = passedData => value.BaseObject.buildFromServer(passedData, constructorParams, rawData);
-      return value.isArray ? lodash_map__WEBPACK_IMPORTED_MODULE_8___default()(responseData, buildInstance) : buildInstance(responseData);
+      return value.isArray ? lodash_map__WEBPACK_IMPORTED_MODULE_7___default()(responseData, buildInstance) : buildInstance(responseData);
     }
     throw new Error(`${this.displayName}: _populateObject: Invalid responseMap object. Object must define ` + '`BaseObject` or `manualParse`. See docs for typedef of ResponseMapValueObject.');
   }
@@ -1052,10 +1054,10 @@ class BaseObject {
 
     let item;
     if (!isDataFromServer) {
-      item = lodash_get__WEBPACK_IMPORTED_MODULE_2___default()(data, key);
-    } else if (lodash_isString__WEBPACK_IMPORTED_MODULE_6___default()(value)) {
-      item = lodash_get__WEBPACK_IMPORTED_MODULE_2___default()(data, value);
-    } else if (lodash_isPlainObject__WEBPACK_IMPORTED_MODULE_5___default()(value)) {
+      item = lodash_get__WEBPACK_IMPORTED_MODULE_1___default()(data, key);
+    } else if (lodash_isString__WEBPACK_IMPORTED_MODULE_5___default()(value)) {
+      item = lodash_get__WEBPACK_IMPORTED_MODULE_1___default()(data, value);
+    } else if (lodash_isPlainObject__WEBPACK_IMPORTED_MODULE_4___default()(value)) {
       item = this._processObjectValue({
         data,
         rawData,
@@ -1066,8 +1068,8 @@ class BaseObject {
     } else {
       throw new Error(`${this.displayName}: _populateObject: Did not recognize responseMap value type for key ` + `${key}`);
     }
-    if (!lodash_isUndefined__WEBPACK_IMPORTED_MODULE_7___default()(item)) {
-      lodash_set__WEBPACK_IMPORTED_MODULE_9___default()(instance, key, item);
+    if (!lodash_isUndefined__WEBPACK_IMPORTED_MODULE_6___default()(item)) {
+      lodash_set__WEBPACK_IMPORTED_MODULE_8___default()(instance, key, item);
     }
   }
 
@@ -1095,13 +1097,13 @@ class BaseObject {
   }) {
     if (!instance) {
       throw new Error(`${this.displayName}: _populateObject: Did not receive instance to populate`);
-    } else if (lodash_isEmpty__WEBPACK_IMPORTED_MODULE_3___default()(data)) {
+    } else if (lodash_isEmpty__WEBPACK_IMPORTED_MODULE_2___default()(data)) {
       return instance;
     }
     const deferredMapItems = {};
-    lodash_forEach__WEBPACK_IMPORTED_MODULE_1___default()(this.responseMap, (value, key) => {
-      if (lodash_isPlainObject__WEBPACK_IMPORTED_MODULE_5___default()(value) && value.defer) {
-        lodash_set__WEBPACK_IMPORTED_MODULE_9___default()(deferredMapItems, key, value);
+    lodash_forEach__WEBPACK_IMPORTED_MODULE_0___default()(this.responseMap, (value, key) => {
+      if (lodash_isPlainObject__WEBPACK_IMPORTED_MODULE_4___default()(value) && value.defer) {
+        lodash_set__WEBPACK_IMPORTED_MODULE_8___default()(deferredMapItems, key, value);
       } else {
         this._processResponseMapItem({
           data,
@@ -1114,7 +1116,7 @@ class BaseObject {
         });
       }
     });
-    lodash_forEach__WEBPACK_IMPORTED_MODULE_1___default()(deferredMapItems, (value, key) => {
+    lodash_forEach__WEBPACK_IMPORTED_MODULE_0___default()(deferredMapItems, (value, key) => {
       this._processResponseMapItem({
         data,
         rawData,
@@ -1139,7 +1141,7 @@ class BaseObject {
    */
   static buildFromServer(data, constructorParams) {
     const instance = new this(constructorParams);
-    const flatData = this.flattenResponse ? (0,_utils_js__WEBPACK_IMPORTED_MODULE_10__.flattenObjectSansNumericKeys)(data) : data;
+    const flatData = this.flattenResponse ? (0,_utils_js__WEBPACK_IMPORTED_MODULE_9__.flattenObjectSansNumericKeys)(data) : data;
     this._populateObject({
       data: flatData,
       rawData: data,
@@ -1150,7 +1152,6 @@ class BaseObject {
     return instance;
   }
 }
-BaseObject.displayName = 'BaseObject';
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (BaseObject);
 
 /***/ },
@@ -1181,77 +1182,81 @@ __webpack_require__.r(__webpack_exports__);
  *
  * @augments {Player}
  */
-class BoxscorePlayer extends _player_player__WEBPACK_IMPORTED_MODULE_1__["default"] {}
-BoxscorePlayer.displayName = 'BoxscorePlayer';
-/**
- * @typedef {PlayerMap} BoxscorePlayerMap
- *
- * @property {Player} player The player model representing the NFL player.
- * @property {string} rosteredPosition The position the player is slotted at in the fantasy lineup
- * @property {number} totalPoints The total points scored by the player.
- * @property {PlayerStats} pointBreakdown The PlayerStats model with the points scored by the
- *                                        player.
- * @property {PlayerStats} rawStats The PlayerStats model with the raw statistics registered by
- *                                  the player.
- */
-/**
- * @type {BoxscorePlayerMap}
- */
-BoxscorePlayer.responseMap = {
-  availabilityStatus: {
-    key: 'status',
-    manualParse: (responseData, data, rawData) => rawData.playerPoolEntry.status
-  },
-  rosteredPosition: {
-    key: 'lineupSlotId',
-    manualParse: responseData => lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(_constants__WEBPACK_IMPORTED_MODULE_3__.slotCategoryIdToPositionMap, responseData)
-  },
-  totalPoints: 'appliedStatTotal',
-  pointBreakdown: {
-    key: 'stats',
-    manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_2__.parsePlayerStats)({
-      responseData,
-      constructorParams,
-      usesPoints: true,
-      statKey: 'appliedStats',
-      statSourceId: 0,
-      statSplitTypeId: 1
-    })
-  },
-  projectedPointBreakdown: {
-    key: 'stats',
-    manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_2__.parsePlayerStats)({
-      responseData,
-      constructorParams,
-      usesPoints: true,
-      statKey: 'appliedStats',
-      statSourceId: 1,
-      statSplitTypeId: 1
-    })
-  },
-  rawStats: {
-    key: 'stats',
-    manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_2__.parsePlayerStats)({
-      responseData,
-      constructorParams,
-      usesPoints: false,
-      statKey: 'stats',
-      statSourceId: 0,
-      statSplitTypeId: 1
-    })
-  },
-  projectedRawStats: {
-    key: 'stats',
-    manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_2__.parsePlayerStats)({
-      responseData,
-      constructorParams,
-      usesPoints: false,
-      statKey: 'stats',
-      statSourceId: 1,
-      statSplitTypeId: 1
-    })
-  }
-};
+class BoxscorePlayer extends _player_player__WEBPACK_IMPORTED_MODULE_1__["default"] {
+  static displayName = 'BoxscorePlayer';
+
+  /**
+   * @typedef {PlayerMap} BoxscorePlayerMap
+   *
+   * @property {Player} player The player model representing the NFL player.
+   * @property {string} rosteredPosition The position the player is slotted at in the fantasy lineup
+   * @property {number} totalPoints The total points scored by the player.
+   * @property {PlayerStats} pointBreakdown The PlayerStats model with the points scored by the
+   *                                        player.
+   * @property {PlayerStats} rawStats The PlayerStats model with the raw statistics registered by
+   *                                  the player.
+   */
+
+  /**
+   * @type {BoxscorePlayerMap}
+   */
+  static responseMap = {
+    ..._player_player__WEBPACK_IMPORTED_MODULE_1__["default"].responseMap,
+    availabilityStatus: {
+      key: 'status',
+      manualParse: (responseData, data, rawData) => rawData.playerPoolEntry.status
+    },
+    rosteredPosition: {
+      key: 'lineupSlotId',
+      manualParse: responseData => lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(_constants__WEBPACK_IMPORTED_MODULE_3__.slotCategoryIdToPositionMap, responseData)
+    },
+    totalPoints: 'appliedStatTotal',
+    pointBreakdown: {
+      key: 'stats',
+      manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_2__.parsePlayerStats)({
+        responseData,
+        constructorParams,
+        usesPoints: true,
+        statKey: 'appliedStats',
+        statSourceId: 0,
+        statSplitTypeId: 1
+      })
+    },
+    projectedPointBreakdown: {
+      key: 'stats',
+      manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_2__.parsePlayerStats)({
+        responseData,
+        constructorParams,
+        usesPoints: true,
+        statKey: 'appliedStats',
+        statSourceId: 1,
+        statSplitTypeId: 1
+      })
+    },
+    rawStats: {
+      key: 'stats',
+      manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_2__.parsePlayerStats)({
+        responseData,
+        constructorParams,
+        usesPoints: false,
+        statKey: 'stats',
+        statSourceId: 0,
+        statSplitTypeId: 1
+      })
+    },
+    projectedRawStats: {
+      key: 'stats',
+      manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_2__.parsePlayerStats)({
+        responseData,
+        constructorParams,
+        usesPoints: false,
+        statKey: 'stats',
+        statSourceId: 1,
+        statSplitTypeId: 1
+      })
+    }
+  };
+}
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (BoxscorePlayer);
 
 /***/ },
@@ -1283,52 +1288,55 @@ __webpack_require__.r(__webpack_exports__);
  *
  * @augments {BaseObject}
  */
-class Boxscore extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_2__["default"] {}
-Boxscore.displayName = 'Boxscore';
-/**
- * @typedef {object} BoxscoreMap
- *
- * @property {number} homeScore The total points scored by the home team.
- * @property {number} homeProjectedScore The projected total points scored by the home team.
- *   NOTE: This field is only populated in the boxscore for the current matchup period!
- * @property {number} homeTeamId The home team's id. Can be used to load a cached Team.
- * @property {BoxscorePlayer[]} homeRoster The home team's roster, containing player info and
- *                                         stats.
- *
- * @property {number} awayScore The total points scored by the away team.
- * @property {number} awayProjectedScore The projected total points scored by the away team.
- *   NOTE: This field is only populated in the boxscore for the current matchup period!
- * @property {number} awayTeamId The away team's id. Can be used to load a cached Team.
- * @property {BoxscorePlayer[]} awayRoster The away team's roster, containing player info and
- *                                         stats.
- */
-/**
- * @type {BoxscoreMap}
- */
-Boxscore.responseMap = {
-  homeScore: {
-    key: 'home',
-    manualParse: responseData => lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPointsLive') || lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPoints')
-  },
-  homeProjectedScore: 'home.totalProjectedPointsLive',
-  homeTeamId: 'home.teamId',
-  homeRoster: {
-    key: 'home.rosterForCurrentScoringPeriod.entries',
-    isArray: true,
-    manualParse: (responseData, data, rawData, constructorParams) => lodash_map__WEBPACK_IMPORTED_MODULE_1___default()(responseData, playerData => _boxscore_player_boxscore_player__WEBPACK_IMPORTED_MODULE_3__["default"].buildFromServer(playerData, constructorParams))
-  },
-  awayScore: {
-    key: 'away',
-    manualParse: responseData => lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPointsLive') || lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPoints')
-  },
-  awayProjectedScore: 'away.totalProjectedPointsLive',
-  awayTeamId: 'away.teamId',
-  awayRoster: {
-    key: 'away.rosterForCurrentScoringPeriod.entries',
-    isArray: true,
-    manualParse: (responseData, data, rawData, constructorParams) => lodash_map__WEBPACK_IMPORTED_MODULE_1___default()(responseData, playerData => _boxscore_player_boxscore_player__WEBPACK_IMPORTED_MODULE_3__["default"].buildFromServer(playerData, constructorParams))
-  }
-};
+class Boxscore extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_2__["default"] {
+  static displayName = 'Boxscore';
+
+  /**
+   * @typedef {object} BoxscoreMap
+   *
+   * @property {number} homeScore The total points scored by the home team.
+   * @property {number} homeProjectedScore The projected total points scored by the home team.
+   *   NOTE: This field is only populated in the boxscore for the current matchup period!
+   * @property {number} homeTeamId The home team's id. Can be used to load a cached Team.
+   * @property {BoxscorePlayer[]} homeRoster The home team's roster, containing player info and
+   *                                         stats.
+   *
+   * @property {number} awayScore The total points scored by the away team.
+   * @property {number} awayProjectedScore The projected total points scored by the away team.
+   *   NOTE: This field is only populated in the boxscore for the current matchup period!
+   * @property {number} awayTeamId The away team's id. Can be used to load a cached Team.
+   * @property {BoxscorePlayer[]} awayRoster The away team's roster, containing player info and
+   *                                         stats.
+   */
+
+  /**
+   * @type {BoxscoreMap}
+   */
+  static responseMap = {
+    homeScore: {
+      key: 'home',
+      manualParse: responseData => lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPointsLive') || lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPoints')
+    },
+    homeProjectedScore: 'home.totalProjectedPointsLive',
+    homeTeamId: 'home.teamId',
+    homeRoster: {
+      key: 'home.rosterForCurrentScoringPeriod.entries',
+      isArray: true,
+      manualParse: (responseData, data, rawData, constructorParams) => lodash_map__WEBPACK_IMPORTED_MODULE_1___default()(responseData, playerData => _boxscore_player_boxscore_player__WEBPACK_IMPORTED_MODULE_3__["default"].buildFromServer(playerData, constructorParams))
+    },
+    awayScore: {
+      key: 'away',
+      manualParse: responseData => lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPointsLive') || lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPoints')
+    },
+    awayProjectedScore: 'away.totalProjectedPointsLive',
+    awayTeamId: 'away.teamId',
+    awayRoster: {
+      key: 'away.rosterForCurrentScoringPeriod.entries',
+      isArray: true,
+      manualParse: (responseData, data, rawData, constructorParams) => lodash_map__WEBPACK_IMPORTED_MODULE_1___default()(responseData, playerData => _boxscore_player_boxscore_player__WEBPACK_IMPORTED_MODULE_3__["default"].buildFromServer(playerData, constructorParams))
+    }
+  };
+}
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Boxscore);
 
 /***/ },
@@ -2743,6 +2751,8 @@ __webpack_require__.r(__webpack_exports__);
  * @augments {Player}
  */
 class DraftPlayer extends _player_player__WEBPACK_IMPORTED_MODULE_2__["default"] {
+  static displayName = 'DraftPlayer';
+
   /**
    * Returns valid id params when 'id' and 'seasonId' are passed.
    *
@@ -2781,54 +2791,54 @@ class DraftPlayer extends _player_player__WEBPACK_IMPORTED_MODULE_2__["default"]
   /**
    * @type {DraftPlayerMap}
    */
+  static responseMap = {
+    ..._player_player__WEBPACK_IMPORTED_MODULE_2__["default"].responseMap,
+    id: 'playerId',
+    teamId: 'teamId',
+    overallPickNumber: 'overallPickNumber',
+    roundNumber: 'roundId',
+    roundPickNumber: 'roundPickNumber',
+    isKeeper: 'keeper',
+    bidAmount: 'bidAmount',
+    nominatingTeamId: 'nominatingTeamId',
+    positionalRanking: {
+      key: 'ratings',
+      manualParse: responseData => lodash_first__WEBPACK_IMPORTED_MODULE_0___default()(lodash_values__WEBPACK_IMPORTED_MODULE_1___default()(responseData))?.positionalRanking
+    },
+    overallRanking: {
+      key: 'ratings',
+      manualParse: responseData => lodash_first__WEBPACK_IMPORTED_MODULE_0___default()(lodash_values__WEBPACK_IMPORTED_MODULE_1___default()(responseData))?.totalRanking
+    },
+    rawStatsForYear: {
+      key: 'stats',
+      manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_3__.parsePlayerStats)({
+        responseData,
+        constructorParams,
+        usesPoints: false,
+        seasonId: constructorParams.seasonId,
+        statKey: 'stats',
+        statSourceId: 0,
+        statSplitTypeId: 0
+      })
+    },
+    projectedRawStatsForYear: {
+      key: 'stats',
+      manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_3__.parsePlayerStats)({
+        responseData,
+        constructorParams,
+        usesPoints: false,
+        seasonId: constructorParams.seasonId,
+        statKey: 'stats',
+        statSourceId: 1,
+        statSplitTypeId: 0
+      })
+    },
+    pointsScoredThisSeason: {
+      key: 'ratings',
+      manualParse: responseData => lodash_first__WEBPACK_IMPORTED_MODULE_0___default()(lodash_values__WEBPACK_IMPORTED_MODULE_1___default()(responseData))?.totalRating
+    }
+  };
 }
-DraftPlayer.displayName = 'DraftPlayer';
-DraftPlayer.responseMap = {
-  id: 'playerId',
-  teamId: 'teamId',
-  overallPickNumber: 'overallPickNumber',
-  roundNumber: 'roundId',
-  roundPickNumber: 'roundPickNumber',
-  isKeeper: 'keeper',
-  bidAmount: 'bidAmount',
-  nominatingTeamId: 'nominatingTeamId',
-  positionalRanking: {
-    key: 'ratings',
-    manualParse: responseData => lodash_first__WEBPACK_IMPORTED_MODULE_0___default()(lodash_values__WEBPACK_IMPORTED_MODULE_1___default()(responseData))?.positionalRanking
-  },
-  overallRanking: {
-    key: 'ratings',
-    manualParse: responseData => lodash_first__WEBPACK_IMPORTED_MODULE_0___default()(lodash_values__WEBPACK_IMPORTED_MODULE_1___default()(responseData))?.totalRanking
-  },
-  rawStatsForYear: {
-    key: 'stats',
-    manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_3__.parsePlayerStats)({
-      responseData,
-      constructorParams,
-      usesPoints: false,
-      seasonId: constructorParams.seasonId,
-      statKey: 'stats',
-      statSourceId: 0,
-      statSplitTypeId: 0
-    })
-  },
-  projectedRawStatsForYear: {
-    key: 'stats',
-    manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_3__.parsePlayerStats)({
-      responseData,
-      constructorParams,
-      usesPoints: false,
-      seasonId: constructorParams.seasonId,
-      statKey: 'stats',
-      statSourceId: 1,
-      statSplitTypeId: 0
-    })
-  },
-  pointsScoredThisSeason: {
-    key: 'ratings',
-    manualParse: responseData => lodash_first__WEBPACK_IMPORTED_MODULE_0___default()(lodash_values__WEBPACK_IMPORTED_MODULE_1___default()(responseData))?.totalRating
-  }
-};
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (DraftPlayer);
 
 /***/ },
@@ -2854,71 +2864,75 @@ __webpack_require__.r(__webpack_exports__);
  *
  * @augments {Player}
  */
-class FreeAgentPlayer extends _player_player__WEBPACK_IMPORTED_MODULE_0__["default"] {}
-FreeAgentPlayer.displayName = 'FreeAgentPlayer';
-/**
- * @typedef {PlayerMap} FreeAgentPlayerMap
- *
- * @property {PlayerStats} rawStats The PlayerStats model with the raw statistics registered by
- *                                  the player over the season.
- * @property {PlayerStats} projectedRawStats The PlayerStats model with the raw statistics
- *                                           projected by the player over the season.
- */
-/**
- * @type {FreeAgentPlayerMap}
- */
-FreeAgentPlayer.responseMap = {
-  rawStatsForYear: {
-    key: 'stats',
-    manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_1__.parsePlayerStats)({
-      responseData,
-      constructorParams,
-      usesPoints: false,
-      seasonId: constructorParams.seasonId,
-      statKey: 'stats',
-      statSourceId: 0,
-      statSplitTypeId: 0
-    })
-  },
-  projectedRawStatsForYear: {
-    key: 'stats',
-    manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_1__.parsePlayerStats)({
-      responseData,
-      constructorParams,
-      usesPoints: false,
-      seasonId: constructorParams.seasonId,
-      statKey: 'stats',
-      statSourceId: 1,
-      statSplitTypeId: 0
-    })
-  },
-  rawStatsForScoringPeriod: {
-    key: 'stats',
-    manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_1__.parsePlayerStats)({
-      responseData,
-      constructorParams,
-      usesPoints: false,
-      seasonId: constructorParams.seasonId,
-      scoringPeriodId: constructorParams.scoringPeriodId,
-      statKey: 'stats',
-      statSourceId: 0,
-      statSplitTypeId: 1
-    })
-  },
-  projectedRawStatsForScoringPeriod: {
-    key: 'stats',
-    manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_1__.parsePlayerStats)({
-      responseData,
-      constructorParams,
-      usesPoints: false,
-      seasonId: constructorParams.seasonId,
-      scoringPeriodId: constructorParams.scoringPeriodId,
-      statKey: 'stats',
-      statSourceId: 1,
-      statSplitTypeId: 1
-    })
-  }
-};
+class FreeAgentPlayer extends _player_player__WEBPACK_IMPORTED_MODULE_0__["default"] {
+  static displayName = 'FreeAgentPlayer';
+
+  /**
+   * @typedef {PlayerMap} FreeAgentPlayerMap
+   *
+   * @property {PlayerStats} rawStats The PlayerStats model with the raw statistics registered by
+   *                                  the player over the season.
+   * @property {PlayerStats} projectedRawStats The PlayerStats model with the raw statistics
+   *                                           projected by the player over the season.
+   */
+
+  /**
+   * @type {FreeAgentPlayerMap}
+   */
+  static responseMap = {
+    ..._player_player__WEBPACK_IMPORTED_MODULE_0__["default"].responseMap,
+    rawStatsForYear: {
+      key: 'stats',
+      manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_1__.parsePlayerStats)({
+        responseData,
+        constructorParams,
+        usesPoints: false,
+        seasonId: constructorParams.seasonId,
+        statKey: 'stats',
+        statSourceId: 0,
+        statSplitTypeId: 0
+      })
+    },
+    projectedRawStatsForYear: {
+      key: 'stats',
+      manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_1__.parsePlayerStats)({
+        responseData,
+        constructorParams,
+        usesPoints: false,
+        seasonId: constructorParams.seasonId,
+        statKey: 'stats',
+        statSourceId: 1,
+        statSplitTypeId: 0
+      })
+    },
+    rawStatsForScoringPeriod: {
+      key: 'stats',
+      manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_1__.parsePlayerStats)({
+        responseData,
+        constructorParams,
+        usesPoints: false,
+        seasonId: constructorParams.seasonId,
+        scoringPeriodId: constructorParams.scoringPeriodId,
+        statKey: 'stats',
+        statSourceId: 0,
+        statSplitTypeId: 1
+      })
+    },
+    projectedRawStatsForScoringPeriod: {
+      key: 'stats',
+      manualParse: (responseData, data, rawData, constructorParams) => (0,_player_stats_player_stats__WEBPACK_IMPORTED_MODULE_1__.parsePlayerStats)({
+        responseData,
+        constructorParams,
+        usesPoints: false,
+        seasonId: constructorParams.seasonId,
+        scoringPeriodId: constructorParams.scoringPeriodId,
+        statKey: 'stats',
+        statSourceId: 1,
+        statSplitTypeId: 1
+      })
+    }
+  };
+}
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (FreeAgentPlayer);
 
 /***/ },
@@ -2962,111 +2976,117 @@ __webpack_require__.r(__webpack_exports__);
  *
  * @augments {BaseObject}
  */
-class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_6__["default"] {}
-League.displayName = 'League';
-/**
- * @typedef {object} DraftSettings
- *
- * @property {Date} date The date of the draft.
- * @property {DRAFT_TYPE} type The type of draft.
- * @property {number} timePerPick The amount of time to make a selection.
- * @property {boolean} canTradeDraftPicks Whether or not draft picks can be traded.
- * @property {number} currentMatchupPeriodId The current matchup period id (see README.md for
- *   matchupPeriod v. scoringPeriod)
- * @property {number} currentScoringPeriodId The current scoring period id (see README.md for
- *   matchupPeriod v. scoringPeriod)
- */
-/**
- * @typedef {object} RosterSettings
- *
- * @property {object} lineupPositionCount How many slots of each position are in a starting
- *                                        lineup. Key is position; value is count.
- * @property {object} positionLimits The maximum number of players that may be rostered of each
- *                                   position. Key is position; value is count.
- * @property {LINEUP_LOCK_TIMES} locktime When the starting lineup for a roster locks.
- */
-/**
- * @typedef {object} ScheduleSettings
- *
- * @property {number} numberOfRegularSeasonMatchups The number of regular season matchups a team
- *                                                  will have on the schedule.
- * @property {number} regularSeasonMatchupLength How many weeks each regular season matchup lasts.
- * @property {number} numberOfPlayoffMatchups The number of playoff matchups a team will have
- *                                            on the schedule.
- * @property {number} playoffMatchupLength How many weeks each playoff matchup lasts.
- * @property {number} numberOfPlayoffTeams The number of playoff teams there will be.
- */
-/**
- * @typedef {object} LeagueMap
- *
- * @property {string} name The name of the league.
- * @property {number} size The number of teams in the league.
- * @property {boolean} isPublic Whether or not the league is publically visible and accessible.
- *
- * @property {DraftSettings} draftSettings The draft settings of the league.
- * @property {RosterSettings} rosterSettings The roster settings of the league.
- * @property {ScheduleSettings} scheduleSettings The schedule settings of the league.
- * @property {object} scoringSettings The scoring settings of the league.
- */
-/**
- * @type {LeagueMap}
- */
-League.responseMap = {
-  name: 'name',
-  size: 'size',
-  isPublic: 'isPublic',
-  currentMatchupPeriodId: 'currentMatchupPeriodId',
-  currentScoringPeriodId: 'currentScoringPeriodId',
-  draftSettings: {
-    key: 'draftSettings',
-    manualParse: responseData => ({
-      date: new Date(responseData.date),
-      type: responseData.type,
-      timePerPick: responseData.timePerSelection,
-      canTradeDraftPicks: responseData.isTradingEnabled
-    })
-  },
-  rosterSettings: {
-    key: 'rosterSettings',
-    manualParse: responseData => ({
-      lineupPositionCount: lodash_mapKeys__WEBPACK_IMPORTED_MODULE_2___default()(responseData.lineupSlotCounts, (count, position) => lodash_get__WEBPACK_IMPORTED_MODULE_1___default()(_constants__WEBPACK_IMPORTED_MODULE_7__.slotCategoryIdToPositionMap, position)),
-      positionLimits: lodash_mapKeys__WEBPACK_IMPORTED_MODULE_2___default()(responseData.positionLimits, (count, position) => lodash_get__WEBPACK_IMPORTED_MODULE_1___default()(_constants__WEBPACK_IMPORTED_MODULE_7__.slotCategoryIdToPositionMap, position)),
-      locktime: responseData.rosterLocktimeType
-    })
-  },
-  scheduleSettings: {
-    key: 'scheduleSettings',
-    manualParse: responseData => {
-      const numberOfPlayoffMatchups = lodash_toSafeInteger__WEBPACK_IMPORTED_MODULE_4___default()((17 - responseData.matchupPeriodCount * responseData.matchupPeriodLength) / responseData.playoffMatchupPeriodLength);
-      return {
-        numberOfRegularSeasonMatchups: responseData.matchupPeriodCount,
-        regularSeasonMatchupLength: responseData.matchupPeriodLength,
-        numberOfPlayoffMatchups,
-        playoffMatchupLength: responseData.playoffMatchupPeriodLength,
-        numberOfPlayoffTeams: responseData.playoffTeamCount
-      };
-    }
-  },
-  scoringSettings: {
-    key: 'scoringSettings',
-    manualParse: responseData => lodash_reduce__WEBPACK_IMPORTED_MODULE_3___default()(responseData.scoringItems, (acc, {
-      points,
-      pointsOverrides,
-      statId
-    }) => {
-      const key = _constants__WEBPACK_IMPORTED_MODULE_7__.scoringIdToItem[statId];
-      if (!key) {
+class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_6__["default"] {
+  static displayName = 'League';
+
+  /**
+   * @typedef {object} DraftSettings
+   *
+   * @property {Date} date The date of the draft.
+   * @property {DRAFT_TYPE} type The type of draft.
+   * @property {number} timePerPick The amount of time to make a selection.
+   * @property {boolean} canTradeDraftPicks Whether or not draft picks can be traded.
+   * @property {number} currentMatchupPeriodId The current matchup period id (see README.md for
+   *   matchupPeriod v. scoringPeriod)
+   * @property {number} currentScoringPeriodId The current scoring period id (see README.md for
+   *   matchupPeriod v. scoringPeriod)
+   */
+
+  /**
+   * @typedef {object} RosterSettings
+   *
+   * @property {object} lineupPositionCount How many slots of each position are in a starting
+   *                                        lineup. Key is position; value is count.
+   * @property {object} positionLimits The maximum number of players that may be rostered of each
+   *                                   position. Key is position; value is count.
+   * @property {LINEUP_LOCK_TIMES} locktime When the starting lineup for a roster locks.
+   */
+
+  /**
+   * @typedef {object} ScheduleSettings
+   *
+   * @property {number} numberOfRegularSeasonMatchups The number of regular season matchups a team
+   *                                                  will have on the schedule.
+   * @property {number} regularSeasonMatchupLength How many weeks each regular season matchup lasts.
+   * @property {number} numberOfPlayoffMatchups The number of playoff matchups a team will have
+   *                                            on the schedule.
+   * @property {number} playoffMatchupLength How many weeks each playoff matchup lasts.
+   * @property {number} numberOfPlayoffTeams The number of playoff teams there will be.
+   */
+
+  /**
+   * @typedef {object} LeagueMap
+   *
+   * @property {string} name The name of the league.
+   * @property {number} size The number of teams in the league.
+   * @property {boolean} isPublic Whether or not the league is publically visible and accessible.
+   *
+   * @property {DraftSettings} draftSettings The draft settings of the league.
+   * @property {RosterSettings} rosterSettings The roster settings of the league.
+   * @property {ScheduleSettings} scheduleSettings The schedule settings of the league.
+   * @property {object} scoringSettings The scoring settings of the league.
+   */
+
+  /**
+   * @type {LeagueMap}
+   */
+  static responseMap = {
+    name: 'name',
+    size: 'size',
+    isPublic: 'isPublic',
+    currentMatchupPeriodId: 'currentMatchupPeriodId',
+    currentScoringPeriodId: 'currentScoringPeriodId',
+    draftSettings: {
+      key: 'draftSettings',
+      manualParse: responseData => ({
+        date: new Date(responseData.date),
+        type: responseData.type,
+        timePerPick: responseData.timePerSelection,
+        canTradeDraftPicks: responseData.isTradingEnabled
+      })
+    },
+    rosterSettings: {
+      key: 'rosterSettings',
+      manualParse: responseData => ({
+        lineupPositionCount: lodash_mapKeys__WEBPACK_IMPORTED_MODULE_2___default()(responseData.lineupSlotCounts, (count, position) => lodash_get__WEBPACK_IMPORTED_MODULE_1___default()(_constants__WEBPACK_IMPORTED_MODULE_7__.slotCategoryIdToPositionMap, position)),
+        positionLimits: lodash_mapKeys__WEBPACK_IMPORTED_MODULE_2___default()(responseData.positionLimits, (count, position) => lodash_get__WEBPACK_IMPORTED_MODULE_1___default()(_constants__WEBPACK_IMPORTED_MODULE_7__.slotCategoryIdToPositionMap, position)),
+        locktime: responseData.rosterLocktimeType
+      })
+    },
+    scheduleSettings: {
+      key: 'scheduleSettings',
+      manualParse: responseData => {
+        const numberOfPlayoffMatchups = lodash_toSafeInteger__WEBPACK_IMPORTED_MODULE_4___default()((17 - responseData.matchupPeriodCount * responseData.matchupPeriodLength) / responseData.playoffMatchupPeriodLength);
+        return {
+          numberOfRegularSeasonMatchups: responseData.matchupPeriodCount,
+          regularSeasonMatchupLength: responseData.matchupPeriodLength,
+          numberOfPlayoffMatchups,
+          playoffMatchupLength: responseData.playoffMatchupPeriodLength,
+          numberOfPlayoffTeams: responseData.playoffTeamCount
+        };
+      }
+    },
+    scoringSettings: {
+      key: 'scoringSettings',
+      manualParse: responseData => lodash_reduce__WEBPACK_IMPORTED_MODULE_3___default()(responseData.scoringItems, (acc, {
+        points,
+        pointsOverrides,
+        statId
+      }) => {
+        const key = _constants__WEBPACK_IMPORTED_MODULE_7__.scoringIdToItem[statId];
+        if (!key) {
+          return acc;
+        }
+        if (pointsOverrides) {
+          acc[key] = lodash_first__WEBPACK_IMPORTED_MODULE_0___default()(lodash_values__WEBPACK_IMPORTED_MODULE_5___default()(pointsOverrides));
+        } else {
+          acc[key] = points;
+        }
         return acc;
-      }
-      if (pointsOverrides) {
-        acc[key] = lodash_first__WEBPACK_IMPORTED_MODULE_0___default()(lodash_values__WEBPACK_IMPORTED_MODULE_5___default()(pointsOverrides));
-      } else {
-        acc[key] = points;
-      }
-      return acc;
-    }, {})
-  }
-};
+      }, {})
+    }
+  };
+}
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (League);
 
 /***/ },
@@ -3090,7 +3110,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var lodash_toSafeInteger__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(lodash_toSafeInteger__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var _base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../base-classes/base-object/base-object */ "./src/base-classes/base-object/base-object.js");
 /* harmony import */ var _constants_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants.js */ "./src/constants.js");
-var _NFLGame;
 
 
 
@@ -3103,6 +3122,68 @@ var _NFLGame;
  * @augments {BaseObject}
  */
 class NFLGame extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_3__["default"] {
+  static displayName = 'NFLGame';
+  static GAME_STATUSES = {
+    pre: 'Not Started',
+    in: 'In Progress',
+    post: 'Final'
+  };
+
+  /**
+   * @typedef {object} NFLTeam
+   *
+   * @property {number} id The id of the NFL team in the ESPN universe.
+   * @property {string} team The name of the NFL team.
+   * @property {string} teamAbbrev The name abbreviation of the NFL team.
+   * @property {string} record The win/loss/tie record of the NFL team.
+   * @property {number} score The score of the NFL team in the game.
+   */
+
+  /**
+   * @typedef {object} NFLGameMap
+   *
+   * @property {Date} startTime The date and time when the game starts in Eastern Time.
+   * @property {number} quarter The quarter the game is in.
+   * @property {string} clock The current game clock formatted as MM:SS.
+   * @property {string} odds The odds for the game formatted as "TEAM_ABBREV LINE". NOTE: These
+   *   may only display for the current week.
+   * @property {string} broadcaster Who is broadcasting the game on TV.
+   *
+   * @property {string} gameStatus Whether or not the game has not started, is in progress, or has
+   *                               finished.
+   * @property {NFLTeam} homeTeam The home team in the game.
+   * @property {NFLTeam} awayTeam The away team in the game.
+   */
+
+  /**
+   * @type {NFLGameMap}
+   */
+  static responseMap = {
+    startTime: {
+      key: 'date',
+      manualParse: responseData => new Date(responseData)
+    },
+    quarter: 'period',
+    clock: 'clock',
+    broadcaster: 'broadcast',
+    odds: 'odds',
+    gameStatus: {
+      key: 'status',
+      manualParse: responseData => lodash_get__WEBPACK_IMPORTED_MODULE_1___default()(this.GAME_STATUSES, responseData)
+    },
+    homeTeam: {
+      key: 'competitors',
+      manualParse: responseData => this._buildTeamAttribute(lodash_find__WEBPACK_IMPORTED_MODULE_0___default()(responseData, {
+        homeAway: 'home'
+      }))
+    },
+    awayTeam: {
+      key: 'competitors',
+      manualParse: responseData => this._buildTeamAttribute(lodash_find__WEBPACK_IMPORTED_MODULE_0___default()(responseData, {
+        homeAway: 'away'
+      }))
+    }
+  };
   static _buildTeamAttribute(teamResponseData) {
     return {
       id: lodash_toSafeInteger__WEBPACK_IMPORTED_MODULE_2___default()(teamResponseData.id),
@@ -3113,66 +3194,6 @@ class NFLGame extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MO
     };
   }
 }
-_NFLGame = NFLGame;
-NFLGame.displayName = 'NFLGame';
-NFLGame.GAME_STATUSES = {
-  pre: 'Not Started',
-  in: 'In Progress',
-  post: 'Final'
-};
-/**
- * @typedef {object} NFLTeam
- *
- * @property {number} id The id of the NFL team in the ESPN universe.
- * @property {string} team The name of the NFL team.
- * @property {string} teamAbbrev The name abbreviation of the NFL team.
- * @property {string} record The win/loss/tie record of the NFL team.
- * @property {number} score The score of the NFL team in the game.
- */
-/**
- * @typedef {object} NFLGameMap
- *
- * @property {Date} startTime The date and time when the game starts in Eastern Time.
- * @property {number} quarter The quarter the game is in.
- * @property {string} clock The current game clock formatted as MM:SS.
- * @property {string} odds The odds for the game formatted as "TEAM_ABBREV LINE". NOTE: These
- *   may only display for the current week.
- * @property {string} broadcaster Who is broadcasting the game on TV.
- *
- * @property {string} gameStatus Whether or not the game has not started, is in progress, or has
- *                               finished.
- * @property {NFLTeam} homeTeam The home team in the game.
- * @property {NFLTeam} awayTeam The away team in the game.
- */
-/**
- * @type {NFLGameMap}
- */
-NFLGame.responseMap = {
-  startTime: {
-    key: 'date',
-    manualParse: responseData => new Date(responseData)
-  },
-  quarter: 'period',
-  clock: 'clock',
-  broadcaster: 'broadcast',
-  odds: 'odds',
-  gameStatus: {
-    key: 'status',
-    manualParse: responseData => lodash_get__WEBPACK_IMPORTED_MODULE_1___default()(_NFLGame.GAME_STATUSES, responseData)
-  },
-  homeTeam: {
-    key: 'competitors',
-    manualParse: responseData => _NFLGame._buildTeamAttribute(lodash_find__WEBPACK_IMPORTED_MODULE_0___default()(responseData, {
-      homeAway: 'home'
-    }))
-  },
-  awayTeam: {
-    key: 'competitors',
-    manualParse: responseData => _NFLGame._buildTeamAttribute(lodash_find__WEBPACK_IMPORTED_MODULE_0___default()(responseData, {
-      homeAway: 'away'
-    }))
-  }
-};
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (NFLGame);
 
 /***/ },
@@ -3217,14 +3238,15 @@ class PlayerStats extends _base_classes_base_object_base_object__WEBPACK_IMPORTE
     super(options);
     this.usesPoints = options.usesPoints;
   }
+  static displayName = 'PlayerStats';
+
+  /**
+   * @type {ScoringItems}
+   */
+  static responseMap = {
+    ..._constants__WEBPACK_IMPORTED_MODULE_4__.scoringItemToId
+  };
 }
-PlayerStats.displayName = 'PlayerStats';
-/**
- * @type {ScoringItems}
- */
-PlayerStats.responseMap = {
-  ..._constants__WEBPACK_IMPORTED_MODULE_4__.scoringItemToId
-};
 const parsePlayerStats = ({
   responseData,
   constructorParams,
@@ -3291,6 +3313,9 @@ class Player extends _base_classes_base_cacheable_object_base_cacheable_object_j
     this.seasonId = options.seasonId;
     this.scoringPeriodId = options.scoringPeriodId;
   }
+  static displayName = 'Player';
+  static flattenResponse = true;
+
   /**
    * Returns valid id params when 'id' and 'seasonId' are passed.
    *
@@ -3345,49 +3370,47 @@ class Player extends _base_classes_base_cacheable_object_base_cacheable_object_j
   /**
    * @type {PlayerMap}
    */
+  static responseMap = {
+    id: 'id',
+    firstName: 'firstName',
+    fullName: 'fullName',
+    lastName: 'lastName',
+    jerseyNumber: {
+      key: 'jersey',
+      manualParse: responseData => responseData ? lodash_toNumber__WEBPACK_IMPORTED_MODULE_2___default()(responseData) : undefined
+    },
+    proTeam: {
+      key: 'proTeamId',
+      manualParse: responseData => lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(_constants_js__WEBPACK_IMPORTED_MODULE_4__.nflTeamIdToNFLTeam, responseData)
+    },
+    proTeamAbbreviation: {
+      key: 'proTeamId',
+      manualParse: responseData => lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(_constants_js__WEBPACK_IMPORTED_MODULE_4__.nflTeamIdToNFLTeamAbbreviation, responseData)
+    },
+    defaultPosition: {
+      key: 'defaultPositionId',
+      manualParse: responseData => lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(_constants_js__WEBPACK_IMPORTED_MODULE_4__.slotCategoryIdToPositionMap, responseData)
+    },
+    eligiblePositions: {
+      key: 'eligibleSlots',
+      manualParse: responseData => lodash_map__WEBPACK_IMPORTED_MODULE_1___default()(responseData, posId => lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(_constants_js__WEBPACK_IMPORTED_MODULE_4__.slotCategoryIdToPositionMap, posId))
+    },
+    averageDraftPosition: 'averageDraftPosition',
+    auctionValueAverage: 'auctionValueAverage',
+    percentChange: 'percentChange',
+    percentStarted: 'percentStarted',
+    percentOwned: 'percentOwned',
+    acquiredDate: {
+      key: 'acquisitionDate',
+      manualParse: responseData => responseData ? new Date(responseData) : undefined
+    },
+    availabilityStatus: 'status',
+    isDroppable: 'droppable',
+    isInjured: 'injured',
+    injuryStatus: 'injuryStatus',
+    outlooksByWeek: 'outlooksByWeek'
+  };
 }
-Player.displayName = 'Player';
-Player.flattenResponse = true;
-Player.responseMap = {
-  id: 'id',
-  firstName: 'firstName',
-  fullName: 'fullName',
-  lastName: 'lastName',
-  jerseyNumber: {
-    key: 'jersey',
-    manualParse: responseData => responseData ? lodash_toNumber__WEBPACK_IMPORTED_MODULE_2___default()(responseData) : undefined
-  },
-  proTeam: {
-    key: 'proTeamId',
-    manualParse: responseData => lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(_constants_js__WEBPACK_IMPORTED_MODULE_4__.nflTeamIdToNFLTeam, responseData)
-  },
-  proTeamAbbreviation: {
-    key: 'proTeamId',
-    manualParse: responseData => lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(_constants_js__WEBPACK_IMPORTED_MODULE_4__.nflTeamIdToNFLTeamAbbreviation, responseData)
-  },
-  defaultPosition: {
-    key: 'defaultPositionId',
-    manualParse: responseData => lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(_constants_js__WEBPACK_IMPORTED_MODULE_4__.slotCategoryIdToPositionMap, responseData)
-  },
-  eligiblePositions: {
-    key: 'eligibleSlots',
-    manualParse: responseData => lodash_map__WEBPACK_IMPORTED_MODULE_1___default()(responseData, posId => lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(_constants_js__WEBPACK_IMPORTED_MODULE_4__.slotCategoryIdToPositionMap, posId))
-  },
-  averageDraftPosition: 'averageDraftPosition',
-  auctionValueAverage: 'auctionValueAverage',
-  percentChange: 'percentChange',
-  percentStarted: 'percentStarted',
-  percentOwned: 'percentOwned',
-  acquiredDate: {
-    key: 'acquisitionDate',
-    manualParse: responseData => responseData ? new Date(responseData) : undefined
-  },
-  availabilityStatus: 'status',
-  isDroppable: 'droppable',
-  isInjured: 'injured',
-  injuryStatus: 'injuryStatus',
-  outlooksByWeek: 'outlooksByWeek'
-};
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Player);
 
 /***/ },
@@ -3428,6 +3451,8 @@ class Team extends _base_classes_base_cacheable_object_base_cacheable_object_js_
     this.leagueId = options.leagueId;
     this.seasonId = options.seasonId;
   }
+  static displayName = 'Team';
+
   /**
    * Returns valid id params when 'id', `leagueId`, and 'seasonId' are passed.
    *
@@ -3490,48 +3515,47 @@ class Team extends _base_classes_base_cacheable_object_base_cacheable_object_js_
   /**
    * @type {TeamMap}
    */
+  static responseMap = {
+    id: 'id',
+    abbreviation: 'abbrev',
+    name: 'name',
+    ownerName: {
+      key: 'owner',
+      manualParse: ({
+        firstName,
+        lastName
+      }) => `${lodash_trim__WEBPACK_IMPORTED_MODULE_2___default()(firstName)} ${lodash_trim__WEBPACK_IMPORTED_MODULE_2___default()(lastName)}`
+    },
+    logoURL: 'logo',
+    wavierRank: 'wavierRank',
+    roster: {
+      key: 'roster.entries',
+      isArray: true,
+      manualParse: (responseData, data, rawData, constructorParams) => lodash_map__WEBPACK_IMPORTED_MODULE_0___default()(responseData, playerData => _player_player__WEBPACK_IMPORTED_MODULE_4__["default"].buildFromServer(playerData.playerPoolEntry, constructorParams))
+    },
+    wins: 'record.overall.wins',
+    losses: 'record.overall.losses',
+    ties: 'record.overall.ties',
+    divisionWins: 'record.division.wins',
+    divisionLosses: 'record.division.losses',
+    divisionTies: 'record.division.ties',
+    homeWins: 'record.home.wins',
+    homeLosses: 'record.home.losses',
+    homeTies: 'record.home.ties',
+    awayWins: 'record.away.wins',
+    awayLosses: 'record.away.losses',
+    awayTies: 'record.away.ties',
+    totalPointsScored: 'points',
+    regularSeasonPointsFor: 'record.overall.pointsFor',
+    regularSeasonPointsAgainst: 'record.overall.pointsAgainst',
+    winningPercentage: {
+      key: 'record.overall.percentage',
+      manualParse: responseData => lodash_round__WEBPACK_IMPORTED_MODULE_1___default()(responseData * 100, 2)
+    },
+    playoffSeed: 'playoffSeed',
+    finalStandingsPosition: 'rankCalculatedFinal'
+  };
 }
-Team.displayName = 'Team';
-Team.responseMap = {
-  id: 'id',
-  abbreviation: 'abbrev',
-  name: 'name',
-  ownerName: {
-    key: 'owner',
-    manualParse: ({
-      firstName,
-      lastName
-    }) => `${lodash_trim__WEBPACK_IMPORTED_MODULE_2___default()(firstName)} ${lodash_trim__WEBPACK_IMPORTED_MODULE_2___default()(lastName)}`
-  },
-  logoURL: 'logo',
-  wavierRank: 'wavierRank',
-  roster: {
-    key: 'roster.entries',
-    isArray: true,
-    manualParse: (responseData, data, rawData, constructorParams) => lodash_map__WEBPACK_IMPORTED_MODULE_0___default()(responseData, playerData => _player_player__WEBPACK_IMPORTED_MODULE_4__["default"].buildFromServer(playerData.playerPoolEntry, constructorParams))
-  },
-  wins: 'record.overall.wins',
-  losses: 'record.overall.losses',
-  ties: 'record.overall.ties',
-  divisionWins: 'record.division.wins',
-  divisionLosses: 'record.division.losses',
-  divisionTies: 'record.division.ties',
-  homeWins: 'record.home.wins',
-  homeLosses: 'record.home.losses',
-  homeTies: 'record.home.ties',
-  awayWins: 'record.away.wins',
-  awayLosses: 'record.away.losses',
-  awayTies: 'record.away.ties',
-  totalPointsScored: 'points',
-  regularSeasonPointsFor: 'record.overall.pointsFor',
-  regularSeasonPointsAgainst: 'record.overall.pointsAgainst',
-  winningPercentage: {
-    key: 'record.overall.percentage',
-    manualParse: responseData => lodash_round__WEBPACK_IMPORTED_MODULE_1___default()(responseData * 100, 2)
-  },
-  playoffSeed: 'playoffSeed',
-  finalStandingsPosition: 'rankCalculatedFinal'
-};
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Team);
 
 /***/ },
