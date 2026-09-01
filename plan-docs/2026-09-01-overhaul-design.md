@@ -146,13 +146,16 @@ line and the same branch.
 
 ## Work plan
 
-Each step is one commit. Steps 1–3 are correctness and land first so they bisect cleanly.
+Each step is one commit. Steps 1-3 are correctness and land first so they bisect cleanly.
 
 ### 1. Fix `defaultPosition`
 
 * Add `defaultPositionIdToPosition = {1:'QB', 2:'RB', 3:'WR', 4:'TE', 5:'K', 16:'D/ST'}`.
 * Point `Player.responseMap.defaultPosition` at it. Leave `eligiblePositions` on the slot map.
 * Document both maps with which ESPN enum each covers.
+* **Deliberate behaviour change:** the six standard ids are confirmed against real 2026 payloads.
+  IDP position ids are *not* confirmed, so an unrecognised id now yields `undefined` rather than a
+  confidently wrong string. Absent beats wrong.
 * **Acceptance:** a test asserting all six ids against literal position strings.
 
 ### 2. De-tautologize
@@ -169,8 +172,9 @@ Each step is one commit. Steps 1–3 are correctness and land first so they bise
 * `{ base: {name: points}, overrides: {position: {name: points}} }`.
 * Overrides keyed via `defaultPositionIdToPosition`.
 * Stat ids with no name surface as `statId<N>` rather than being dropped.
-* **Acceptance:** a fixture-driven test over the real WPFL settings shape proving no item is lost
-  and that a base/override pair is represented distinctly.
+* **Acceptance:** a test over a trimmed real settings payload proving no item is lost and that a
+  base/override pair is represented distinctly. The payload lands *with this step* -- scoring
+  settings are statIds and numbers, carrying no PII, so this does not wait on step 7.
 
 ### 4. Delete the cache
 
@@ -179,52 +183,76 @@ Each step is one commit. Steps 1–3 are correctness and land first so they bise
 * Remove `getIDParams` / `getCacheId` from models.
 * **Acceptance:** suite green; no reference to `cache`, `defer` or `getCacheId` outside history.
 
-### 5. Rewrite the HTTP layer
+### 5a. Injectable transport (pure refactor)
 
-* `Client` options gain `{ timeout = 30000, retries = 2, cache = false, fetch = globalThis.fetch }`.
+* Replace the `http` module singleton with `createHttp({ fetch })`, held per `Client`.
+* Migrate the client tests from `jest.spyOn(http, 'get')` to a fake `fetch`, asserting on the
+  **resolved URL and request init** rather than on route strings.
+* No behaviour change. Split from 5b because this alone touches 79 `http.get` references across a
+  1683-line test file, and mixing it with new behaviour would make a regression unbisectable.
+* **Acceptance:** suite green with identical assertions-by-meaning; every route previously asserted
+  as a string is now asserted as a full URL.
+
+### 5b. Timeout, retry, cache
+
+* `Client` options gain `{ timeout = 30000, retries = 2, cache = false }`.
 * Per-attempt `AbortSignal.timeout`; per-call `signal` composed with `AbortSignal.any`.
 * Retry on network errors and 429/5xx only. Never 4xx. Never after an abort. Exponential backoff
   with jitter, honouring `Retry-After`.
 * `cache: {ttl, max}` on the Client instance, keyed by resolved URL, bounded by `max`.
-* **Acceptance:** tests for each of — timeout fires; 4xx does not retry; 5xx retries twice then
+* **Acceptance:** tests for each of -- timeout fires; 4xx does not retry; 5xx retries twice then
   throws; abort is terminal; cache hit avoids a second fetch; cache evicts past `max`.
 
 ### 6. Drop lodash
 
 * New `src/internal/` helpers preserving the semantics the codebase depends on:
-  * `mapOrEmpty`, `filterOrEmpty`, `findIn` — tolerate `undefined` collections
-  * `getPath` / `setPath` — dotted-path access
-  * `mergeConfig` — **deep** merge of `headers`
+  * `mapOrEmpty`, `filterOrEmpty`, `findIn` -- tolerate `undefined` collections
+  * `getPath` / `setPath` -- dotted-path access
+  * `mergeConfig` -- **deep** merge of `headers`
   * `trimOrEmpty`, `roundTo`, `toSafeInt`
+* **Also purge lodash from the 10 test files that import it**, so it leaves `package.json`
+  entirely rather than surviving as a devDependency.
 * **Acceptance:** each helper has a test for its `undefined` input case. `mergeConfig` has a test
-  proving two header objects combine. Bundle contains no lodash module.
+  proving two header objects combine. No lodash in `package.json`; bundle contains no lodash module.
 
 ### 7. Fixture layer
 
-* `src/__fixtures__/` holding trimmed payloads.
-* PII-free sources taken from `draft-2026/data/cache/` — schedule, players, draft, and the
+* `src/__fixtures__/` holding trimmed payloads as **`.json`**, not `.js` -- `collectCoverageFrom`
+  globs `src/**/*.js` and would otherwise count fixtures against coverage.
+* PII-free sources taken from `draft-2026/data/cache/` -- schedule, players, draft, and the
   `settings` subtree.
 * `members[]` and the `teams[]` envelope hand-written with synthetic names and SWIDs, wrapped
   around real roster entries.
 * `kona_league_communication` captured fresh and given the same synthetic envelope.
 * A guard test failing on any `{8-4-4-4-12}` GUID or known league member name in the fixture tree.
 * Fixtures replayed through the injectable `fetch` against the real `Client`.
-* `integration-tests/` untouched — retained as the ESPN drift canary.
+* `integration-tests/` untouched -- retained as the ESPN drift canary.
 
 ### 8. Types
 
 * Export unions as frozen objects where a consumer would compare against them: `WINNING_TEAM`,
   `INJURY_STATUSES`, `PLAYER_AVAILABILITY_STATUSES`, activity actions. Types-only for the rest.
-* Annotate all ten bare-`string` enum fields with **open** unions (`… | (string & {})`).
+* Annotate all ten bare-`string` enum fields with **open** unions.
+* **Cross-file references must use `import('../constants').X`.** Verified empirically: a bare
+  cross-file typedef name never resolves, which is the actual cause of the TS2304 note in
+  `build-types.mjs`. Exporting a runtime constant alone does not fix it. Both ESLint's `valid-types`
+  and `tsc` accept `(string & {})` and emit it intact.
 * Delete the `JSDOC_DEFINED_TYPES` ESLint workaround.
 * Leave TS2417 alone; `build-types.mjs` already documents why.
 
 ### 9. Distribution
 
 * Add `"prepare": "npm run build"`. Drop `verify:artifacts` and `prepublishOnly`.
+* **Update the `ci` script and the README npm-scripts table**, both of which name
+  `verify:artifacts`.
+* **Harden `scripts/build-types.mjs`**: it shells out to `npx tsc`. Step 9 makes that run on every
+  consumer install, where a resolution miss would become a network fetch. Resolve the local
+  TypeScript binary directly instead.
 * Delete and gitignore `node.js`, `node.js.map`, `node-dev.js`, `node.js.LICENSE.txt`,
   `node.d.ts`, `types/`.
 * Rewrite the README install section; **remove the false claim that CI enforces the rebuild**.
+* Note: `prepare` also runs on a local `npm install` in this repo, so every dev install rebuilds.
+  Accepted -- it keeps local artifacts fresh.
 
 ### 10. API surface
 
@@ -252,3 +280,28 @@ consumer's `espnPeriod.ts` already does it better), TS2417 static-side errors (i
 * Repin `discord-bot` to the new SHA.
 * Collapse its `player?.playerPoolEntry?.player.fullName ?? …` chain to `action.playerName`.
   That chain is currently unguarded at `.player.fullName` and can throw.
+
+## Plan review
+
+The plan was adversarially reviewed before implementation. Eight problems were found in it and
+fixed above.
+
+| # | Problem with the plan | Resolution |
+| --- | --- | --- |
+| P1 | Step 3's acceptance criterion depended on fixtures that do not exist until step 7 | Step 3 carries its own trimmed settings payload; scoring settings are PII-free so nothing waits |
+| P2 | Step 6 ignored that **10 test files** import lodash; it would have survived as a devDependency | Tests are purged too, so lodash leaves `package.json` entirely |
+| P3 | Step 5 was far larger than any other -- 79 `http.get` references in a 1683-line test file -- mixing a mechanical refactor with new behaviour | Split into 5a (injectable transport, no behaviour change) and 5b (timeout/retry/cache) |
+| P4 | `.js` fixtures would be swept into `collectCoverageFrom: ['src/**/*.js']` and drag coverage below 100% | Fixtures are `.json` |
+| P5 | `npm run ci` and the README scripts table both name `verify:artifacts`, which step 9 deletes | Both updated in step 9 |
+| P6 | `build-types.mjs` shells out to `npx tsc`; step 9 makes that run on every consumer install, where a resolution miss becomes a network fetch | Resolve the local binary directly |
+| P7 | `defaultPositionIdToPosition` covers only the six confirmed ids; IDP ids are unverified | Documented as deliberate: unknown ids yield `undefined`, because absent beats confidently wrong |
+| P8 | Step 8 assumed exporting runtime constants would make the typedefs reachable | Verified false. Cross-file jsdoc needs `import('../constants').X`; that is the real TS2304 cause. `(string & {})` confirmed to pass ESLint and emit correctly |
+
+Verified empirically during review, not assumed:
+
+* ESLint's `valid-types` and `tsc` both accept `(string & {})`; tsc emits
+  `export type WinningTeam = "HOME" | "AWAY" | "TIE" | "UNDECIDED" | (string & {})`.
+* A typedef reaches the `.d.ts` only when something exported refers to it, and cross-file
+  references resolve only through `import('...')`.
+* `discord-bot` does not read `defaultPosition`, so D1's fix breaks no consumer.
+
