@@ -14,7 +14,7 @@ Legend: `pending` / `in progress` / `done` / `revised` / `abandoned`
 | 5a | Injectable transport (pure refactor) | done (revised) | `PENDING` |
 | 5b | Timeout, retry, per-Client cache | done | `PENDING` |
 | 6 | Drop lodash | done | `PENDING` |
-| 7 | Fixture layer | pending | |
+| 7 | Fixture layer | done | `PENDING` |
 | 8 | Types: open unions, exported constants | pending | |
 | 9 | Distribution: `prepare`, drop committed artifacts | pending | |
 | 10 | API surface: activity normalization, pagination | pending | |
@@ -205,3 +205,29 @@ of multiplying, so `roundTo(1.005, 2)` is `1.01` rather than the `1` that
 `Math.round(1.005 * 100) / 100` gives; there is a test naming that.
 
 459 tests green, coverage back to 100% on all four measures.
+
+### Step 7 - fixture layer
+
+**done.** `src/__fixtures__/` holds five trimmed `.json` payloads and a 45-test replay suite that
+drives a real `Client` through the injected fetch from step 5a.
+
+Split by PII content as designed: `free-agents.json`, `boxscores.json` and `league-settings.json`
+are real 2026 data (NFL players are public figures; settings are stat ids and numbers), while
+`teams.json`, `activity.json` and `player-cards.json` are hand-written with invented identities.
+
+`activity.json` is hand-written rather than captured - this session had no credentials to record a
+live `kona_league_communication` response. Its shape is taken from what `_buildActivity` reads, and
+its target ids are wired onto the real roster ids in `teams.json` so the roster-hit and
+player-card-fallback paths are both exercised.
+
+**A mistake caught and fixed mid-step.** The personal-data guard was first written as a *deny-list*
+of real league member names - which meant spelling those names out in a public repository, the
+exact thing the guard exists to prevent. It is now an allowlist: every ESPN member object (found by
+carrying `displayName`, which NFL player objects never do) must hold only synthetic names, and every
+SWID-shaped identifier must be one of the zeroed fixture ones. The real names were also removed from
+`cspell.json`, where the deny-list had put them.
+
+Verified by injecting violations: a real-looking SWID fails, a non-synthetic member name fails, and
+reintroducing the `defaultPosition` bug fails exactly the four positions it originally broke.
+
+504 tests green, coverage still 100%. `integration-tests/` untouched.

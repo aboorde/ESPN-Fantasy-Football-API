@@ -1,0 +1,192 @@
+{
+  "teams": [
+    {
+      "id": 1,
+      "abbrev": "AAA",
+      "name": "Fixture Team One",
+      "logo": "https://example.invalid/logo-one.png",
+      "primaryOwner": "{00000000-0000-0000-0000-000000000001}",
+      "owners": [
+        "{00000000-0000-0000-0000-000000000001}"
+      ],
+      "divisionId": 0,
+      "waiverRank": 3,
+      "points": 1421.5,
+      "pointsAdjusted": 0,
+      "pointsDelta": 0,
+      "playoffSeed": 2,
+      "rankCalculatedFinal": 3,
+      "currentProjectedRank": 2,
+      "draftDayProjectedRank": 5,
+      "playoffClinchType": "CLINCHED_PLAYOFF_BERTH",
+      "eliminated": false,
+      "eliminationMatchupPeriod": 0,
+      "currentSimulationResults": {
+        "playoffPct": 0.97,
+        "divisionWinPct": 0.41,
+        "rank": 2.3
+      },
+      "transactionCounter": {
+        "acquisitionBudgetSpent": 143,
+        "acquisitions": 21,
+        "drops": 19,
+        "trades": 2,
+        "moveToIR": 1
+      },
+      "record": {
+        "overall": {
+          "wins": 9,
+          "losses": 4,
+          "ties": 0,
+          "percentage": 0.6923,
+          "pointsFor": 1421.5,
+          "pointsAgainst": 1310.2,
+          "streakType": "WIN",
+          "streakLength": 3,
+          "gamesBack": 1
+        },
+        "division": {
+          "wins": 4,
+          "losses": 2,
+          "ties": 0
+        },
+        "home": {
+          "wins": 5,
+          "losses": 2,
+          "ties": 0
+        },
+        "away": {
+          "wins": 4,
+          "losses": 2,
+          "ties": 0
+        }
+      },
+      "roster": {
+        "entries": [
+          {
+            "playerId": 4426515,
+            "lineupSlotId": 4,
+            "status": "NORMAL",
+            "acquisitionDate": null,
+            "injuryStatus": "NORMAL",
+            "playerPoolEntry": {
+              "id": 4426515,
+              "status": "ONTEAM",
+              "appliedStatTotal": 0.0,
+              "player": {
+                "id": 4426515,
+                "firstName": "Puka",
+                "lastName": "Nacua",
+                "fullName": "Puka Nacua",
+                "jersey": null,
+                "proTeamId": 14,
+                "defaultPositionId": 3,
+                "eligibleSlots": [
+                  3,
+                  4,
+                  5,
+                  23,
+                  7,
+                  20,
+                  21
+                ],
+                "droppable": false,
+                "injured": false,
+                "injuryStatus": "QUESTIONABLE",
+                "stats": []
+              }
+            },
+            "appliedStatTotal": 0.0
+          },
+          {
+            "playerId": 4374302,
+            "lineupSlotId": 4,
+            "status": "NORMAL",
+            "acquisitionDate": null,
+            "injuryStatus": "NORMAL",
+            "playerPoolEntry": {
+              "id": 4374302,
+              "status": "ONTEAM",
+              "appliedStatTotal": 0.0,
+              "player": {
+                "id": 4374302,
+                "firstName": "Amon-Ra",
+                "lastName": "St. Brown",
+                "fullName": "Amon-Ra St. Brown",
+                "jersey": null,
+                "proTeamId": 8,
+                "defaultPositionId": 3,
+                "eligibleSlots": [
+                  3,
+                  4,
+                  5,
+                  23,
+                  7,
+                  20,
+                  21
+                ],
+                "droppable": false,
+                "injured": false,
+                "injuryStatus": "ACTIVE",
+                "stats": []
+              }
+            },
+            "appliedStatTotal": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "abbrev": "BBB",
+      "name": "Fixture Team Two",
+      "primaryOwner": "{00000000-0000-0000-0000-000000000002}",
+      "owners": [
+        "{00000000-0000-0000-0000-000000000002}"
+      ],
+      "record": {
+        "overall": {
+          "wins": 4,
+          "losses": 9,
+          "ties": 0,
+          "percentage": 0.3077
+        }
+      },
+      "roster": {
+        "entries": []
+      }
+    },
+    {
+      "id": 3,
+      "abbrev": "CCC",
+      "name": "Fixture Team Three",
+      "primaryOwner": "{00000000-0000-0000-0000-00000000DEAD}",
+      "owners": [],
+      "record": {
+        "overall": {
+          "wins": 6,
+          "losses": 7,
+          "ties": 0,
+          "percentage": 0.4615
+        }
+      },
+      "roster": {
+        "entries": []
+      }
+    }
+  ],
+  "members": [
+    {
+      "id": "{00000000-0000-0000-0000-000000000001}",
+      "firstName": "Ada",
+      "lastName": "Fixture",
+      "displayName": "ada-fixture"
+    },
+    {
+      "id": "{00000000-0000-0000-0000-000000000002}",
+      "firstName": "  ",
+      "lastName": " ",
+      "displayName": "blank-fixture"
+    }
+  ]
+}

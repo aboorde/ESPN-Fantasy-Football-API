@@ -1,0 +1,14 @@
+{
+  "players": [
+    {
+      "id": 999001,
+      "fullName": "Waiver Fixture",
+      "defaultPositionId": 3
+    },
+    {
+      "id": 999002,
+      "fullName": "Traded Fixture",
+      "defaultPositionId": 2
+    }
+  ]
+}

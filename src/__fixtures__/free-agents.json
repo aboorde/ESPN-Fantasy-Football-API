@@ -1,0 +1,621 @@
+{
+  "players": [
+    {
+      "id": 3918298,
+      "status": "FREEAGENT",
+      "onTeamId": 0,
+      "player": {
+        "id": 3918298,
+        "firstName": "Josh",
+        "lastName": "Allen",
+        "fullName": "Josh Allen",
+        "jersey": "17",
+        "proTeamId": 2,
+        "defaultPositionId": 1,
+        "eligibleSlots": [
+          0,
+          7,
+          20,
+          21
+        ],
+        "droppable": false,
+        "injured": false,
+        "injuryStatus": "ACTIVE",
+        "ownership": {
+          "activityLevel": null,
+          "auctionValueAverage": 33.67,
+          "auctionValueAverageChange": 0.22,
+          "averageDraftPosition": 22.03,
+          "averageDraftPositionPercentChange": 0.03,
+          "date": 1787873421517,
+          "leagueType": 0,
+          "percentChange": 0.0,
+          "percentOwned": 99.88,
+          "percentStarted": 97.44
+        },
+        "stats": [
+          {
+            "seasonId": 2026,
+            "scoringPeriodId": 1,
+            "statSourceId": 1,
+            "statSplitTypeId": 1,
+            "appliedTotal": 19.2591432,
+            "stats": {
+              "0": 30.42726197,
+              "1": 19.73143922,
+              "2": 10.69582274,
+              "3": 223.7055857
+            },
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2025,
+            "scoringPeriodId": 0,
+            "statSourceId": 0,
+            "statSplitTypeId": 0,
+            "appliedTotal": 364.62,
+            "stats": {
+              "0": 460.0,
+              "1": 319.0,
+              "2": 141.0,
+              "3": 3668.0
+            },
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2026,
+            "scoringPeriodId": 0,
+            "statSourceId": 0,
+            "statSplitTypeId": 0,
+            "appliedTotal": 0.0,
+            "stats": {},
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2025,
+            "scoringPeriodId": 0,
+            "statSourceId": 1,
+            "statSplitTypeId": 0,
+            "appliedTotal": 367.87424042,
+            "stats": {
+              "0": 521.4095499,
+              "1": 335.0016792,
+              "2": 186.4078707,
+              "3": 3953.702332
+            },
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2026,
+            "scoringPeriodId": 0,
+            "statSourceId": 1,
+            "statSplitTypeId": 0,
+            "appliedTotal": 369.69012399,
+            "stats": {
+              "0": 508.6426428,
+              "1": 340.0927137,
+              "2": 168.5499291,
+              "3": 3946.319073
+            },
+            "appliedStats": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": 4429795,
+      "status": "FREEAGENT",
+      "onTeamId": 0,
+      "player": {
+        "id": 4429795,
+        "firstName": "Jahmyr",
+        "lastName": "Gibbs",
+        "fullName": "Jahmyr Gibbs",
+        "jersey": "0",
+        "proTeamId": 8,
+        "defaultPositionId": 2,
+        "eligibleSlots": [
+          2,
+          3,
+          23,
+          7,
+          20,
+          21
+        ],
+        "droppable": false,
+        "injured": false,
+        "injuryStatus": "ACTIVE",
+        "ownership": {
+          "activityLevel": null,
+          "auctionValueAverage": 68.05,
+          "auctionValueAverageChange": 0.61,
+          "averageDraftPosition": 1.41,
+          "averageDraftPositionPercentChange": 0.01,
+          "date": 1787873422971,
+          "leagueType": 0,
+          "percentChange": 0.0,
+          "percentOwned": 99.91,
+          "percentStarted": 99.71
+        },
+        "stats": [
+          {
+            "seasonId": 2026,
+            "scoringPeriodId": 1,
+            "statSourceId": 1,
+            "statSplitTypeId": 1,
+            "appliedTotal": 19.62405328,
+            "stats": {
+              "23": 17.12414036,
+              "24": 82.30194633,
+              "25": 0.865160197,
+              "26": 0.016293651
+            },
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2025,
+            "scoringPeriodId": 0,
+            "statSourceId": 0,
+            "statSplitTypeId": 0,
+            "appliedTotal": 328.4,
+            "stats": {
+              "23": 243.0,
+              "24": 1223.0,
+              "25": 13.0,
+              "27": 237.0
+            },
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2026,
+            "scoringPeriodId": 0,
+            "statSourceId": 0,
+            "statSplitTypeId": 0,
+            "appliedTotal": 0.0,
+            "stats": {},
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2025,
+            "scoringPeriodId": 0,
+            "statSourceId": 1,
+            "statSplitTypeId": 0,
+            "appliedTotal": 287.10530994,
+            "stats": {
+              "23": 234.7180184,
+              "24": 1153.123756,
+              "25": 10.83725079,
+              "26": 0.428611308
+            },
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2026,
+            "scoringPeriodId": 0,
+            "statSourceId": 1,
+            "statSplitTypeId": 0,
+            "appliedTotal": 330.96561514,
+            "stats": {
+              "23": 283.0670726,
+              "24": 1372.600184,
+              "25": 14.45294482,
+              "26": 0.272140461
+            },
+            "appliedStats": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": 4362628,
+      "status": "FREEAGENT",
+      "onTeamId": 0,
+      "player": {
+        "id": 4362628,
+        "firstName": "Ja'Marr",
+        "lastName": "Chase",
+        "fullName": "Ja'Marr Chase",
+        "jersey": "1",
+        "proTeamId": 4,
+        "defaultPositionId": 3,
+        "eligibleSlots": [
+          3,
+          4,
+          5,
+          23,
+          7,
+          20,
+          21
+        ],
+        "droppable": false,
+        "injured": false,
+        "injuryStatus": "QUESTIONABLE",
+        "ownership": {
+          "activityLevel": null,
+          "auctionValueAverage": 61.4,
+          "auctionValueAverageChange": 0.14,
+          "averageDraftPosition": 3.98,
+          "averageDraftPositionPercentChange": -0.05,
+          "date": 1787873422446,
+          "leagueType": 0,
+          "percentChange": 0.0,
+          "percentOwned": 99.89,
+          "percentStarted": 99.33
+        },
+        "stats": [
+          {
+            "seasonId": 2026,
+            "scoringPeriodId": 1,
+            "statSourceId": 1,
+            "statSplitTypeId": 1,
+            "appliedTotal": 16.46125323,
+            "stats": {
+              "23": 0.23750791,
+              "24": 1.222828706,
+              "25": 0.008685868,
+              "26": 0.000588677
+            },
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2025,
+            "scoringPeriodId": 0,
+            "statSourceId": 0,
+            "statSplitTypeId": 0,
+            "appliedTotal": 251.1,
+            "stats": {
+              "23": 3.0,
+              "24": 14.0,
+              "27": 2.0,
+              "39": 4.66666667
+            },
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2026,
+            "scoringPeriodId": 0,
+            "statSourceId": 0,
+            "statSplitTypeId": 0,
+            "appliedTotal": 0.0,
+            "stats": {},
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2025,
+            "scoringPeriodId": 0,
+            "statSourceId": 1,
+            "statSplitTypeId": 0,
+            "appliedTotal": 281.67522524,
+            "stats": {
+              "23": 3.554324183,
+              "24": 19.5647913,
+              "25": 0.119984106,
+              "26": 0.006924406
+            },
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2026,
+            "scoringPeriodId": 0,
+            "statSourceId": 1,
+            "statSplitTypeId": 0,
+            "appliedTotal": 277.65541619,
+            "stats": {
+              "23": 4.042203901,
+              "24": 20.92264258,
+              "25": 0.143288461,
+              "26": 0.009728168
+            },
+            "appliedStats": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": 4361307,
+      "status": "FREEAGENT",
+      "onTeamId": 0,
+      "player": {
+        "id": 4361307,
+        "firstName": "Trey",
+        "lastName": "McBride",
+        "fullName": "Trey McBride",
+        "jersey": "85",
+        "proTeamId": 22,
+        "defaultPositionId": 4,
+        "eligibleSlots": [
+          5,
+          6,
+          23,
+          7,
+          20,
+          21
+        ],
+        "droppable": false,
+        "injured": false,
+        "injuryStatus": "ACTIVE",
+        "ownership": {
+          "activityLevel": null,
+          "auctionValueAverage": 35.36,
+          "auctionValueAverageChange": 0.12,
+          "averageDraftPosition": 20.75,
+          "averageDraftPositionPercentChange": -0.11,
+          "date": 1787873422327,
+          "leagueType": 0,
+          "percentChange": 0.0,
+          "percentOwned": 99.84,
+          "percentStarted": 99.3
+        },
+        "stats": [
+          {
+            "seasonId": 2026,
+            "scoringPeriodId": 1,
+            "statSourceId": 1,
+            "statSplitTypeId": 1,
+            "appliedTotal": 11.0956064,
+            "stats": {
+              "42": 60.72893646,
+              "43": 0.299723366,
+              "44": 0.016522039,
+              "45": 0.005596807
+            },
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2025,
+            "scoringPeriodId": 0,
+            "statSourceId": 0,
+            "statSplitTypeId": 0,
+            "appliedTotal": 252.9,
+            "stats": {
+              "41": 126.0,
+              "42": 1239.0,
+              "43": 11.0,
+              "47": 241.0
+            },
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2026,
+            "scoringPeriodId": 0,
+            "statSourceId": 0,
+            "statSplitTypeId": 0,
+            "appliedTotal": 0.0,
+            "stats": {},
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2025,
+            "scoringPeriodId": 0,
+            "statSourceId": 1,
+            "statSplitTypeId": 0,
+            "appliedTotal": 202.66955617,
+            "stats": {
+              "42": 1086.589815,
+              "43": 6.26661592,
+              "44": 0.476415735,
+              "45": 0.12444661
+            },
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2026,
+            "scoringPeriodId": 0,
+            "statSourceId": 1,
+            "statSplitTypeId": 0,
+            "appliedTotal": 187.96251725,
+            "stats": {
+              "42": 1023.240053,
+              "43": 5.344628279,
+              "44": 0.293999962,
+              "45": 0.098534982
+            },
+            "appliedStats": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": 3953687,
+      "status": "FREEAGENT",
+      "onTeamId": 0,
+      "player": {
+        "id": 3953687,
+        "firstName": "Brandon",
+        "lastName": "Aubrey",
+        "fullName": "Brandon Aubrey",
+        "jersey": "17",
+        "proTeamId": 6,
+        "defaultPositionId": 5,
+        "eligibleSlots": [
+          17,
+          20,
+          21
+        ],
+        "droppable": true,
+        "injured": false,
+        "injuryStatus": "ACTIVE",
+        "ownership": {
+          "activityLevel": null,
+          "auctionValueAverage": 4.9,
+          "auctionValueAverageChange": -0.04,
+          "averageDraftPosition": 87.98,
+          "averageDraftPositionPercentChange": -0.4,
+          "date": 1787873421689,
+          "leagueType": 0,
+          "percentChange": 0.0,
+          "percentOwned": 99.77,
+          "percentStarted": 98.71
+        },
+        "stats": [
+          {
+            "seasonId": 2026,
+            "scoringPeriodId": 1,
+            "statSourceId": 1,
+            "statSplitTypeId": 1,
+            "appliedTotal": 10.52829923,
+            "stats": {
+              "74": 0.40763073,
+              "75": 0.5474476,
+              "76": 0.13981687,
+              "77": 0.53531133
+            },
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2025,
+            "scoringPeriodId": 0,
+            "statSourceId": 0,
+            "statSplitTypeId": 0,
+            "appliedTotal": 194.0,
+            "stats": {
+              "23": 1.0,
+              "24": 6.0,
+              "27": 1.0,
+              "39": 6.0
+            },
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2026,
+            "scoringPeriodId": 0,
+            "statSourceId": 0,
+            "statSplitTypeId": 0,
+            "appliedTotal": 0.0,
+            "stats": {},
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2025,
+            "scoringPeriodId": 0,
+            "statSourceId": 1,
+            "statSplitTypeId": 0,
+            "appliedTotal": 148.99408706,
+            "stats": {
+              "74": 5.212783373,
+              "75": 7.103847294,
+              "76": 1.891063921,
+              "77": 7.667979544
+            },
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2026,
+            "scoringPeriodId": 0,
+            "statSourceId": 1,
+            "statSplitTypeId": 0,
+            "appliedTotal": 180.36000862,
+            "stats": {
+              "74": 7.02552502,
+              "75": 9.435272,
+              "76": 2.40974698,
+              "77": 9.2261031
+            },
+            "appliedStats": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": -16034,
+      "status": "FREEAGENT",
+      "onTeamId": 0,
+      "player": {
+        "id": -16034,
+        "firstName": "Texans",
+        "lastName": "D/ST",
+        "fullName": "Texans D/ST",
+        "jersey": null,
+        "proTeamId": 34,
+        "defaultPositionId": 16,
+        "eligibleSlots": [
+          16,
+          20,
+          21
+        ],
+        "droppable": true,
+        "injured": false,
+        "injuryStatus": null,
+        "ownership": {
+          "activityLevel": null,
+          "auctionValueAverage": 4.13,
+          "auctionValueAverageChange": -0.08,
+          "averageDraftPosition": 89.05,
+          "averageDraftPositionPercentChange": -0.66,
+          "date": 1787873420121,
+          "leagueType": 0,
+          "percentChange": 0.0,
+          "percentOwned": 98.78,
+          "percentStarted": 85.59
+        },
+        "stats": [
+          {
+            "seasonId": 2026,
+            "scoringPeriodId": 1,
+            "statSourceId": 1,
+            "statSplitTypeId": 1,
+            "appliedTotal": 6.18596915,
+            "stats": {
+              "89": 0.008347496,
+              "90": 0.037488753,
+              "91": 0.143956813,
+              "92": 0.147955613
+            },
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2025,
+            "scoringPeriodId": 0,
+            "statSourceId": 0,
+            "statSplitTypeId": 0,
+            "appliedTotal": 201.0,
+            "stats": {
+              "89": 1.0,
+              "90": 0.0,
+              "91": 3.0,
+              "92": 5.0
+            },
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2026,
+            "scoringPeriodId": 0,
+            "statSourceId": 0,
+            "statSplitTypeId": 0,
+            "appliedTotal": 0.0,
+            "stats": {},
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2025,
+            "scoringPeriodId": 0,
+            "statSourceId": 1,
+            "statSplitTypeId": 0,
+            "appliedTotal": 150.26011228,
+            "stats": {
+              "89": 0.301321851,
+              "90": 1.361906669,
+              "91": 4.477268175,
+              "92": 3.677148007
+            },
+            "appliedStats": {}
+          },
+          {
+            "seasonId": 2026,
+            "scoringPeriodId": 0,
+            "statSourceId": 1,
+            "statSplitTypeId": 0,
+            "appliedTotal": 152.17727161,
+            "stats": {
+              "89": 0.291929508,
+              "90": 1.319214979,
+              "91": 4.357664964,
+              "92": 3.608691299
+            },
+            "appliedStats": {}
+          }
+        ]
+      }
+    }
+  ]
+}

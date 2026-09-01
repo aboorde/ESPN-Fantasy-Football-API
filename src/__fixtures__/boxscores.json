@@ -1,0 +1,500 @@
+{
+  "schedule": [
+    {
+      "id": 1,
+      "matchupPeriodId": 1,
+      "winner": "UNDECIDED",
+      "playoffTierType": null,
+      "home": {
+        "teamId": 8,
+        "totalPoints": 0.0,
+        "totalPointsLive": null,
+        "totalProjectedPointsLive": null,
+        "winProbability": null,
+        "rosterForCurrentScoringPeriod": {
+          "entries": [
+            {
+              "playerId": 4426515,
+              "lineupSlotId": 4,
+              "status": "NORMAL",
+              "acquisitionDate": null,
+              "injuryStatus": "NORMAL",
+              "playerPoolEntry": {
+                "id": 4426515,
+                "status": "ONTEAM",
+                "appliedStatTotal": 0.0,
+                "player": {
+                  "id": 4426515,
+                  "firstName": "Puka",
+                  "lastName": "Nacua",
+                  "fullName": "Puka Nacua",
+                  "jersey": null,
+                  "proTeamId": 14,
+                  "defaultPositionId": 3,
+                  "eligibleSlots": [
+                    3,
+                    4,
+                    5,
+                    23,
+                    7,
+                    20,
+                    21
+                  ],
+                  "droppable": false,
+                  "injured": false,
+                  "injuryStatus": "QUESTIONABLE",
+                  "stats": []
+                }
+              },
+              "appliedStatTotal": 0.0
+            },
+            {
+              "playerId": 4374302,
+              "lineupSlotId": 4,
+              "status": "NORMAL",
+              "acquisitionDate": null,
+              "injuryStatus": "NORMAL",
+              "playerPoolEntry": {
+                "id": 4374302,
+                "status": "ONTEAM",
+                "appliedStatTotal": 0.0,
+                "player": {
+                  "id": 4374302,
+                  "firstName": "Amon-Ra",
+                  "lastName": "St. Brown",
+                  "fullName": "Amon-Ra St. Brown",
+                  "jersey": null,
+                  "proTeamId": 8,
+                  "defaultPositionId": 3,
+                  "eligibleSlots": [
+                    3,
+                    4,
+                    5,
+                    23,
+                    7,
+                    20,
+                    21
+                  ],
+                  "droppable": false,
+                  "injured": false,
+                  "injuryStatus": "ACTIVE",
+                  "stats": []
+                }
+              },
+              "appliedStatTotal": 0.0
+            }
+          ]
+        }
+      },
+      "away": {
+        "teamId": 1,
+        "totalPoints": 0.0,
+        "totalPointsLive": null,
+        "totalProjectedPointsLive": null,
+        "winProbability": null,
+        "rosterForCurrentScoringPeriod": {
+          "entries": [
+            {
+              "playerId": 4870808,
+              "lineupSlotId": 2,
+              "status": "NORMAL",
+              "acquisitionDate": null,
+              "injuryStatus": "NORMAL",
+              "playerPoolEntry": {
+                "id": 4870808,
+                "status": "ONTEAM",
+                "appliedStatTotal": 0.0,
+                "player": {
+                  "id": 4870808,
+                  "firstName": "Jeremiyah",
+                  "lastName": "Love",
+                  "fullName": "Jeremiyah Love",
+                  "jersey": null,
+                  "proTeamId": 22,
+                  "defaultPositionId": 2,
+                  "eligibleSlots": [
+                    25,
+                    2,
+                    3,
+                    23,
+                    7,
+                    20,
+                    21
+                  ],
+                  "droppable": true,
+                  "injured": false,
+                  "injuryStatus": "QUESTIONABLE",
+                  "stats": []
+                }
+              },
+              "appliedStatTotal": 0.0
+            },
+            {
+              "playerId": 3043078,
+              "lineupSlotId": 2,
+              "status": "NORMAL",
+              "acquisitionDate": null,
+              "injuryStatus": "NORMAL",
+              "playerPoolEntry": {
+                "id": 3043078,
+                "status": "ONTEAM",
+                "appliedStatTotal": 0.0,
+                "player": {
+                  "id": 3043078,
+                  "firstName": "Derrick",
+                  "lastName": "Henry",
+                  "fullName": "Derrick Henry",
+                  "jersey": null,
+                  "proTeamId": 33,
+                  "defaultPositionId": 2,
+                  "eligibleSlots": [
+                    2,
+                    3,
+                    23,
+                    7,
+                    20,
+                    21
+                  ],
+                  "droppable": true,
+                  "injured": false,
+                  "injuryStatus": "ACTIVE",
+                  "stats": []
+                }
+              },
+              "appliedStatTotal": 0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 2,
+      "matchupPeriodId": 1,
+      "winner": "UNDECIDED",
+      "playoffTierType": null,
+      "home": {
+        "teamId": 11,
+        "totalPoints": 0.0,
+        "totalPointsLive": null,
+        "totalProjectedPointsLive": null,
+        "winProbability": null,
+        "rosterForCurrentScoringPeriod": {
+          "entries": [
+            {
+              "playerId": 4432665,
+              "lineupSlotId": 6,
+              "status": "NORMAL",
+              "acquisitionDate": null,
+              "injuryStatus": "NORMAL",
+              "playerPoolEntry": {
+                "id": 4432665,
+                "status": "ONTEAM",
+                "appliedStatTotal": 0.0,
+                "player": {
+                  "id": 4432665,
+                  "firstName": "Brock",
+                  "lastName": "Bowers",
+                  "fullName": "Brock Bowers",
+                  "jersey": null,
+                  "proTeamId": 13,
+                  "defaultPositionId": 4,
+                  "eligibleSlots": [
+                    5,
+                    6,
+                    23,
+                    7,
+                    20,
+                    21
+                  ],
+                  "droppable": false,
+                  "injured": false,
+                  "injuryStatus": "ACTIVE",
+                  "stats": []
+                }
+              },
+              "appliedStatTotal": 0.0
+            },
+            {
+              "playerId": 4890973,
+              "lineupSlotId": 2,
+              "status": "NORMAL",
+              "acquisitionDate": null,
+              "injuryStatus": "NORMAL",
+              "playerPoolEntry": {
+                "id": 4890973,
+                "status": "ONTEAM",
+                "appliedStatTotal": 0.0,
+                "player": {
+                  "id": 4890973,
+                  "firstName": "Ashton",
+                  "lastName": "Jeanty",
+                  "fullName": "Ashton Jeanty",
+                  "jersey": null,
+                  "proTeamId": 13,
+                  "defaultPositionId": 2,
+                  "eligibleSlots": [
+                    2,
+                    3,
+                    23,
+                    7,
+                    20,
+                    21
+                  ],
+                  "droppable": true,
+                  "injured": false,
+                  "injuryStatus": "QUESTIONABLE",
+                  "stats": []
+                }
+              },
+              "appliedStatTotal": 0.0
+            }
+          ]
+        }
+      },
+      "away": {
+        "teamId": 7,
+        "totalPoints": 0.0,
+        "totalPointsLive": null,
+        "totalProjectedPointsLive": null,
+        "winProbability": null,
+        "rosterForCurrentScoringPeriod": {
+          "entries": [
+            {
+              "playerId": 4429795,
+              "lineupSlotId": 2,
+              "status": "NORMAL",
+              "acquisitionDate": null,
+              "injuryStatus": "NORMAL",
+              "playerPoolEntry": {
+                "id": 4429795,
+                "status": "ONTEAM",
+                "appliedStatTotal": 0.0,
+                "player": {
+                  "id": 4429795,
+                  "firstName": "Jahmyr",
+                  "lastName": "Gibbs",
+                  "fullName": "Jahmyr Gibbs",
+                  "jersey": null,
+                  "proTeamId": 8,
+                  "defaultPositionId": 2,
+                  "eligibleSlots": [
+                    2,
+                    3,
+                    23,
+                    7,
+                    20,
+                    21
+                  ],
+                  "droppable": false,
+                  "injured": false,
+                  "injuryStatus": "ACTIVE",
+                  "stats": []
+                }
+              },
+              "appliedStatTotal": 0.0
+            },
+            {
+              "playerId": 4430878,
+              "lineupSlotId": 4,
+              "status": "NORMAL",
+              "acquisitionDate": null,
+              "injuryStatus": "NORMAL",
+              "playerPoolEntry": {
+                "id": 4430878,
+                "status": "ONTEAM",
+                "appliedStatTotal": 0.0,
+                "player": {
+                  "id": 4430878,
+                  "firstName": "Jaxon",
+                  "lastName": "Smith-Njigba",
+                  "fullName": "Jaxon Smith-Njigba",
+                  "jersey": null,
+                  "proTeamId": 26,
+                  "defaultPositionId": 3,
+                  "eligibleSlots": [
+                    3,
+                    4,
+                    5,
+                    23,
+                    7,
+                    20,
+                    21
+                  ],
+                  "droppable": false,
+                  "injured": false,
+                  "injuryStatus": "ACTIVE",
+                  "stats": []
+                }
+              },
+              "appliedStatTotal": 0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 3,
+      "matchupPeriodId": 1,
+      "winner": "UNDECIDED",
+      "playoffTierType": null,
+      "home": {
+        "teamId": 9,
+        "totalPoints": 0.0,
+        "totalPointsLive": null,
+        "totalProjectedPointsLive": null,
+        "winProbability": null,
+        "rosterForCurrentScoringPeriod": {
+          "entries": [
+            {
+              "playerId": 4710714,
+              "lineupSlotId": 4,
+              "status": "NORMAL",
+              "acquisitionDate": null,
+              "injuryStatus": "NORMAL",
+              "playerPoolEntry": {
+                "id": 4710714,
+                "status": "ONTEAM",
+                "appliedStatTotal": 0.0,
+                "player": {
+                  "id": 4710714,
+                  "firstName": "De'Zhaun",
+                  "lastName": "Stribling",
+                  "fullName": "De'Zhaun Stribling",
+                  "jersey": null,
+                  "proTeamId": 25,
+                  "defaultPositionId": 3,
+                  "eligibleSlots": [
+                    25,
+                    3,
+                    4,
+                    5,
+                    23,
+                    7,
+                    20,
+                    21
+                  ],
+                  "droppable": true,
+                  "injured": false,
+                  "injuryStatus": "QUESTIONABLE",
+                  "stats": []
+                }
+              },
+              "appliedStatTotal": 0.0
+            },
+            {
+              "playerId": 4882093,
+              "lineupSlotId": 2,
+              "status": "NORMAL",
+              "acquisitionDate": null,
+              "injuryStatus": "NORMAL",
+              "playerPoolEntry": {
+                "id": 4882093,
+                "status": "ONTEAM",
+                "appliedStatTotal": 0.0,
+                "player": {
+                  "id": 4882093,
+                  "firstName": "Bhayshul",
+                  "lastName": "Tuten",
+                  "fullName": "Bhayshul Tuten",
+                  "jersey": null,
+                  "proTeamId": 30,
+                  "defaultPositionId": 2,
+                  "eligibleSlots": [
+                    2,
+                    3,
+                    23,
+                    7,
+                    20,
+                    21
+                  ],
+                  "droppable": true,
+                  "injured": false,
+                  "injuryStatus": "ACTIVE",
+                  "stats": []
+                }
+              },
+              "appliedStatTotal": 0.0
+            }
+          ]
+        }
+      },
+      "away": {
+        "teamId": 15,
+        "totalPoints": 0.0,
+        "totalPointsLive": null,
+        "totalProjectedPointsLive": null,
+        "winProbability": null,
+        "rosterForCurrentScoringPeriod": {
+          "entries": [
+            {
+              "playerId": 4428331,
+              "lineupSlotId": 4,
+              "status": "NORMAL",
+              "acquisitionDate": null,
+              "injuryStatus": "NORMAL",
+              "playerPoolEntry": {
+                "id": 4428331,
+                "status": "ONTEAM",
+                "appliedStatTotal": 0.0,
+                "player": {
+                  "id": 4428331,
+                  "firstName": "Rashee",
+                  "lastName": "Rice",
+                  "fullName": "Rashee Rice",
+                  "jersey": null,
+                  "proTeamId": 12,
+                  "defaultPositionId": 3,
+                  "eligibleSlots": [
+                    3,
+                    4,
+                    5,
+                    23,
+                    7,
+                    20,
+                    21
+                  ],
+                  "droppable": true,
+                  "injured": false,
+                  "injuryStatus": "ACTIVE",
+                  "stats": []
+                }
+              },
+              "appliedStatTotal": 0.0
+            },
+            {
+              "playerId": 2473037,
+              "lineupSlotId": 17,
+              "status": "NORMAL",
+              "acquisitionDate": null,
+              "injuryStatus": "NORMAL",
+              "playerPoolEntry": {
+                "id": 2473037,
+                "status": "ONTEAM",
+                "appliedStatTotal": 0.0,
+                "player": {
+                  "id": 2473037,
+                  "firstName": "Jason",
+                  "lastName": "Myers",
+                  "fullName": "Jason Myers",
+                  "jersey": null,
+                  "proTeamId": 26,
+                  "defaultPositionId": 5,
+                  "eligibleSlots": [
+                    17,
+                    20,
+                    21
+                  ],
+                  "droppable": true,
+                  "injured": false,
+                  "injuryStatus": "ACTIVE",
+                  "stats": []
+                }
+              },
+              "appliedStatTotal": 0.0
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
