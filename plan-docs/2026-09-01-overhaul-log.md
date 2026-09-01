@@ -347,6 +347,54 @@ the declarations win: they are what consumers consume, `tsc` checks them, and `d
 and unpublished. This is a standing tradeoff, not a defect, but it is worth deciding whether
 `build:docs` still earns its place now that `.d.ts` is the real API documentation.
 
+## Cleanup pass (`/simplify`, after step 11)
+
+Four review agents read the branch diff for reuse, simplification, efficiency and altitude. Their
+findings, and what happened to each.
+
+### Fixed
+
+| Finding | Where | Outcome |
+| --- | --- | --- |
+| `getPath`/`setPath` split every path, including the dotless case that is nearly all of them | `internal/objects.js` | Fast path restored. lodash's `_.get` had one; the replacement dropped it |
+| `each`/`map`/`filter`/`find` allocated a `[key, value]` pair per entry | `internal/collections.js` | Index walk. `find` got its own walk, since it is the one that stops early |
+| `BaseObject` re-enumerated its static `responseMap` once per entity | `base-object.js` | Cached per class as an own property |
+| Unknown slot ids collided into one `"undefined"` key, losing counts | `league.js` | Named resolvers in `constants.js` |
+| Cache unbounded under `cache: true` and `cache: {ttl}` | `http.js` | Config normalized against defaults |
+| Cache key named `x-fantasy-filter`, leaving the next header collision open | `http.js` | Keys on full request identity, minus `Cookie` |
+| `Boxscore` rosters hand-rolled the declarative branch | `boxscore.js` | `BaseObject` + `isArray`; `parseAbsent` no longer needed |
+| `isArray` declared alongside `manualParse`, where it is never read | `team.js` | Removed, with a note saying why |
+| Boxscore schedule/filter/build block written twice | `client.js` | `_parseBoxscoreResponse`, matching the `_parseTeamResponse` precedent |
+| ESPN host retyped five times | `client.js` | `ESPN_HOST`, `LEAGUE_HISTORY_BASE_URL` |
+| `getDraftInfo` scanned 3000 players per pick | `client.js` | Indexed by id once |
+| Two flatteners identical but for their predicate | `utils.js` | One `flatten(object, shouldRecurse)` |
+| Activity labels written in three places | `client.js` | `ACTIVITY_ACTION` is the single source |
+| `manualParse` documented 3 args, example showed 4, code passes 5 | `base-object.js` | Corrected |
+| Response stub written four times plus four inline literals | test files | `client/response.stubs.js` |
+| Six `find` closures the matches-shorthand covers | `client.js` | Shorthand |
+| `scoringSettings` was a `reduce` that behaved as a loop | `league.js` | Loop |
+| Duplicate `createHttp` jsdoc block, the first stale | `http.js` | Deleted |
+| Comments citing `verify:artifacts` and a drift gate this branch deleted | `build-types.mjs` | Rewritten |
+| `entriesOf` exported with no caller | `internal/collections.js` | Removed |
+
+**Parse cost: 933ms -> 130ms** for 2000 free agents, measured on the `free-agents.json` fixture
+before and after. The three causes were all introduced by the lodash removal, and all three were
+invisible to a suite that only ever parses a handful of objects at a time.
+
+### Skipped, with reasons
+
+- **Abort-signal plumbing in `http.js` has no reachable caller.** True: `signal` appears nowhere
+  outside `http.js`, and `createHttp` is not exported from `index.js`. But removing it deletes a
+  working capability rather than cruft, and the alternative - threading `signal` through all eleven
+  `Client` methods - is a public API change, not a cleanup. Left for a decision.
+- **`mergeConfig`'s conditional headers spread has one always-true caller.** Making it
+  unconditional would return `{headers: {}}` where it now returns no `headers` key, for no gain.
+  The branch is only "dead" because there is currently one caller.
+- **A uniform unknown-id policy across all six enum lookups.** The rule that actually holds is
+  narrower: an unresolved id must stay unique where it becomes a *key*, because collisions there
+  lose data. As a *value*, `Player#defaultPosition` reading `undefined` is honest, and a fabricated
+  `positionId27` would be worse. Those sites now say so rather than being made uniform.
+
 ## Required follow-up (not on this branch)
 
 1. **The integration snapshots are stale.** They were recorded before the position and scoring
