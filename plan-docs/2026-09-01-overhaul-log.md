@@ -17,7 +17,7 @@ Legend: `pending` / `in progress` / `done` / `revised` / `abandoned`
 | 7 | Fixture layer | done | `PENDING` |
 | 8 | Types: open unions, exported constants | done (diagnosis corrected) | `PENDING` |
 | 9 | Distribution: `prepare`, drop committed artifacts | done | `PENDING` |
-| 10 | API surface: activity normalization, pagination | pending | |
+| 10 | API surface: activity normalization, pagination | done | `PENDING` |
 
 ---
 
@@ -284,3 +284,19 @@ it" claim replaced with "there is no CI, run `npm run ci` locally".
 fails to resolve locally would go to the network.
 
 Drift is no longer policed, it is impossible: there is nothing committed to drift from.
+
+### Step 10 - API surface
+
+**done.** `ActivityAction` gains `playerName`; `getRecentActivity` gains `limit` and `offset`,
+defaulting to the 25 and 0 that were hardcoded.
+
+`playerId` was dropped from the plan on inspection: `targetId` already is the player id, so the
+field would have been an exact duplicate.
+
+**A fixture bug found while writing this.** `player-cards.json` had the player flat
+(`{id, fullName}`) when the `kona_playercard` response actually wraps it (`{id, player: {...}}`) -
+which the typedef in `client.js` says and the consumer's own access pattern confirms. A flat fixture
+would have let a wrong normalization pass. Corrected, and the assertion now reads through the
+wrapper.
+
+509 tests green, coverage still 100%.

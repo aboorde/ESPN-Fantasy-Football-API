@@ -206,6 +206,7 @@ The result is an array of activity topics, each holding one action per message i
       team,        // the Team's raw response data, or undefined if it could not be resolved
       action,      // 'FA ADDED' | 'WAIVER ADDED' | 'DROPPED' | 'TRADED' | 'UNKNOWN'
       player,      // the roster entry, or the player card when the player is no longer rostered
+      playerName,  // the name, read out of whichever of those two shapes `player` came back in
       bidAmount,   // the winning bid on a 'WAIVER ADDED' action, otherwise 0
       date,        // the topic's timestamp, in epoch milliseconds
       targetId,    // the ESPN player id the message refers to
@@ -217,6 +218,16 @@ The result is an array of activity topics, each holding one action per message i
 
 Pass `msgType` to restrict the result to a single kind of transaction. It accepts `'FA'`, `'WAIVER'`
 or `'TRADED'`; anything else is ignored and every type is returned.
+
+`player` is ESPN's raw object and arrives in one of two shapes: a roster entry when the player is
+still on the team that moved them, nested under `playerPoolEntry`, and a player-card entry when
+they are not, nested under `player`. Which one you get is not knowable before the request. Read
+`playerName` unless you need something else off the raw object -- the obvious hand-written version,
+`player?.playerPoolEntry?.player.fullName`, throws on a `playerPoolEntry` that has no `player`.
+
+Pass `limit` and `offset` to page. Both default to what this method always used, 25 and 0. A single
+busy waiver day can produce more than 25 topics, and ESPN returns the newest ones, so a caller
+filtering by date afterwards would silently lose the rest.
 
 ```javascript
 const trades = await myClient.getRecentActivity({ seasonId: 2024, msgType: 'TRADED' });

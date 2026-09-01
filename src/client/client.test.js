@@ -1350,6 +1350,26 @@ describe('Client', () => {
           });
         });
 
+        describe('paging', () => {
+          test('asks for 25 topics from the start by default', () => {
+            client.getRecentActivity({ seasonId });
+
+            const { limit, limitPerMessageSet, offset } = filterOf(0).topics;
+            expect(limit).toBe(25);
+            expect(limitPerMessageSet.value).toBe(25);
+            expect(offset).toBe(0);
+          });
+
+          test('passes a requested limit and offset through to the filter', () => {
+            client.getRecentActivity({ seasonId, limit: 100, offset: 50 });
+
+            const { limit, limitPerMessageSet, offset } = filterOf(0).topics;
+            expect(limit).toBe(100);
+            expect(limitPerMessageSet.value).toBe(100);
+            expect(offset).toBe(50);
+          });
+        });
+
         describe('when msgType is a known activity type', () => {
           test('filters on only that message type', () => {
             client.getRecentActivity({ seasonId, msgType: 'WAIVER' });

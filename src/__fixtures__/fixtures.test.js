@@ -227,8 +227,27 @@ describe('recorded ESPN payloads', () => {
       expect(parsed[0][0].player.playerPoolEntry.player.fullName).toEqual(expect.any(String));
     });
 
+    test('resolves a name from the roster shape', () => {
+      expect(parsed[0][0].playerName).toEqual(expect.any(String));
+      expect(parsed[0][0].playerName).toBe(parsed[0][0].player.playerPoolEntry.player.fullName);
+    });
+
+    test('resolves a name from the player-card shape too', () => {
+      // The point of the field: the two raw shapes nest the name differently, and a caller
+      // reading them by hand has to know that. Here both come back the same way.
+      expect(parsed[1][0].playerName).toBe('Waiver Fixture');
+      expect(parsed[2][0].playerName).toBe('Traded Fixture');
+    });
+
+    test('leaves the name undefined when the player resolved to nothing', () => {
+      // The UNKNOWN message targets an id on no roster and in no card response.
+      expect(parsed[2][1].playerName).toBeUndefined();
+    });
+
     test('falls back to the player-card response for a player on no roster', () => {
-      expect(parsed[1][0].player.fullName).toBe('Waiver Fixture');
+      // The card response wraps each player, the same way kona_player_info does -- which is why
+      // the two shapes exist and why playerName below is worth having.
+      expect(parsed[1][0].player.player.fullName).toBe('Waiver Fixture');
     });
   });
 

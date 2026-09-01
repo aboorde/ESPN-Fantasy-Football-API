@@ -62,12 +62,33 @@ import createHttp from './http';
  * @property {'FA ADDED'|'WAIVER ADDED'|'DROPPED'|'TRADED'|'UNKNOWN'} action The kind of
  *                          transaction. `UNKNOWN` when ESPN sends a message type this client does
  *                          not label.
- * @property {ActivityPlayer|null} [player] The player the action targeted.
+ * @property {ActivityPlayer|null} [player] The player the action targeted, in whichever of the two
+ *                                          raw shapes ESPN supplied.
+ * @property {string} [playerName] The targeted player's name, read out of whichever shape `player`
+ *                                 came back in. `undefined` when the player could not be resolved
+ *                                 at all. There is no matching `playerId` because `targetId`
+ *                                 already is one.
  * @property {number} bidAmount The winning FAAB bid, for a `WAIVER ADDED`. Zero otherwise.
  * @property {number} date Epoch milliseconds for the topic the action belongs to.
  * @property {number} targetId The ESPN id of the player the action targeted.
  * @property {ActivityIds} ids The message's raw `from`, `for` and `to` ids.
  */
+
+/**
+ * Reads a player's name out of whichever shape the activity lookup produced.
+ *
+ * A player still on the roster of the team that moved them comes back as that team's roster entry,
+ * nested under `playerPoolEntry`. One who is not comes back from the player-card endpoint, nested
+ * under `player`. Which shape a given action gets is not knowable before the request, so a consumer
+ * reading the raw object has to try both -- and the obvious way to write that,
+ * `player?.playerPoolEntry?.player.fullName`, throws on a `playerPoolEntry` without a `player`.
+ *
+ * @param   {object} [player] The raw player object, in either shape.
+ * @returns {string|undefined} The player's name, or `undefined` when there is none to read.
+ */
+const activityPlayerName = (player) => (
+  player?.playerPoolEntry?.player?.fullName ?? player?.player?.fullName
+);
 
 /**
  * Maps ESPN's numeric `messageTypeId` onto the readable label `getRecentActivity` reports.
@@ -523,10 +544,17 @@ class Client {
    * @param   {string} [options.msgType] Restricts results to one activity type: `FA`, `WAIVER`,
    *                                     `DROPPED` or `TRADED`. Anything else, including a numeric
    *                                     message id, returns every transaction type.
+   * @param   {number} [options.limit] How many activity topics to ask for. Defaults to 25, which is
+   *   what this method always used. Raise it when a single busy day -- a waiver Wednesday -- can
+   *   produce more topics than that, since ESPN returns the newest and a caller filtering by date
+   *   afterwards would silently lose the rest.
+   * @param   {number} [options.offset] How many topics to skip, for paging further back.
    * @returns {Promise<ActivityAction[][]>} A promise resolving to the league's recent activity,
    *                                        one inner array per activity topic.
    */
-  getRecentActivity({ seasonId, msgType = '' }) {
+  getRecentActivity({
+    seasonId, msgType = '', limit = 25, offset = 0
+  }) {
     this.constructor._validateV3Params(seasonId, 'getRecentActivity');
 
     const msgTypes = getPath(MESSAGE_IDS_BY_ACTIVITY_TYPE, msgType, ALL_ACTIVITY_MESSAGE_IDS);
@@ -542,9 +570,9 @@ class Client {
         'x-fantasy-filter': JSON.stringify({
           topics: {
             filterType: { value: ['ACTIVITY_TRANSACTIONS'] },
-            limit: 25,
-            limitPerMessageSet: { value: 25 },
-            offset: 0,
+            limit,
+            limitPerMessageSet: { value: limit },
+            offset,
             sortMessageDate: { sortPriority: 1, sortAsc: false },
             sortFor: { sortPriority: 2, sortAsc: false },
             filterIncludeMessageTypeIds: { value: msgTypes }
@@ -611,10 +639,8 @@ class Client {
       return this._http.get(playerRoute, playerConfig).then((playerData) => (
         map(activity, (action) => map(action, (msg) => {
           if (!msg.player) {
-            return {
-              ...msg,
-              player: find(playerData.players, (player) => player.id === msg.targetId)
-            };
+            const player = find(playerData.players, (card) => card.id === msg.targetId);
+            return { ...msg, player, playerName: activityPlayerName(player) };
           }
           return msg;
         }))
@@ -668,7 +694,14 @@ class Client {
       };
 
       return {
-        team, action, player, bidAmount, date, targetId: message.targetId, ids
+        team,
+        action,
+        player,
+        playerName: activityPlayerName(player),
+        bidAmount,
+        date,
+        targetId: message.targetId,
+        ids
       };
     });
   }

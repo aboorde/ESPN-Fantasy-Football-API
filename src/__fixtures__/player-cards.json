@@ -2,13 +2,21 @@
   "players": [
     {
       "id": 999001,
-      "fullName": "Waiver Fixture",
-      "defaultPositionId": 3
+      "player": {
+        "id": 999001,
+        "fullName": "Waiver Fixture",
+        "defaultPositionId": 3,
+        "proTeamId": 3
+      }
     },
     {
       "id": 999002,
-      "fullName": "Traded Fixture",
-      "defaultPositionId": 2
+      "player": {
+        "id": 999002,
+        "fullName": "Traded Fixture",
+        "defaultPositionId": 2,
+        "proTeamId": 7
+      }
     }
   ]
 }
