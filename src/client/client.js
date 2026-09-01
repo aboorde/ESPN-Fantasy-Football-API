@@ -2,8 +2,10 @@ import filter from 'lodash/filter';
 import find from 'lodash/find';
 import forEach from 'lodash/forEach';
 import get from 'lodash/get';
+import keys from 'lodash/keys';
 import map from 'lodash/map';
 import merge from 'lodash/merge';
+import toSafeInteger from 'lodash/toSafeInteger';
 
 import Boxscore from '../boxscore/boxscore';
 import DraftPlayer from '../draft-player/draft-player';
@@ -15,6 +17,37 @@ import Team from '../team/team';
 
 import { flattenObjectSansNumericKeys } from '../utils';
 import http from './http';
+
+/**
+ * Maps ESPN's numeric `messageTypeId` onto the readable label `getRecentActivity` reports.
+ *
+ * ESPN uses three separate ids for a drop depending on how it happened.
+ */
+const ACTIVITY_TYPE_BY_MESSAGE_ID = {
+  178: 'FA ADDED',
+  179: 'DROPPED',
+  180: 'WAIVER ADDED',
+  181: 'DROPPED',
+  239: 'DROPPED',
+  244: 'TRADED'
+};
+
+/**
+ * Maps a caller's `msgType` onto every `messageTypeId` it covers.
+ *
+ * This was previously folded into the same object as the id-to-label map, which had two
+ * consequences: `'178' in map` was true, so a numeric string filtered by the *label* rather than
+ * by an id, and there was no reverse key for DROPPED at all -- so drops could not be filtered to,
+ * because they span three ids and the flat map could only hold one.
+ */
+const MESSAGE_IDS_BY_ACTIVITY_TYPE = {
+  FA: [178],
+  WAIVER: [180],
+  DROPPED: [179, 181, 239],
+  TRADED: [244]
+};
+
+const ALL_ACTIVITY_MESSAGE_IDS = map(keys(ACTIVITY_TYPE_BY_MESSAGE_ID), toSafeInteger);
 
 /**
  * Provides functionality to make a variety of API calls to ESPN for a given fantasy football
@@ -40,20 +73,6 @@ class Client {
     this.leagueId = options.leagueId;
 
     this.setCookies({ espnS2: options.espnS2, SWID: options.SWID });
-
-    // Maps ESPN's numeric `messageTypeId`s onto readable transaction labels, and readable keys
-    // back onto the ids `getRecentActivity` filters by.
-    this.ACTIVITY_MAP = {
-      178: 'FA ADDED',
-      180: 'WAIVER ADDED',
-      179: 'DROPPED',
-      181: 'DROPPED',
-      239: 'DROPPED',
-      244: 'TRADED',
-      FA: 178,
-      WAIVER: 180,
-      TRADED: 244
-    };
   }
 
   /**
@@ -407,23 +426,40 @@ class Client {
    * fantasy football league, newest first. Each element of the returned array corresponds to one
    * activity topic and holds one action per message within that topic.
    *
+   * @typedef  {object} ActivityAction
+   *
+   * One transaction within an activity topic. These are plain objects rather than a BaseObject:
+   * `team` and `player` are ESPN's own raw shapes, passed through so a caller can read whatever it
+   * needs from them.
+   *
+   * @property {object} team The raw ESPN team object that made the move, resolved from the
+   *                         message's `from`, `for` or `to` id depending on the action.
+   * @property {string} action One of `FA ADDED`, `WAIVER ADDED`, `DROPPED`, `TRADED`, or `UNKNOWN`
+   *                          when ESPN sends a message type this client does not label.
+   * @property {object} player The raw ESPN player entry the action targeted. Resolved from the
+   *                           team's roster where the player is still on it, and from the player
+   *                           card endpoint otherwise.
+   * @property {number} bidAmount The winning FAAB bid, for a `WAIVER ADDED`. Zero otherwise.
+   * @property {number} date Epoch milliseconds for the topic the action belongs to.
+   * @property {number} targetId The ESPN id of the player the action targeted.
+   * @property {object} ids The message's raw `from`, `for` and `to` ids.
+   */
+
+  /**
    * @param   {object} options Required options object.
    * @param   {number} options.seasonId The season to grab data from.
-   * @param   {string} [options.msgType] Restricts results to a single activity type. Accepts a key
-   *                                     of `ACTIVITY_MAP`: `FA`, `WAIVER` or `TRADED`. When
-   *                                     omitted, every transaction type is returned.
-   * @returns {Promise<object[][]>} A promise resolving to the league's recent activity.
+   * @param   {string} [options.msgType] Restricts results to one activity type: `FA`, `WAIVER`,
+   *                                     `DROPPED` or `TRADED`. Anything else, including a numeric
+   *                                     message id, returns every transaction type.
+   * @returns {Promise<ActivityAction[][]>} A promise resolving to the league's recent activity,
+   *                                        one inner array per activity topic.
    */
   getRecentActivity({ seasonId, msgType = '' }) {
     this.constructor._validateV3Params(seasonId, 'getRecentActivity');
 
-    let topics = [];
-    let msgTypes = [178, 180, 179, 239, 181, 244];
     const searchIds = [];
     let activity = [];
-    if (msgType in this.ACTIVITY_MAP) {
-      msgTypes = [this.ACTIVITY_MAP[msgType]];
-    }
+    const msgTypes = get(MESSAGE_IDS_BY_ACTIVITY_TYPE, msgType, ALL_ACTIVITY_MESSAGE_IDS);
 
     const route = this.constructor._buildRoute({
       base: `apis/v3/games/ffl/seasons/${seasonId}/segments/0/leagues/${this.leagueId}/communication`,
@@ -456,11 +492,14 @@ class Client {
       baseURL: 'https://lm-api-reads.fantasy.espn.com/'
     });
 
-    return http.get(route, config).then((communicationData) => {
-      topics = communicationData.topics;
-      return http.get(leagueRoute, leagueConfig);
-    }).then((leagueData) => {
-      activity = map(topics, (topic) => this._buildActivity(topic, leagueData));
+    // The league fetch does not depend on the communication fetch -- only the player-card fetch
+    // below does, because it needs the target ids the topics resolve to. Running the first two
+    // together takes a round trip off every call.
+    return Promise.all([
+      http.get(route, config),
+      http.get(leagueRoute, leagueConfig)
+    ]).then(([communicationData, leagueData]) => {
+      activity = map(communicationData.topics, (topic) => this._buildActivity(topic, leagueData));
       forEach(activity, (action) => {
         forEach(action, (msg) => {
           if (!msg.player) {
@@ -529,8 +568,8 @@ class Client {
         team = find(teams, (x) => x.id === message.to);
       }
 
-      if (this.ACTIVITY_MAP[msgId]) {
-        action = this.ACTIVITY_MAP[msgId];
+      if (ACTIVITY_TYPE_BY_MESSAGE_ID[msgId]) {
+        action = ACTIVITY_TYPE_BY_MESSAGE_ID[msgId];
       }
       if (action === 'WAIVER ADDED') {
         bidAmount = message.from || 0;

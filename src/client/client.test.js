@@ -1330,11 +1330,11 @@ describe('Client', () => {
             client.getRecentActivity({ seasonId });
 
             const { filterIncludeMessageTypeIds } = filterOf(0).topics;
-            expect(filterIncludeMessageTypeIds.value).toEqual([178, 180, 179, 239, 181, 244]);
+            expect(filterIncludeMessageTypeIds.value).toEqual([178, 179, 180, 181, 239, 244]);
           });
         });
 
-        describe('when msgType is a key on ACTIVITY_MAP', () => {
+        describe('when msgType is a known activity type', () => {
           test('filters on only that message type', () => {
             client.getRecentActivity({ seasonId, msgType: 'WAIVER' });
 
@@ -1343,17 +1343,39 @@ describe('Client', () => {
           });
         });
 
-        describe('when msgType is not a key on ACTIVITY_MAP', () => {
+        describe('when msgType is not a known activity type', () => {
           test('falls back to every transaction message type', () => {
             client.getRecentActivity({ seasonId, msgType: 'NOT_A_TYPE' });
 
             const { filterIncludeMessageTypeIds } = filterOf(0).topics;
-            expect(filterIncludeMessageTypeIds.value).toEqual([178, 180, 179, 239, 181, 244]);
+            expect(filterIncludeMessageTypeIds.value).toEqual([178, 179, 180, 181, 239, 244]);
+          });
+        });
+
+        describe('when msgType is DROPPED', () => {
+          test('filters on all three message ids ESPN uses for a drop', () => {
+            // The old bidirectional map could hold only one id per label, so DROPPED -- which
+            // spans 179, 181 and 239 -- had no reverse key at all and could not be filtered to.
+            client.getRecentActivity({ seasonId, msgType: 'DROPPED' });
+
+            const { filterIncludeMessageTypeIds } = filterOf(0).topics;
+            expect(filterIncludeMessageTypeIds.value).toEqual([179, 181, 239]);
+          });
+        });
+
+        describe('when msgType is a numeric string', () => {
+          test('falls back to every type rather than filtering by a label', () => {
+            // `'178' in ACTIVITY_MAP` was true when ids and labels shared one object, so this
+            // filtered by the string 'FA ADDED' -- a label where ESPN expects an id.
+            client.getRecentActivity({ seasonId, msgType: '178' });
+
+            const { filterIncludeMessageTypeIds } = filterOf(0).topics;
+            expect(filterIncludeMessageTypeIds.value).toEqual([178, 179, 180, 181, 239, 244]);
           });
         });
 
         describe('after the promises resolve', () => {
-          test('requests the league view second', async () => {
+          test('requests the league view alongside the communication view', async () => {
             await client.getRecentActivity({ seasonId });
 
             const route = `${routeBase(seasonId, client.leagueId)}` +
