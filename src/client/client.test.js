@@ -708,7 +708,8 @@ describe('Client', () => {
 
         test('calls http.get with the correct params', () => {
           const routeBase = `${seasonId}/segments/0/leagues/${leagueId}`;
-          const routeParams = `?scoringPeriodId=${scoringPeriodId}&view=mRoster&view=mTeam`;
+          const routeParams =
+            `?scoringPeriodId=${scoringPeriodId}&view=mRoster&view=mTeam&view=mStandings`;
           const route = `${routeBase}${routeParams}`;
 
           const config = {};
@@ -825,6 +826,39 @@ describe('Client', () => {
               expect(team.roster[0].firstName).toBe(
                 response.teams[index].roster.entries[0].playerPoolEntry.firstName
               );
+            });
+          });
+
+          describe('when a team\'s primaryOwner matches no league member', () => {
+            test('builds the team without an ownerName rather than throwing', async () => {
+              const response = {
+                members: [{ firstName: 'Owner', id: '{PRESENT}', lastName: 'Dude' }],
+                teams: [
+                  { abbrev: 'SWAG', primaryOwner: '{PRESENT}' },
+                  { abbrev: 'GONE', primaryOwner: '{DEPARTED-MANAGER}' }
+                ]
+              };
+              http.get.mockReturnValue(Promise.resolve(response));
+
+              const teams = await client.getTeamsAtWeek({ seasonId, scoringPeriodId });
+
+              expect(teams.length).toBe(2);
+              expect(teams[0].ownerName).toBe('Owner Dude');
+              expect(teams[1].ownerName).toBeUndefined();
+              expect(teams[1].abbreviation).toBe('GONE');
+            });
+          });
+
+          describe('when the response carries no members at all', () => {
+            test('builds the teams without ownerNames rather than throwing', async () => {
+              const response = { teams: [{ abbrev: 'SWAG', primaryOwner: '{ANY}' }] };
+              http.get.mockReturnValue(Promise.resolve(response));
+
+              const teams = await client.getTeamsAtWeek({ seasonId, scoringPeriodId });
+
+              expect(teams.length).toBe(1);
+              expect(teams[0].abbreviation).toBe('SWAG');
+              expect(teams[0].ownerName).toBeUndefined();
             });
           });
         });
