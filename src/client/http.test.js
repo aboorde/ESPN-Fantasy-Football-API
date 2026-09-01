@@ -55,7 +55,8 @@ describe('http', () => {
 
         expect(fetch).toHaveBeenCalledWith(expect.any(String), {
           headers: { Accept: 'application/json' },
-          credentials: undefined
+          credentials: undefined,
+          signal: expect.any(AbortSignal)
         });
       });
 
@@ -68,7 +69,8 @@ describe('http', () => {
             Cookie: 'espn_s2=a;',
             'x-fantasy-filter': '{}'
           },
-          credentials: undefined
+          credentials: undefined,
+          signal: expect.any(AbortSignal)
         });
       });
 
@@ -77,7 +79,8 @@ describe('http', () => {
 
         expect(fetch).toHaveBeenCalledWith(expect.any(String), {
           headers: { Accept: 'text/plain' },
-          credentials: undefined
+          credentials: undefined,
+          signal: expect.any(AbortSignal)
         });
       });
     });
@@ -88,7 +91,8 @@ describe('http', () => {
 
         expect(fetch).toHaveBeenCalledWith(expect.any(String), {
           headers: { Accept: 'application/json' },
-          credentials: 'include'
+          credentials: 'include',
+          signal: expect.any(AbortSignal)
         });
       });
     });
@@ -166,6 +170,226 @@ describe('http', () => {
           status: 500
         });
       });
+    });
+  });
+
+  describe('timeout', () => {
+    test('aborts an attempt that outlives the timeout', async () => {
+      const fetchMock = jest.fn((url, init) => new Promise((resolve, reject) => {
+        init.signal.addEventListener('abort', () => reject(init.signal.reason));
+      }));
+      const client = createHttp({ fetch: fetchMock, timeout: 10, retries: 0 });
+
+      await expect(client.get('route')).rejects.toThrow(/abort|timed out/i);
+    });
+
+    test('does not attach a signal when the timeout is disabled and no signal is passed', async () => {
+      const fetchMock = jest.fn().mockResolvedValue(buildResponse());
+      const client = createHttp({ fetch: fetchMock, timeout: 0 });
+
+      await client.get('route');
+
+      expect(fetchMock.mock.calls[0][1].signal).toBeUndefined();
+    });
+
+    test('honours a per-request timeout over the client default', async () => {
+      const fetchMock = jest.fn((url, init) => new Promise((resolve, reject) => {
+        init.signal.addEventListener('abort', () => reject(init.signal.reason));
+      }));
+      const client = createHttp({ fetch: fetchMock, timeout: 0, retries: 0 });
+
+      await expect(client.get('route', { timeout: 10 })).rejects.toThrow(/abort|timed out/i);
+    });
+  });
+
+  describe('retries', () => {
+    const failing = (status) => buildResponse({
+      ok: false, status, statusText: 'nope', body: '{}'
+    });
+
+    test('retries a 500 and resolves when a later attempt succeeds', async () => {
+      const fetchMock = jest.fn()
+        .mockResolvedValueOnce(failing(500))
+        .mockResolvedValueOnce(buildResponse({ body: '{"ok":true}' }));
+      const client = createHttp({ fetch: fetchMock, retryDelay: 0 });
+
+      await expect(client.get('route')).resolves.toEqual({ ok: true });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    test('retries a 429', async () => {
+      const fetchMock = jest.fn()
+        .mockResolvedValueOnce(failing(429))
+        .mockResolvedValueOnce(buildResponse({ body: '{"ok":true}' }));
+      const client = createHttp({ fetch: fetchMock, retryDelay: 0 });
+
+      await expect(client.get('route')).resolves.toEqual({ ok: true });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    test('gives up after the configured number of retries', async () => {
+      const fetchMock = jest.fn().mockResolvedValue(failing(503));
+      const client = createHttp({ fetch: fetchMock, retries: 2, retryDelay: 0 });
+
+      await expect(client.get('route')).rejects.toMatchObject({ status: 503 });
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    test('does not retry a 4xx', async () => {
+      const fetchMock = jest.fn().mockResolvedValue(failing(401));
+      const client = createHttp({ fetch: fetchMock, retries: 2, retryDelay: 0 });
+
+      await expect(client.get('route')).rejects.toMatchObject({ status: 401 });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    test('does not retry a 2xx whose body is not JSON', async () => {
+      const fetchMock = jest.fn().mockResolvedValue(buildResponse({ body: '<html>maintenance' }));
+      const client = createHttp({ fetch: fetchMock, retries: 2, retryDelay: 0 });
+
+      await expect(client.get('route')).rejects.toThrow(/was not JSON/);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    test('retries a network error', async () => {
+      const fetchMock = jest.fn()
+        .mockRejectedValueOnce(new TypeError('fetch failed'))
+        .mockResolvedValueOnce(buildResponse({ body: '{"ok":true}' }));
+      const client = createHttp({ fetch: fetchMock, retryDelay: 0 });
+
+      await expect(client.get('route')).resolves.toEqual({ ok: true });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    test('waits the seconds ESPN asks for rather than its own backoff', async () => {
+      const response = failing(429);
+      // Fractional seconds so the test does not actually sit for a second. The point is which
+      // branch decides the delay, not its magnitude.
+      response.headers = { get: (name) => (name === 'retry-after' ? '0.01' : null) };
+      const fetchMock = jest.fn()
+        .mockResolvedValueOnce(response)
+        .mockResolvedValueOnce(buildResponse({ body: '{"ok":true}' }));
+
+      // A base delay long enough that honouring it instead would stall this test conspicuously.
+      const client = createHttp({ fetch: fetchMock, retryDelay: 10000 });
+
+      const startedAt = Date.now();
+      await expect(client.get('route')).resolves.toEqual({ ok: true });
+      expect(Date.now() - startedAt).toBeLessThan(1000);
+    });
+
+    test('stops waiting out a backoff as soon as the caller aborts', async () => {
+      const controller = new AbortController();
+      const fetchMock = jest.fn()
+        .mockImplementationOnce(() => {
+          // Aborts during the backoff rather than during the request, which is the case the sleep
+          // has to notice. Aborting any earlier would be caught before the wait even starts.
+          setTimeout(() => controller.abort(), 5);
+          return Promise.resolve(failing(500));
+        })
+        .mockResolvedValue(buildResponse({ body: '{"ok":true}' }));
+      const client = createHttp({ fetch: fetchMock, retryDelay: 10000 });
+
+      const startedAt = Date.now();
+      await client.get('route', { signal: controller.signal }).catch(() => {});
+
+      expect(Date.now() - startedAt).toBeLessThan(1000);
+    });
+
+    test('reports a parseable Retry-After on the error', async () => {
+      const response = failing(429);
+      response.headers = { get: (name) => (name === 'retry-after' ? '2' : null) };
+      const fetchMock = jest.fn().mockResolvedValue(response);
+      const client = createHttp({ fetch: fetchMock, retries: 0 });
+
+      await expect(client.get('route')).rejects.toMatchObject({ retryAfter: 2 });
+    });
+
+    describe('when the caller aborts', () => {
+      test('is terminal -- the request is not retried', async () => {
+        const controller = new AbortController();
+        const fetchMock = jest.fn(() => {
+          controller.abort();
+          return Promise.reject(new Error('aborted'));
+        });
+        const client = createHttp({ fetch: fetchMock, retries: 2, retryDelay: 0 });
+
+        await expect(client.get('route', { signal: controller.signal })).rejects.toThrow();
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+      });
+    });
+  });
+
+  describe('cache', () => {
+    test('is off by default', async () => {
+      const fetchMock = jest.fn().mockResolvedValue(buildResponse({ body: '{"n":1}' }));
+      const client = createHttp({ fetch: fetchMock });
+
+      await client.get('route');
+      await client.get('route');
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    test('serves a second identical request without a fetch', async () => {
+      const fetchMock = jest.fn().mockResolvedValue(buildResponse({ body: '{"n":1}' }));
+      const client = createHttp({ fetch: fetchMock, cache: { ttl: 60000, max: 8 } });
+
+      await expect(client.get('route')).resolves.toEqual({ n: 1 });
+      await expect(client.get('route')).resolves.toEqual({ n: 1 });
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    // getFreeAgents and the player half of getDraftInfo build byte-identical URLs and differ only
+    // in this header. Keyed on URL alone, one would be served the other's response.
+    test('does not confuse two requests that differ only by fantasy filter', async () => {
+      const fetchMock = jest.fn()
+        .mockResolvedValueOnce(buildResponse({ body: '{"who":"free agents"}' }))
+        .mockResolvedValueOnce(buildResponse({ body: '{"who":"draft pool"}' }));
+      const client = createHttp({ fetch: fetchMock, cache: { ttl: 60000, max: 8 } });
+
+      const first = await client.get('players', { headers: { 'x-fantasy-filter': '{"a":1}' } });
+      const second = await client.get('players', { headers: { 'x-fantasy-filter': '{"b":2}' } });
+
+      expect(first).toEqual({ who: 'free agents' });
+      expect(second).toEqual({ who: 'draft pool' });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    test('refetches once the entry has expired', async () => {
+      const fetchMock = jest.fn()
+        .mockResolvedValueOnce(buildResponse({ body: '{"n":1}' }))
+        .mockResolvedValueOnce(buildResponse({ body: '{"n":2}' }));
+      const client = createHttp({ fetch: fetchMock, cache: { ttl: 5, max: 8 } });
+
+      await client.get('route');
+      jest.spyOn(Date, 'now').mockReturnValue(Date.now() + 1000);
+
+      await expect(client.get('route')).resolves.toEqual({ n: 2 });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    test('evicts the oldest entry past max', async () => {
+      const fetchMock = jest.fn().mockResolvedValue(buildResponse({ body: '{"n":1}' }));
+      const client = createHttp({ fetch: fetchMock, cache: { ttl: 60000, max: 2 } });
+
+      await client.get('one');
+      await client.get('two');
+      await client.get('three');
+      await client.get('one'); // evicted, so this refetches
+
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+    });
+
+    test('does not cache a failed request', async () => {
+      const fetchMock = jest.fn()
+        .mockResolvedValueOnce(buildResponse({ ok: false, status: 404, body: '{}' }))
+        .mockResolvedValueOnce(buildResponse({ body: '{"n":1}' }));
+      const client = createHttp({ fetch: fetchMock, cache: { ttl: 60000, max: 8 }, retries: 0 });
+
+      await expect(client.get('route')).rejects.toMatchObject({ status: 404 });
+      await expect(client.get('route')).resolves.toEqual({ n: 1 });
     });
   });
 

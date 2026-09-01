@@ -1697,6 +1697,57 @@ describe('Client', () => {
     });
   });
 
+  describe('request options', () => {
+    const okResponse = (body) => ({
+      ok: true, status: 200, statusText: 'OK', text: () => Promise.resolve(body)
+    });
+
+    test('a configured cache serves a repeated call without a second request', async () => {
+      const fetchMock = jest.fn().mockResolvedValue(okResponse('{"settings":{},"status":{}}'));
+      const client = new Client({
+        leagueId: 213213, fetch: fetchMock, cache: { ttl: 60000, max: 8 }
+      });
+
+      await client.getLeagueInfo({ seasonId: 2018 });
+      await client.getLeagueInfo({ seasonId: 2018 });
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    test('no cache is configured by default', async () => {
+      const fetchMock = jest.fn().mockResolvedValue(okResponse('{"settings":{},"status":{}}'));
+      const client = new Client({ leagueId: 213213, fetch: fetchMock });
+
+      await client.getLeagueInfo({ seasonId: 2018 });
+      await client.getLeagueInfo({ seasonId: 2018 });
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    test('retries reach the http client', async () => {
+      const fetchMock = jest.fn()
+        .mockResolvedValueOnce({
+          ok: false, status: 500, statusText: 'boom', text: () => Promise.resolve('{}')
+        })
+        .mockResolvedValue(okResponse('{"settings":{},"status":{}}'));
+      const client = new Client({ leagueId: 213213, fetch: fetchMock });
+
+      await client.getLeagueInfo({ seasonId: 2018 });
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    test('a 4xx surfaces immediately rather than being retried', async () => {
+      const fetchMock = jest.fn().mockResolvedValue({
+        ok: false, status: 401, statusText: 'Unauthorized', text: () => Promise.resolve('{}')
+      });
+      const client = new Client({ leagueId: 213213, fetch: fetchMock });
+
+      await expect(client.getLeagueInfo({ seasonId: 2018 })).rejects.toMatchObject({ status: 401 });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
   // Everything above stubs the http client and asserts the *route fragment* a method builds. That
   // leaves the join of route to base URL untested, which is the half that decides whether a request
   // reaches ESPN at all -- three of these routes resolve against a different host than the default.

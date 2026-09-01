@@ -133,11 +133,25 @@ class Client {
    * @param {string} [options.SWID] The `SWID` cookie value, for private leagues.
    * @param {Function} [options.fetch] A stand-in for the platform's `fetch`. Supplying one is how
    *                                   a caller observes, records or replays requests.
+   * @param {number} [options.timeout] Per-attempt timeout in milliseconds, 30000 by default. `0`
+   *                                   disables it. With the default retry count, a request's worst
+   *                                   case is roughly three times this plus backoff.
+   * @param {number} [options.retries] How many times to retry a failed request, 2 by default. Only
+   *                                   network errors and 429/5xx are retried; a 4xx never is, and
+   *                                   neither is a request the caller aborted.
+   * @param {false|{ttl: number, max: number}} [options.cache] Off by default. When set, successful
+   *   responses are held for `ttl` milliseconds, at most `max` of them, on this Client. Nothing is
+   *   shared between Clients, and dropping the Client drops the cache.
    */
   constructor(options = {}) {
     this.leagueId = options.leagueId;
 
-    this._http = createHttp({ fetch: options.fetch });
+    this._http = createHttp({
+      fetch: options.fetch,
+      timeout: options.timeout,
+      retries: options.retries,
+      cache: options.cache
+    });
 
     this.setCookies({ espnS2: options.espnS2, SWID: options.SWID });
   }

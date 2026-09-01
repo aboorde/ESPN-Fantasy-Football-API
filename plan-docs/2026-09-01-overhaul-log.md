@@ -12,7 +12,7 @@ Legend: `pending` / `in progress` / `done` / `revised` / `abandoned`
 | 3 | Reshape `League#scoringSettings` | done | `PENDING` |
 | 4 | Delete `BaseCacheableObject` and the `defer` pass | done | `PENDING` |
 | 5a | Injectable transport (pure refactor) | done (revised) | `PENDING` |
-| 5b | Timeout, retry, per-Client cache | pending | |
+| 5b | Timeout, retry, per-Client cache | done | `PENDING` |
 | 6 | Drop lodash | pending | |
 | 7 | Fixture layer | pending | |
 | 8 | Types: open unions, exported constants | pending | |
@@ -156,3 +156,28 @@ That gap was not hypothetical. Repointing `getNFLGamesForPeriod` from `site.api.
 fantasy host passes the entire old suite and fails the new one.
 
 355 tests green, coverage still 100%.
+
+### Step 5b - timeout, retry, cache
+
+**done.** `Client` gains `{ timeout, retries, cache }`, all with the defaults the design settled on.
+
+**A design bug caught during implementation.** The plan specified a cache "keyed by resolved URL".
+That would have been wrong: `getFreeAgents` and the player half of `getDraftInfo` build
+*byte-identical* URLs -
+`{season}/segments/0/leagues/{id}?scoringPeriodId={n}&view=kona_player_info` - and differ only in
+the `x-fantasy-filter` header, one asking for free agents and waivers and the other for the top
+3000 by ownership. A URL-keyed cache would have served one method the other's response. The key now
+includes the filter, and a test asserts the two do not collide. `Cookie` is deliberately excluded:
+a Client holds one credential set for its whole life, so it cannot vary within its own cache.
+
+Other implementation notes:
+
+* The abort signal is composed **fresh per attempt**. `AbortSignal.timeout` is spent once it fires,
+  so a reused one would make every retry after a timeout abort instantly.
+* `Retry-After` is parsed to a number and surfaced on `HttpError.retryAfter` rather than attaching
+  the `Response`. That error is documented as safe to log wholesale, and a Response carries headers.
+* A caller's abort cuts short a backoff already in progress, rather than being noticed a full curve
+  later.
+* A 2xx with a non-JSON body is not retried - the request worked.
+
+378 tests green, coverage still 100%, including every branch of the retry and cache logic.
