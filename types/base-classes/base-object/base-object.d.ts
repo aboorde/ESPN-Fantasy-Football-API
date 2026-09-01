@@ -1,5 +1,97 @@
 export default BaseObject;
 /**
+ * The `responseMap` can have two values: a string or a ResponseMapValueObject. When string, the
+ * data found on that response is directly mapped to the BaseObject without mutation. When
+ * ResponseMapValueObject, the data at the `key` will be used to create BaseObject(s) or
+ * manually parsed with a provided `manualParse function`. Either result is attached to the
+ * BaseObject being populated.
+ */
+export type ResponseMapValueObject = {
+    /**
+     * The key on the response data where the data can be found. This must be
+     * defined.
+     */
+    key: string;
+    /**
+     * The BaseObject to create with the response data.
+     */
+    BaseObject: BaseObject;
+    /**
+     * Whether or not the response data is an array. Useful for
+     * attributes such as "teams".
+     */
+    isArray: boolean;
+    /**
+     * Whether to run `manualParse` even when the response has no
+     * value at `key`. Off by default: a parser is normally written
+     * to shape a value, so calling it with `undefined` is how it
+     * throws, and leaving the attribute unset is what
+     * `_processResponseMapItem` already does with an undefined
+     * result. Turn it on for a parser whose output is meaningful
+     * without input -- `map(undefined)` giving `[]` for a roster
+     * ESPN has not sent, say -- or one that reads `rawData` rather
+     * than its own key.
+     */
+    parseAbsent: boolean;
+    /**
+     * A function to manually apply logic to the response. This
+     * function must return its result to be attached to the
+     * populated BaseObject. The arguments to this function are:
+     * (data at the key), (the whole response), (the instance being
+     * populated).
+     */
+    manualParse: Function;
+};
+/**
+ * @typedef {object} ResponseMapValueObject
+ *
+ * The `responseMap` can have two values: a string or a ResponseMapValueObject. When string, the
+ * data found on that response is directly mapped to the BaseObject without mutation. When
+ * ResponseMapValueObject, the data at the `key` will be used to create BaseObject(s) or
+ * manually parsed with a provided `manualParse function`. Either result is attached to the
+ * BaseObject being populated.
+ *
+ * @property {string} key The key on the response data where the data can be found. This must be
+ *                        defined.
+ * @property {BaseObject} BaseObject The BaseObject to create with the response data.
+ * @property {boolean} isArray Whether or not the response data is an array. Useful for
+ *                             attributes such as "teams".
+ * @property {boolean} parseAbsent Whether to run `manualParse` even when the response has no
+ *                                 value at `key`. Off by default: a parser is normally written
+ *                                 to shape a value, so calling it with `undefined` is how it
+ *                                 throws, and leaving the attribute unset is what
+ *                                 `_processResponseMapItem` already does with an undefined
+ *                                 result. Turn it on for a parser whose output is meaningful
+ *                                 without input -- `map(undefined)` giving `[]` for a roster
+ *                                 ESPN has not sent, say -- or one that reads `rawData` rather
+ *                                 than its own key.
+ * @property {Function} manualParse A function to manually apply logic to the response. This
+ *                                  function must return its result to be attached to the
+ *                                  populated BaseObject. The arguments to this function are:
+ *                                  (data at the key), (the whole response), (the instance being
+ *                                  populated).
+ * @example
+ * static responseMap = {
+ *   teamId: 'teamId',
+ *   team: {
+ *     key: 'team_on_response',
+ *     BaseObject: true
+ *   },
+ *   teams: {
+ *     key: 'teams_on_response',
+ *     BaseObject: Team,
+ *     isArray: true
+ *   },
+ *   manualTeams: {
+ *     key: 'manual_teams_on_response',
+ *     BaseObject: Team,
+ *     manualParse: (responseData, response, constructorParams, instance) => (
+ *       Team.buildFromServer(responseData)
+ *     )
+ *   }
+ * };
+ */
+/**
  * The base class for all project objects. Provides data mapping functionality.
  */
 declare class BaseObject {

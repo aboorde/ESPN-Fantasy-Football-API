@@ -16,10 +16,12 @@ declare class Matchup extends BaseObject {
      *
      * @property {number} id The matchup's id on the schedule.
      * @property {number} matchupPeriodId The matchup period the matchup is played in.
-     * @property {string} winner Which side won: `HOME`, `AWAY`, `TIE`, or `UNDECIDED` while the
+     * @property {import('../constants').WinningTeam} winner Which side won. `UNDECIDED` while the
      *                           matchup is unplayed or in progress.
      * @property {string} playoffTierType Which bracket the matchup belongs to. `NONE` for a regular
      *                                    season game, otherwise a playoff or consolation tier.
+     *   NOTE: left as `string` rather than a union. This project has not observed the full set of
+     *   tier names ESPN uses, and inventing one would be the same mistake as the position enums.
      *
      * @property {number} homeTeamId The home team's id. Can be used to load a cached Team.
      * @property {number} homeScore The total points scored by the home team, live where ESPN is
@@ -47,13 +49,15 @@ declare class Matchup extends BaseObject {
          */
         matchupPeriodId: number;
         /**
-         * Which side won: `HOME`, `AWAY`, `TIE`, or `UNDECIDED` while the
+         * Which side won. `UNDECIDED` while the
          * matchup is unplayed or in progress.
          */
-        winner: string;
+        winner: import("../constants").WinningTeam;
         /**
          * Which bracket the matchup belongs to. `NONE` for a regular
          * season game, otherwise a playoff or consolation tier.
+         * NOTE: left as `string` rather than a union. This project has not observed the full set of
+         * tier names ESPN uses, and inventing one would be the same mistake as the position enums.
          */
         playoffTierType: string;
         /**

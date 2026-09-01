@@ -1,4 +1,8 @@
 export default FreeAgentPlayer;
+export type PlayerStats = import("../player-stats/player-stats").default;
+/**
+ * @typedef {import('../player-stats/player-stats').default} PlayerStats
+ */
 /**
  * Represents a player and their raw stats.
  *

@@ -31,6 +31,56 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
+ * @typedef {object} ResponseMapValueObject
+ *
+ * The `responseMap` can have two values: a string or a ResponseMapValueObject. When string, the
+ * data found on that response is directly mapped to the BaseObject without mutation. When
+ * ResponseMapValueObject, the data at the `key` will be used to create BaseObject(s) or
+ * manually parsed with a provided `manualParse function`. Either result is attached to the
+ * BaseObject being populated.
+ *
+ * @property {string} key The key on the response data where the data can be found. This must be
+ *                        defined.
+ * @property {BaseObject} BaseObject The BaseObject to create with the response data.
+ * @property {boolean} isArray Whether or not the response data is an array. Useful for
+ *                             attributes such as "teams".
+ * @property {boolean} parseAbsent Whether to run `manualParse` even when the response has no
+ *                                 value at `key`. Off by default: a parser is normally written
+ *                                 to shape a value, so calling it with `undefined` is how it
+ *                                 throws, and leaving the attribute unset is what
+ *                                 `_processResponseMapItem` already does with an undefined
+ *                                 result. Turn it on for a parser whose output is meaningful
+ *                                 without input -- `map(undefined)` giving `[]` for a roster
+ *                                 ESPN has not sent, say -- or one that reads `rawData` rather
+ *                                 than its own key.
+ * @property {Function} manualParse A function to manually apply logic to the response. This
+ *                                  function must return its result to be attached to the
+ *                                  populated BaseObject. The arguments to this function are:
+ *                                  (data at the key), (the whole response), (the instance being
+ *                                  populated).
+ * @example
+ * static responseMap = {
+ *   teamId: 'teamId',
+ *   team: {
+ *     key: 'team_on_response',
+ *     BaseObject: true
+ *   },
+ *   teams: {
+ *     key: 'teams_on_response',
+ *     BaseObject: Team,
+ *     isArray: true
+ *   },
+ *   manualTeams: {
+ *     key: 'manual_teams_on_response',
+ *     BaseObject: Team,
+ *     manualParse: (responseData, response, constructorParams, instance) => (
+ *       Team.buildFromServer(responseData)
+ *     )
+ *   }
+ * };
+ */
+
+/**
  * The base class for all project objects. Provides data mapping functionality.
  */
 class BaseObject {
@@ -134,56 +184,6 @@ class BaseObject {
   static _processResponseMapItem({
     data, rawData, constructorParams, instance, isDataFromServer, key, value
   }) {
-    /**
-     * @typedef {object} ResponseMapValueObject
-     *
-     * The `responseMap` can have two values: a string or a ResponseMapValueObject. When string, the
-     * data found on that response is directly mapped to the BaseObject without mutation. When
-     * ResponseMapValueObject, the data at the `key` will be used to create BaseObject(s) or
-     * manually parsed with a provided `manualParse function`. Either result is attached to the
-     * BaseObject being populated.
-     *
-     * @property {string} key The key on the response data where the data can be found. This must be
-     *                        defined.
-     * @property {BaseObject} BaseObject The BaseObject to create with the response data.
-     * @property {boolean} isArray Whether or not the response data is an array. Useful for
-     *                             attributes such as "teams".
-     * @property {boolean} parseAbsent Whether to run `manualParse` even when the response has no
-     *                                 value at `key`. Off by default: a parser is normally written
-     *                                 to shape a value, so calling it with `undefined` is how it
-     *                                 throws, and leaving the attribute unset is what
-     *                                 `_processResponseMapItem` already does with an undefined
-     *                                 result. Turn it on for a parser whose output is meaningful
-     *                                 without input -- `map(undefined)` giving `[]` for a roster
-     *                                 ESPN has not sent, say -- or one that reads `rawData` rather
-     *                                 than its own key.
-     * @property {Function} manualParse A function to manually apply logic to the response. This
-     *                                  function must return its result to be attached to the
-     *                                  populated BaseObject. The arguments to this function are:
-     *                                  (data at the key), (the whole response), (the instance being
-     *                                  populated).
-     * @example
-     * static responseMap = {
-     *   teamId: 'teamId',
-     *   team: {
-     *     key: 'team_on_response',
-     *     BaseObject: true
-     *   },
-     *   teams: {
-     *     key: 'teams_on_response',
-     *     BaseObject: Team,
-     *     isArray: true
-     *   },
-     *   manualTeams: {
-     *     key: 'manual_teams_on_response',
-     *     BaseObject: Team,
-     *     manualParse: (responseData, response, constructorParams, instance) => (
-     *       Team.buildFromServer(responseData)
-     *     )
-     *   }
-     * };
-     */
-
     let item;
 
     if (!isDataFromServer) {
@@ -292,6 +292,10 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /**
+ * @typedef {import('../player-stats/player-stats').default} PlayerStats
+ */
+
+/**
  * Represents a player and their stats on a boxscore.
  *
  * @augments {Player}
@@ -305,8 +309,8 @@ class BoxscorePlayer extends _player_player__WEBPACK_IMPORTED_MODULE_1__["defaul
    * The attributes BoxscorePlayer adds. Everything on Player is inherited through the class
    * hierarchy rather than restated here.
    *
-   * @property {PLAYER_AVAILABILITY_STATUSES} availabilityStatus The fantasy roster status of the
-   *                                                             player.
+   * @property {import('../constants').PlayerAvailabilityStatus} availabilityStatus The fantasy
+   *                                                             roster status of the player.
    * @property {string} rosteredPosition The position the player is slotted at in the fantasy
    *                                     lineup.
    * @property {number} totalPoints The total points scored by the player.
@@ -480,6 +484,7 @@ class Boxscore extends _matchup_matchup__WEBPACK_IMPORTED_MODULE_2__["default"] 
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ACTIVITY_ACTION: () => (/* binding */ ACTIVITY_ACTION),
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var _internal_collections_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../internal/collections.js */ "./src/internal/collections.js");
@@ -577,6 +582,23 @@ const ACTIVITY_TYPE_BY_MESSAGE_ID = {
   239: 'DROPPED',
   244: 'TRADED'
 };
+
+/**
+ * The labels `getRecentActivity` reports, as a frozen object.
+ *
+ * Unlike the ESPN enums in `constants.js`, this union is closed and safe to treat as exhaustive:
+ * these are values this client produces, not values ESPN sends. `UNKNOWN` covers every message
+ * type not in the map above.
+ *
+ * @type {Readonly<Record<string, ActivityAction['action']>>}
+ */
+const ACTIVITY_ACTION = Object.freeze({
+  FA_ADDED: 'FA ADDED',
+  WAIVER_ADDED: 'WAIVER ADDED',
+  DROPPED: 'DROPPED',
+  TRADED: 'TRADED',
+  UNKNOWN: 'UNKNOWN'
+});
 
 /**
  * Maps a caller's `msgType` onto every `messageTypeId` it covers.
@@ -1175,6 +1197,7 @@ class Client {
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Client);
 
 
+
 /***/ },
 
 /***/ "./src/client/http.js"
@@ -1554,6 +1577,10 @@ const createHttp = ({
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   INJURY_STATUS: () => (/* binding */ INJURY_STATUS),
+/* harmony export */   MATCHUP_RESULT: () => (/* binding */ MATCHUP_RESULT),
+/* harmony export */   PLAYER_AVAILABILITY_STATUS: () => (/* binding */ PLAYER_AVAILABILITY_STATUS),
+/* harmony export */   WINNING_TEAM: () => (/* binding */ WINNING_TEAM),
 /* harmony export */   defaultPositionIdToPosition: () => (/* binding */ defaultPositionIdToPosition),
 /* harmony export */   nflTeamIdToNFLTeam: () => (/* binding */ nflTeamIdToNFLTeam),
 /* harmony export */   nflTeamIdToNFLTeamAbbreviation: () => (/* binding */ nflTeamIdToNFLTeamAbbreviation),
@@ -2263,29 +2290,39 @@ const scoringIdToItem = Object.fromEntries(
 );
 
 /**
- * All possible ways a player may be acquired onto a fantasy football team roster.
- * @typedef {
- *   'FREEAGENCY' |
- *   'WAIVERS_TRADITIONAL' |
- *   'WAIVERS_CONTINUOUS'
- * } ACQUISITION_TYPES
+ * ESPN's own string enums, as open unions.
+ *
+ * Each is written `... | (string & {})` rather than as a closed union, deliberately. These lists
+ * are hand-maintained knowledge about an API this project does not control, and that knowledge has
+ * already been wrong here: `defaultPositionId` was read through the lineup-slot enum for years,
+ * reporting four of the six fantasy positions incorrectly. A closed union would let a consumer
+ * write an exhaustive `switch`, have TypeScript certify it complete, and then meet a value ESPN
+ * sends that is not on the list. The open form gives autocomplete without the false promise.
+ *
+ * A few carry runtime constants below, for the values a consumer is likely to compare against.
  */
 
 /**
- * All possible draft types for a league.
- * @typedef {
- *   'OFFLINE' |
+ * How players are acquired onto a roster.
+ * @typedef {'FREEAGENCY' |
+ *   'WAIVERS_TRADITIONAL' |
+ *   'WAIVERS_CONTINUOUS' |
+ *   (string & {})} AcquisitionType
+ */
+
+/**
+ * How a league drafts.
+ * @typedef {'OFFLINE' |
  *   'SNAKE' |
  *   'AUTOPICK' |
  *   'SNAIL' |
- *   'AUCTION'
- * } DRAFT_TYPE
+ *   'AUCTION' |
+ *   (string & {})} DraftType
  */
 
 /**
- * All possible injury statuses for a Player returned by the API
- * @typedef {
- *   'ACTIVE' |
+ * A player's injury status.
+ * @typedef {'ACTIVE' |
  *   'BEREAVEMENT' |
  *   'DAY_TO_DAY' |
  *   'DOUBTFUL' |
@@ -2298,86 +2335,78 @@ const scoringIdToItem = Object.fromEntries(
  *   'SEVEN_DAY_DL' |
  *   'SIXTY_DAY_DL' |
  *   'SUSPENSION' |
- *   'TEN_DAY_DL'
- * } INJURY_STATUSES
+ *   'TEN_DAY_DL' |
+ *   (string & {})} InjuryStatus
  */
 
 /**
- * The different types in which keeper order can be determined.
- * @typedef {
- * 'TRADITIONAL' |
- * 'END_OF_DRAFT' |
- * 'SELECTED_ROUND'
- * } KEEPER_ORDER_TYPES
+ * How keeper order is determined.
+ * @typedef {'TRADITIONAL' |
+ *   'END_OF_DRAFT' |
+ *   'SELECTED_ROUND' |
+ *   (string & {})} KeeperOrderType
  */
 
 /**
- * All possible times at which a starting lineup may be locked and no further changes may be made.
- * @typedef {
- *   'INDIVIDUAL_GAME' |
- *   'FIRSTGAME_SCORINGPERIOD'
- * } LINEUP_LOCK_TIMES
+ * When a starting lineup locks.
+ * @typedef {'INDIVIDUAL_GAME' |
+ *   'FIRSTGAME_SCORINGPERIOD' |
+ *   (string & {})} LineupLockTime
  */
 
 /**
- * All possible types of player moves.
- * @typedef {
- *   'WIN' |
+ * The result of a matchup, from one team's side. This is what a streak is made of.
+ * @typedef {'WIN' |
  *   'LOSS' |
  *   'TIE' |
- *   'NONE'
- * } MATCHUP_RESULTS
+ *   'NONE' |
+ *   (string & {})} MatchupResult
  */
 
 /**
- * All possible tiebreakers for a matchup.
- * @typedef {
- *   'NONE' |
+ * How a tied matchup is broken.
+ * @typedef {'NONE' |
  *   'HOME_TEAM_WINS' |
  *   'SLOT_POINTS' |
  *   'STAT_POINTS' |
- *   'FIRSTGAME_SCORINGPERIOD'
- * } MATCHUP_TIEBREAKERS
+ *   'FIRSTGAME_SCORINGPERIOD' |
+ *   (string & {})} MatchupTiebreaker
  */
 
 /**
- * The status of a player for fantasy rostering purposes.
- * @typedef {
- * 'FREEAGENT' |
- * 'ONTEAM' |
- * 'WAIVERS'
- * } PLAYER_AVAILABILITY_STATUSES
+ * A player's status for fantasy rostering purposes.
+ * @typedef {'FREEAGENT' |
+ *   'ONTEAM' |
+ *   'WAIVERS' |
+ *   (string & {})} PlayerAvailabilityStatus
  */
 
 /**
- * All possible types of player moves.
- * @typedef {
- *   'NONE' |
+ * How a player moved.
+ * @typedef {'NONE' |
  *   'LINEUP' |
  *   'ADD' |
  *   'DROP' |
  *   'DRAFT' |
  *   'UNDRAFT' |
- *   'DRAFT_TRADE'
- * } PLAYER_MOVE_TYPES
+ *   'DRAFT_TRADE' |
+ *   (string & {})} PlayerMoveType
  */
 
 /**
- * The rule by which playoff seeds are determined.
- * @typedef {
- * 'UNKNOWN' |
- * 'H2H_RECORD' |
- * 'TOTAL_POINTS_SCORED' |
- * 'INTRA_DIVISION_RECORD' |
- * 'TOTAL_POINTS_AGAINST' |
- * 'RAW_STAT'
- * } PLAYOFF_SEEDING_RULES
+ * How playoff seeds are determined.
+ * @typedef {'UNKNOWN' |
+ *   'H2H_RECORD' |
+ *   'TOTAL_POINTS_SCORED' |
+ *   'INTRA_DIVISION_RECORD' |
+ *   'TOTAL_POINTS_AGAINST' |
+ *   'RAW_STAT' |
+ *   (string & {})} PlayoffSeedingRule
  */
 
 /**
- * All possible types of transactions.
- * @typedef {
- *   'TRADE_DECLINE' |
+ * A kind of transaction.
+ * @typedef {'TRADE_DECLINE' |
  *   'TRADE_PROPOSAL' |
  *   'TRADE_ACCEPT' |
  *   'TRADE_UPHOLD' |
@@ -2389,19 +2418,66 @@ const scoringIdToItem = Object.fromEntries(
  *   'FUTURE_ROSTER' |
  *   'RETRO_ROSTER' |
  *   'FREEAGENT' |
- *   'DRAFT'
- * } TRANSACTION_TYPES
+ *   'DRAFT' |
+ *   (string & {})} TransactionType
  */
 
 /**
- * Which team won a matchup.
- * @typedef {
- *   'HOME' |
+ * Which side won a matchup.
+ * @typedef {'HOME' |
  *   'AWAY' |
  *   'TIE' |
- *   'UNDECIDED'
- * } WINNING_TEAM
+ *   'UNDECIDED' |
+ *   (string & {})} WinningTeam
  */
+
+/**
+ * Runtime values for {@link WinningTeam}, so a consumer can compare against a constant rather than
+ * repeating a string literal.
+ * @type {Readonly<Record<'HOME'|'AWAY'|'TIE'|'UNDECIDED', WinningTeam>>}
+ */
+const WINNING_TEAM = Object.freeze({
+  HOME: 'HOME',
+  AWAY: 'AWAY',
+  TIE: 'TIE',
+  UNDECIDED: 'UNDECIDED'
+});
+
+/**
+ * Runtime values for {@link MatchupResult}.
+ * @type {Readonly<Record<'WIN'|'LOSS'|'TIE'|'NONE', MatchupResult>>}
+ */
+const MATCHUP_RESULT = Object.freeze({
+  WIN: 'WIN',
+  LOSS: 'LOSS',
+  TIE: 'TIE',
+  NONE: 'NONE'
+});
+
+/**
+ * Runtime values for {@link PlayerAvailabilityStatus}.
+ * @type {Readonly<Record<'FREEAGENT'|'ONTEAM'|'WAIVERS', PlayerAvailabilityStatus>>}
+ */
+const PLAYER_AVAILABILITY_STATUS = Object.freeze({
+  FREEAGENT: 'FREEAGENT',
+  ONTEAM: 'ONTEAM',
+  WAIVERS: 'WAIVERS'
+});
+
+/**
+ * Runtime values for {@link InjuryStatus}. Only the statuses a fantasy manager acts on are given
+ * constants; the type accepts the rest, and any ESPN adds.
+ * @type {Readonly<Record<string, InjuryStatus>>}
+ */
+const INJURY_STATUS = Object.freeze({
+  ACTIVE: 'ACTIVE',
+  DAY_TO_DAY: 'DAY_TO_DAY',
+  DOUBTFUL: 'DOUBTFUL',
+  INJURY_RESERVE: 'INJURY_RESERVE',
+  OUT: 'OUT',
+  QUESTIONABLE: 'QUESTIONABLE',
+  SUSPENSION: 'SUSPENSION'
+});
 
 
 /***/ },
@@ -2420,6 +2496,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _player_stats_player_stats__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../player-stats/player-stats */ "./src/player-stats/player-stats.js");
 
 
+
+/**
+ * @typedef {import('../player-stats/player-stats').default} PlayerStats
+ */
 
 /**
  * Represents a player in a draft.
@@ -2539,6 +2619,10 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+/**
+ * @typedef {import('../player-stats/player-stats').default} PlayerStats
+ */
 
 /**
  * Represents a player and their raw stats.
@@ -3014,12 +3098,12 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
    * @typedef {object} DraftSettings
    *
    * @property {Date} date The date of the draft.
-   * @property {DRAFT_TYPE} type The type of draft.
+   * @property {import('../constants').DraftType} type The type of draft.
    * @property {number} timePerPick The amount of time to make a selection.
    * @property {boolean} canTradeDraftPicks Whether or not draft picks can be traded.
    * @property {number} auctionBudget The budget each team bids with in an auction draft.
    * @property {number} keeperCount The number of players each team may keep.
-   * @property {string} orderType How the draft order was determined.
+   * @property {import('../constants').KeeperOrderType} orderType How the order was determined.
    * @property {number[]} pickOrder The team ids in draft order.
    */
 
@@ -3030,7 +3114,7 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
    *                                        lineup. Key is position; value is count.
    * @property {object} positionLimits The maximum number of players that may be rostered of each
    *                                   position. Key is position; value is count.
-   * @property {LINEUP_LOCK_TIMES} locktime When the starting lineup for a roster locks.
+   * @property {import('../constants').LineupLockTime} locktime When the lineup locks.
    */
 
   /**
@@ -3044,7 +3128,8 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
    * @property {number} playoffMatchupLength How many weeks each playoff matchup lasts.
    * @property {number} numberOfPlayoffTeams The number of playoff teams there will be.
    * @property {object[]} divisions The league's divisions. Each has an `id`, `name` and `size`.
-   * @property {string} playoffSeedingRule The tiebreak used to seed the playoffs.
+   * @property {import('../constants').PlayoffSeedingRule} playoffSeedingRule The tiebreak used
+   *   to seed the playoffs.
    * @property {boolean} playoffReseed Whether the bracket reseeds between playoff rounds.
    */
 
@@ -3055,7 +3140,7 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
    *                           `Team#acquisitionBudgetSpent` for a team's remaining budget.
    * @property {boolean} isUsingBudget Whether the league bids FAAB rather than running a waiver
    *                                  order.
-   * @property {string} type How players are acquired, e.g. `WAIVERS_TRADITIONAL`.
+   * @property {import('../constants').AcquisitionType} type How players are acquired.
    * @property {number} limit The season-long acquisition cap, or -1 when unlimited.
    * @property {number} minimumBid The smallest FAAB bid the league accepts.
    * @property {number} waiverHours How long a dropped player sits on waivers.
@@ -3119,9 +3204,12 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
    * @property {boolean} isActive Whether the league is currently active.
    * @property {boolean} isFull Whether every team slot has been claimed.
    * @property {number} teamsJoined The number of teams that have joined.
-   * @property {string} scoringType How matchups are scored, e.g. `H2H_POINTS`.
-   * @property {string} matchupTieRule The tiebreak applied to a tied regular season matchup.
-   * @property {string} playoffMatchupTieRule The tiebreak applied to a tied playoff matchup.
+   * @property {string} scoringType How matchups are scored, e.g. `H2H_POINTS`. Left as `string`:
+   *   the full set of ESPN scoring types is not verified here.
+   * @property {import('../constants').MatchupTiebreaker} matchupTieRule The tiebreak applied to
+   *   a tied regular season matchup.
+   * @property {import('../constants').MatchupTiebreaker} playoffMatchupTieRule The tiebreak
+   *   applied to a tied playoff matchup.
    *
    * @property {DraftSettings} draftSettings The draft settings of the league.
    * @property {RosterSettings} rosterSettings The roster settings of the league.
@@ -3329,10 +3417,12 @@ class Matchup extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MO
    *
    * @property {number} id The matchup's id on the schedule.
    * @property {number} matchupPeriodId The matchup period the matchup is played in.
-   * @property {string} winner Which side won: `HOME`, `AWAY`, `TIE`, or `UNDECIDED` while the
+   * @property {import('../constants').WinningTeam} winner Which side won. `UNDECIDED` while the
    *                           matchup is unplayed or in progress.
    * @property {string} playoffTierType Which bracket the matchup belongs to. `NONE` for a regular
    *                                    season game, otherwise a playoff or consolation tier.
+   *   NOTE: left as `string` rather than a union. This project has not observed the full set of
+   *   tier names ESPN uses, and inventing one would be the same mistake as the position enums.
    *
    * @property {number} homeTeamId The home team's id. Can be used to load a cached Team.
    * @property {number} homeScore The total points scored by the home team, live where ESPN is
@@ -3653,11 +3743,11 @@ class Player extends _base_classes_base_object_base_object_js__WEBPACK_IMPORTED_
    * @property {Date} acquiredDate The datetime the player was acquired by their current fantasy
    *                               team.
    *
-   * @property {PLAYER_AVAILABILITY_STATUSES} availabilityStatus The fantasy roster status of the
-   *                                                             player.
+   * @property {import('../constants').PlayerAvailabilityStatus} availabilityStatus The fantasy
+   *                                                             roster status of the player.
    * @property {boolean} isDroppable Whether or not the player can be dropped from a team.
    * @property {boolean} isInjured Whether or not the player is injured.
-   * @property {INJURY_STATUSES} injuryStatus The specific injury status/timeline of the player.
+   * @property {import('../constants').InjuryStatus} injuryStatus The player's injury timeline.
    * @property {object} outlooksByWeek ESPN's written outlook for the player, keyed by scoring
    *                                   period.
    */
@@ -3796,8 +3886,9 @@ class Team extends _base_classes_base_object_base_object_js__WEBPACK_IMPORTED_MO
    * @property {number} awayLosses The number of regular season match-ups the team has lost away.
    * @property {number} awayTies The number of regular season match-ups the team has tied away.
    *
-   * @property {string} streakType Whether the team's current run of results is a `WIN`, a `LOSS`,
-   *                               or `NONE` when no games have been played.
+   * @property {import('../constants').MatchupResult} streakType Whether the team's current run of
+   *                               results is a `WIN`, a `LOSS`, or `NONE` when none have been
+   *                               played.
    * @property {number} streakLength How many consecutive results the `streakType` covers.
    * @property {number} gamesBack How far the team trails the leader, in games.
    *
@@ -3824,7 +3915,8 @@ class Team extends _base_classes_base_object_base_object_js__WEBPACK_IMPORTED_MO
    * @property {number} currentProjectedRank The rank ESPN currently projects the team to finish in.
    * @property {number} draftDayProjectedRank The rank ESPN projected on draft day.
    * @property {string} playoffClinchType Whether the team has clinched a playoff spot, a bye, or a
-   *                                      division. `UNKNOWN` until ESPN can determine it.
+   *                                      division. `UNKNOWN` until ESPN can determine it. Left as
+   *                                      `string`: the exact clinch strings are not verified here.
    * @property {boolean} isEliminated Whether the team is mathematically out of the playoff race.
    * @property {number} eliminationMatchupPeriod The matchup period in which the team was
    *                                             eliminated, or 0 if it has not been.
@@ -4063,31 +4155,39 @@ let __webpack_exports__ = {};
   \**********************/
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   Boxscore: () => (/* reexport safe */ _boxscore_boxscore__WEBPACK_IMPORTED_MODULE_0__["default"]),
-/* harmony export */   BoxscorePlayer: () => (/* reexport safe */ _boxscore_player_boxscore_player__WEBPACK_IMPORTED_MODULE_1__["default"]),
-/* harmony export */   Client: () => (/* reexport safe */ _client_client__WEBPACK_IMPORTED_MODULE_2__["default"]),
-/* harmony export */   DraftPlayer: () => (/* reexport safe */ _draft_player_draft_player__WEBPACK_IMPORTED_MODULE_3__["default"]),
-/* harmony export */   FreeAgentPlayer: () => (/* reexport safe */ _free_agent_player_free_agent_player__WEBPACK_IMPORTED_MODULE_4__["default"]),
-/* harmony export */   HttpError: () => (/* reexport safe */ _client_http__WEBPACK_IMPORTED_MODULE_5__.HttpError),
-/* harmony export */   League: () => (/* reexport safe */ _league_league__WEBPACK_IMPORTED_MODULE_6__["default"]),
-/* harmony export */   Matchup: () => (/* reexport safe */ _matchup_matchup__WEBPACK_IMPORTED_MODULE_7__["default"]),
-/* harmony export */   NFLGame: () => (/* reexport safe */ _nfl_game_nfl_game__WEBPACK_IMPORTED_MODULE_8__["default"]),
-/* harmony export */   Player: () => (/* reexport safe */ _player_player__WEBPACK_IMPORTED_MODULE_9__["default"]),
-/* harmony export */   PlayerStats: () => (/* reexport safe */ _player_stats_player_stats__WEBPACK_IMPORTED_MODULE_10__["default"]),
-/* harmony export */   Team: () => (/* reexport safe */ _team_team__WEBPACK_IMPORTED_MODULE_11__["default"])
+/* harmony export */   ACTIVITY_ACTION: () => (/* reexport safe */ _client_client__WEBPACK_IMPORTED_MODULE_3__.ACTIVITY_ACTION),
+/* harmony export */   Boxscore: () => (/* reexport safe */ _boxscore_boxscore__WEBPACK_IMPORTED_MODULE_1__["default"]),
+/* harmony export */   BoxscorePlayer: () => (/* reexport safe */ _boxscore_player_boxscore_player__WEBPACK_IMPORTED_MODULE_2__["default"]),
+/* harmony export */   Client: () => (/* reexport safe */ _client_client__WEBPACK_IMPORTED_MODULE_3__["default"]),
+/* harmony export */   DraftPlayer: () => (/* reexport safe */ _draft_player_draft_player__WEBPACK_IMPORTED_MODULE_4__["default"]),
+/* harmony export */   FreeAgentPlayer: () => (/* reexport safe */ _free_agent_player_free_agent_player__WEBPACK_IMPORTED_MODULE_5__["default"]),
+/* harmony export */   HttpError: () => (/* reexport safe */ _client_http__WEBPACK_IMPORTED_MODULE_6__.HttpError),
+/* harmony export */   INJURY_STATUS: () => (/* reexport safe */ _constants__WEBPACK_IMPORTED_MODULE_0__.INJURY_STATUS),
+/* harmony export */   League: () => (/* reexport safe */ _league_league__WEBPACK_IMPORTED_MODULE_7__["default"]),
+/* harmony export */   MATCHUP_RESULT: () => (/* reexport safe */ _constants__WEBPACK_IMPORTED_MODULE_0__.MATCHUP_RESULT),
+/* harmony export */   Matchup: () => (/* reexport safe */ _matchup_matchup__WEBPACK_IMPORTED_MODULE_8__["default"]),
+/* harmony export */   NFLGame: () => (/* reexport safe */ _nfl_game_nfl_game__WEBPACK_IMPORTED_MODULE_9__["default"]),
+/* harmony export */   PLAYER_AVAILABILITY_STATUS: () => (/* reexport safe */ _constants__WEBPACK_IMPORTED_MODULE_0__.PLAYER_AVAILABILITY_STATUS),
+/* harmony export */   Player: () => (/* reexport safe */ _player_player__WEBPACK_IMPORTED_MODULE_10__["default"]),
+/* harmony export */   PlayerStats: () => (/* reexport safe */ _player_stats_player_stats__WEBPACK_IMPORTED_MODULE_11__["default"]),
+/* harmony export */   Team: () => (/* reexport safe */ _team_team__WEBPACK_IMPORTED_MODULE_12__["default"]),
+/* harmony export */   WINNING_TEAM: () => (/* reexport safe */ _constants__WEBPACK_IMPORTED_MODULE_0__.WINNING_TEAM)
 /* harmony export */ });
-/* harmony import */ var _boxscore_boxscore__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./boxscore/boxscore */ "./src/boxscore/boxscore.js");
-/* harmony import */ var _boxscore_player_boxscore_player__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./boxscore-player/boxscore-player */ "./src/boxscore-player/boxscore-player.js");
-/* harmony import */ var _client_client__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./client/client */ "./src/client/client.js");
-/* harmony import */ var _draft_player_draft_player__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./draft-player/draft-player */ "./src/draft-player/draft-player.js");
-/* harmony import */ var _free_agent_player_free_agent_player__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./free-agent-player/free-agent-player */ "./src/free-agent-player/free-agent-player.js");
-/* harmony import */ var _client_http__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./client/http */ "./src/client/http.js");
-/* harmony import */ var _league_league__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./league/league */ "./src/league/league.js");
-/* harmony import */ var _matchup_matchup__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./matchup/matchup */ "./src/matchup/matchup.js");
-/* harmony import */ var _nfl_game_nfl_game__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./nfl-game/nfl-game */ "./src/nfl-game/nfl-game.js");
-/* harmony import */ var _player_player__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./player/player */ "./src/player/player.js");
-/* harmony import */ var _player_stats_player_stats__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./player-stats/player-stats */ "./src/player-stats/player-stats.js");
-/* harmony import */ var _team_team__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./team/team */ "./src/team/team.js");
+/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./constants */ "./src/constants.js");
+/* harmony import */ var _boxscore_boxscore__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./boxscore/boxscore */ "./src/boxscore/boxscore.js");
+/* harmony import */ var _boxscore_player_boxscore_player__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./boxscore-player/boxscore-player */ "./src/boxscore-player/boxscore-player.js");
+/* harmony import */ var _client_client__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./client/client */ "./src/client/client.js");
+/* harmony import */ var _draft_player_draft_player__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./draft-player/draft-player */ "./src/draft-player/draft-player.js");
+/* harmony import */ var _free_agent_player_free_agent_player__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./free-agent-player/free-agent-player */ "./src/free-agent-player/free-agent-player.js");
+/* harmony import */ var _client_http__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./client/http */ "./src/client/http.js");
+/* harmony import */ var _league_league__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./league/league */ "./src/league/league.js");
+/* harmony import */ var _matchup_matchup__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./matchup/matchup */ "./src/matchup/matchup.js");
+/* harmony import */ var _nfl_game_nfl_game__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./nfl-game/nfl-game */ "./src/nfl-game/nfl-game.js");
+/* harmony import */ var _player_player__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./player/player */ "./src/player/player.js");
+/* harmony import */ var _player_stats_player_stats__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./player-stats/player-stats */ "./src/player-stats/player-stats.js");
+/* harmony import */ var _team_team__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./team/team */ "./src/team/team.js");
+
+
 
 
 

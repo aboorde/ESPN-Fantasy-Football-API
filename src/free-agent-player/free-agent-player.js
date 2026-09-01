@@ -3,6 +3,10 @@ import Player from '../player/player';
 import { parsePlayerStats } from '../player-stats/player-stats';
 
 /**
+ * @typedef {import('../player-stats/player-stats').default} PlayerStats
+ */
+
+/**
  * Represents a player and their raw stats.
  *
  * @augments {Player}

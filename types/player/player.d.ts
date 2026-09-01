@@ -35,11 +35,11 @@ declare class Player extends BaseObject {
      * @property {Date} acquiredDate The datetime the player was acquired by their current fantasy
      *                               team.
      *
-     * @property {PLAYER_AVAILABILITY_STATUSES} availabilityStatus The fantasy roster status of the
-     *                                                             player.
+     * @property {import('../constants').PlayerAvailabilityStatus} availabilityStatus The fantasy
+     *                                                             roster status of the player.
      * @property {boolean} isDroppable Whether or not the player can be dropped from a team.
      * @property {boolean} isInjured Whether or not the player is injured.
-     * @property {INJURY_STATUSES} injuryStatus The specific injury status/timeline of the player.
+     * @property {import('../constants').InjuryStatus} injuryStatus The player's injury timeline.
      * @property {object} outlooksByWeek ESPN's written outlook for the player, keyed by scoring
      *                                   period.
      */
@@ -116,10 +116,10 @@ declare class Player extends BaseObject {
          */
         acquiredDate: Date;
         /**
-         * The fantasy roster status of the
-         * player.
+         * The fantasy
+         * roster status of the player.
          */
-        availabilityStatus: PLAYER_AVAILABILITY_STATUSES;
+        availabilityStatus: import("../constants").PlayerAvailabilityStatus;
         /**
          * Whether or not the player can be dropped from a team.
          */
@@ -129,9 +129,9 @@ declare class Player extends BaseObject {
          */
         isInjured: boolean;
         /**
-         * The specific injury status/timeline of the player.
+         * The player's injury timeline.
          */
-        injuryStatus: INJURY_STATUSES;
+        injuryStatus: import("../constants").InjuryStatus;
         /**
          * ESPN's written outlook for the player, keyed by scoring
          * period.

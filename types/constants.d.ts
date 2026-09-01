@@ -391,6 +391,157 @@ export const scoringIdToItem: {
     [k: string]: string;
 };
 /**
+ * ESPN's own string enums, as open unions.
+ *
+ * Each is written `... | (string & {})` rather than as a closed union, deliberately. These lists
+ * are hand-maintained knowledge about an API this project does not control, and that knowledge has
+ * already been wrong here: `defaultPositionId` was read through the lineup-slot enum for years,
+ * reporting four of the six fantasy positions incorrectly. A closed union would let a consumer
+ * write an exhaustive `switch`, have TypeScript certify it complete, and then meet a value ESPN
+ * sends that is not on the list. The open form gives autocomplete without the false promise.
+ *
+ * A few carry runtime constants below, for the values a consumer is likely to compare against.
+ */
+/**
+ * How players are acquired onto a roster.
+ * @typedef {'FREEAGENCY' |
+ *   'WAIVERS_TRADITIONAL' |
+ *   'WAIVERS_CONTINUOUS' |
+ *   (string & {})} AcquisitionType
+ */
+/**
+ * How a league drafts.
+ * @typedef {'OFFLINE' |
+ *   'SNAKE' |
+ *   'AUTOPICK' |
+ *   'SNAIL' |
+ *   'AUCTION' |
+ *   (string & {})} DraftType
+ */
+/**
+ * A player's injury status.
+ * @typedef {'ACTIVE' |
+ *   'BEREAVEMENT' |
+ *   'DAY_TO_DAY' |
+ *   'DOUBTFUL' |
+ *   'FIFTEEN_DAY_DL' |
+ *   'INJURY_RESERVE' |
+ *   'OUT' |
+ *   'PATERNITY' |
+ *   'PROBABLE' |
+ *   'QUESTIONABLE' |
+ *   'SEVEN_DAY_DL' |
+ *   'SIXTY_DAY_DL' |
+ *   'SUSPENSION' |
+ *   'TEN_DAY_DL' |
+ *   (string & {})} InjuryStatus
+ */
+/**
+ * How keeper order is determined.
+ * @typedef {'TRADITIONAL' |
+ *   'END_OF_DRAFT' |
+ *   'SELECTED_ROUND' |
+ *   (string & {})} KeeperOrderType
+ */
+/**
+ * When a starting lineup locks.
+ * @typedef {'INDIVIDUAL_GAME' |
+ *   'FIRSTGAME_SCORINGPERIOD' |
+ *   (string & {})} LineupLockTime
+ */
+/**
+ * The result of a matchup, from one team's side. This is what a streak is made of.
+ * @typedef {'WIN' |
+ *   'LOSS' |
+ *   'TIE' |
+ *   'NONE' |
+ *   (string & {})} MatchupResult
+ */
+/**
+ * How a tied matchup is broken.
+ * @typedef {'NONE' |
+ *   'HOME_TEAM_WINS' |
+ *   'SLOT_POINTS' |
+ *   'STAT_POINTS' |
+ *   'FIRSTGAME_SCORINGPERIOD' |
+ *   (string & {})} MatchupTiebreaker
+ */
+/**
+ * A player's status for fantasy rostering purposes.
+ * @typedef {'FREEAGENT' |
+ *   'ONTEAM' |
+ *   'WAIVERS' |
+ *   (string & {})} PlayerAvailabilityStatus
+ */
+/**
+ * How a player moved.
+ * @typedef {'NONE' |
+ *   'LINEUP' |
+ *   'ADD' |
+ *   'DROP' |
+ *   'DRAFT' |
+ *   'UNDRAFT' |
+ *   'DRAFT_TRADE' |
+ *   (string & {})} PlayerMoveType
+ */
+/**
+ * How playoff seeds are determined.
+ * @typedef {'UNKNOWN' |
+ *   'H2H_RECORD' |
+ *   'TOTAL_POINTS_SCORED' |
+ *   'INTRA_DIVISION_RECORD' |
+ *   'TOTAL_POINTS_AGAINST' |
+ *   'RAW_STAT' |
+ *   (string & {})} PlayoffSeedingRule
+ */
+/**
+ * A kind of transaction.
+ * @typedef {'TRADE_DECLINE' |
+ *   'TRADE_PROPOSAL' |
+ *   'TRADE_ACCEPT' |
+ *   'TRADE_UPHOLD' |
+ *   'TRADE_VETO' |
+ *   'WAIVER_ERROR' |
+ *   'TRADE_ERROR' |
+ *   'WAIVER' |
+ *   'ROSTER' |
+ *   'FUTURE_ROSTER' |
+ *   'RETRO_ROSTER' |
+ *   'FREEAGENT' |
+ *   'DRAFT' |
+ *   (string & {})} TransactionType
+ */
+/**
+ * Which side won a matchup.
+ * @typedef {'HOME' |
+ *   'AWAY' |
+ *   'TIE' |
+ *   'UNDECIDED' |
+ *   (string & {})} WinningTeam
+ */
+/**
+ * Runtime values for {@link WinningTeam}, so a consumer can compare against a constant rather than
+ * repeating a string literal.
+ * @type {Readonly<Record<'HOME'|'AWAY'|'TIE'|'UNDECIDED', WinningTeam>>}
+ */
+export const WINNING_TEAM: Readonly<Record<"HOME" | "AWAY" | "TIE" | "UNDECIDED", WinningTeam>>;
+/**
+ * Runtime values for {@link MatchupResult}.
+ * @type {Readonly<Record<'WIN'|'LOSS'|'TIE'|'NONE', MatchupResult>>}
+ */
+export const MATCHUP_RESULT: Readonly<Record<"WIN" | "LOSS" | "TIE" | "NONE", MatchupResult>>;
+/**
+ * Runtime values for {@link PlayerAvailabilityStatus}.
+ * @type {Readonly<Record<'FREEAGENT'|'ONTEAM'|'WAIVERS', PlayerAvailabilityStatus>>}
+ */
+export const PLAYER_AVAILABILITY_STATUS: Readonly<Record<"FREEAGENT" | "ONTEAM" | "WAIVERS", PlayerAvailabilityStatus>>;
+/**
+ * Runtime values for {@link InjuryStatus}. Only the statuses a fantasy manager acts on are given
+ * constants; the type accepts the rest, and any ESPN adds.
+ * @type {Readonly<Record<string, InjuryStatus>>}
+ */
+export const INJURY_STATUS: Readonly<Record<string, InjuryStatus>>;
+/**
  * `scoringItemToId` and `scoringIdToItem` map between numerical ids and human-readable attribute
  * names. While some attributes are straight-forward (yards, attempts, completions, etc.), some
  * attributes are niche items such as ranges.
@@ -1217,3 +1368,51 @@ export type ScoringItems = {
      */
     fairCatches: number;
 };
+/**
+ * How players are acquired onto a roster.
+ */
+export type AcquisitionType = "FREEAGENCY" | "WAIVERS_TRADITIONAL" | "WAIVERS_CONTINUOUS" | (string & {});
+/**
+ * How a league drafts.
+ */
+export type DraftType = "OFFLINE" | "SNAKE" | "AUTOPICK" | "SNAIL" | "AUCTION" | (string & {});
+/**
+ * A player's injury status.
+ */
+export type InjuryStatus = "ACTIVE" | "BEREAVEMENT" | "DAY_TO_DAY" | "DOUBTFUL" | "FIFTEEN_DAY_DL" | "INJURY_RESERVE" | "OUT" | "PATERNITY" | "PROBABLE" | "QUESTIONABLE" | "SEVEN_DAY_DL" | "SIXTY_DAY_DL" | "SUSPENSION" | "TEN_DAY_DL" | (string & {});
+/**
+ * How keeper order is determined.
+ */
+export type KeeperOrderType = "TRADITIONAL" | "END_OF_DRAFT" | "SELECTED_ROUND" | (string & {});
+/**
+ * When a starting lineup locks.
+ */
+export type LineupLockTime = "INDIVIDUAL_GAME" | "FIRSTGAME_SCORINGPERIOD" | (string & {});
+/**
+ * The result of a matchup, from one team's side. This is what a streak is made of.
+ */
+export type MatchupResult = "WIN" | "LOSS" | "TIE" | "NONE" | (string & {});
+/**
+ * How a tied matchup is broken.
+ */
+export type MatchupTiebreaker = "NONE" | "HOME_TEAM_WINS" | "SLOT_POINTS" | "STAT_POINTS" | "FIRSTGAME_SCORINGPERIOD" | (string & {});
+/**
+ * A player's status for fantasy rostering purposes.
+ */
+export type PlayerAvailabilityStatus = "FREEAGENT" | "ONTEAM" | "WAIVERS" | (string & {});
+/**
+ * How a player moved.
+ */
+export type PlayerMoveType = "NONE" | "LINEUP" | "ADD" | "DROP" | "DRAFT" | "UNDRAFT" | "DRAFT_TRADE" | (string & {});
+/**
+ * How playoff seeds are determined.
+ */
+export type PlayoffSeedingRule = "UNKNOWN" | "H2H_RECORD" | "TOTAL_POINTS_SCORED" | "INTRA_DIVISION_RECORD" | "TOTAL_POINTS_AGAINST" | "RAW_STAT" | (string & {});
+/**
+ * A kind of transaction.
+ */
+export type TransactionType = "TRADE_DECLINE" | "TRADE_PROPOSAL" | "TRADE_ACCEPT" | "TRADE_UPHOLD" | "TRADE_VETO" | "WAIVER_ERROR" | "TRADE_ERROR" | "WAIVER" | "ROSTER" | "FUTURE_ROSTER" | "RETRO_ROSTER" | "FREEAGENT" | "DRAFT" | (string & {});
+/**
+ * Which side won a matchup.
+ */
+export type WinningTeam = "HOME" | "AWAY" | "TIE" | "UNDECIDED" | (string & {});

@@ -700,29 +700,39 @@ export const scoringIdToItem = Object.fromEntries(
 );
 
 /**
- * All possible ways a player may be acquired onto a fantasy football team roster.
- * @typedef {
- *   'FREEAGENCY' |
- *   'WAIVERS_TRADITIONAL' |
- *   'WAIVERS_CONTINUOUS'
- * } ACQUISITION_TYPES
+ * ESPN's own string enums, as open unions.
+ *
+ * Each is written `... | (string & {})` rather than as a closed union, deliberately. These lists
+ * are hand-maintained knowledge about an API this project does not control, and that knowledge has
+ * already been wrong here: `defaultPositionId` was read through the lineup-slot enum for years,
+ * reporting four of the six fantasy positions incorrectly. A closed union would let a consumer
+ * write an exhaustive `switch`, have TypeScript certify it complete, and then meet a value ESPN
+ * sends that is not on the list. The open form gives autocomplete without the false promise.
+ *
+ * A few carry runtime constants below, for the values a consumer is likely to compare against.
  */
 
 /**
- * All possible draft types for a league.
- * @typedef {
- *   'OFFLINE' |
+ * How players are acquired onto a roster.
+ * @typedef {'FREEAGENCY' |
+ *   'WAIVERS_TRADITIONAL' |
+ *   'WAIVERS_CONTINUOUS' |
+ *   (string & {})} AcquisitionType
+ */
+
+/**
+ * How a league drafts.
+ * @typedef {'OFFLINE' |
  *   'SNAKE' |
  *   'AUTOPICK' |
  *   'SNAIL' |
- *   'AUCTION'
- * } DRAFT_TYPE
+ *   'AUCTION' |
+ *   (string & {})} DraftType
  */
 
 /**
- * All possible injury statuses for a Player returned by the API
- * @typedef {
- *   'ACTIVE' |
+ * A player's injury status.
+ * @typedef {'ACTIVE' |
  *   'BEREAVEMENT' |
  *   'DAY_TO_DAY' |
  *   'DOUBTFUL' |
@@ -735,86 +745,78 @@ export const scoringIdToItem = Object.fromEntries(
  *   'SEVEN_DAY_DL' |
  *   'SIXTY_DAY_DL' |
  *   'SUSPENSION' |
- *   'TEN_DAY_DL'
- * } INJURY_STATUSES
+ *   'TEN_DAY_DL' |
+ *   (string & {})} InjuryStatus
  */
 
 /**
- * The different types in which keeper order can be determined.
- * @typedef {
- * 'TRADITIONAL' |
- * 'END_OF_DRAFT' |
- * 'SELECTED_ROUND'
- * } KEEPER_ORDER_TYPES
+ * How keeper order is determined.
+ * @typedef {'TRADITIONAL' |
+ *   'END_OF_DRAFT' |
+ *   'SELECTED_ROUND' |
+ *   (string & {})} KeeperOrderType
  */
 
 /**
- * All possible times at which a starting lineup may be locked and no further changes may be made.
- * @typedef {
- *   'INDIVIDUAL_GAME' |
- *   'FIRSTGAME_SCORINGPERIOD'
- * } LINEUP_LOCK_TIMES
+ * When a starting lineup locks.
+ * @typedef {'INDIVIDUAL_GAME' |
+ *   'FIRSTGAME_SCORINGPERIOD' |
+ *   (string & {})} LineupLockTime
  */
 
 /**
- * All possible types of player moves.
- * @typedef {
- *   'WIN' |
+ * The result of a matchup, from one team's side. This is what a streak is made of.
+ * @typedef {'WIN' |
  *   'LOSS' |
  *   'TIE' |
- *   'NONE'
- * } MATCHUP_RESULTS
+ *   'NONE' |
+ *   (string & {})} MatchupResult
  */
 
 /**
- * All possible tiebreakers for a matchup.
- * @typedef {
- *   'NONE' |
+ * How a tied matchup is broken.
+ * @typedef {'NONE' |
  *   'HOME_TEAM_WINS' |
  *   'SLOT_POINTS' |
  *   'STAT_POINTS' |
- *   'FIRSTGAME_SCORINGPERIOD'
- * } MATCHUP_TIEBREAKERS
+ *   'FIRSTGAME_SCORINGPERIOD' |
+ *   (string & {})} MatchupTiebreaker
  */
 
 /**
- * The status of a player for fantasy rostering purposes.
- * @typedef {
- * 'FREEAGENT' |
- * 'ONTEAM' |
- * 'WAIVERS'
- * } PLAYER_AVAILABILITY_STATUSES
+ * A player's status for fantasy rostering purposes.
+ * @typedef {'FREEAGENT' |
+ *   'ONTEAM' |
+ *   'WAIVERS' |
+ *   (string & {})} PlayerAvailabilityStatus
  */
 
 /**
- * All possible types of player moves.
- * @typedef {
- *   'NONE' |
+ * How a player moved.
+ * @typedef {'NONE' |
  *   'LINEUP' |
  *   'ADD' |
  *   'DROP' |
  *   'DRAFT' |
  *   'UNDRAFT' |
- *   'DRAFT_TRADE'
- * } PLAYER_MOVE_TYPES
+ *   'DRAFT_TRADE' |
+ *   (string & {})} PlayerMoveType
  */
 
 /**
- * The rule by which playoff seeds are determined.
- * @typedef {
- * 'UNKNOWN' |
- * 'H2H_RECORD' |
- * 'TOTAL_POINTS_SCORED' |
- * 'INTRA_DIVISION_RECORD' |
- * 'TOTAL_POINTS_AGAINST' |
- * 'RAW_STAT'
- * } PLAYOFF_SEEDING_RULES
+ * How playoff seeds are determined.
+ * @typedef {'UNKNOWN' |
+ *   'H2H_RECORD' |
+ *   'TOTAL_POINTS_SCORED' |
+ *   'INTRA_DIVISION_RECORD' |
+ *   'TOTAL_POINTS_AGAINST' |
+ *   'RAW_STAT' |
+ *   (string & {})} PlayoffSeedingRule
  */
 
 /**
- * All possible types of transactions.
- * @typedef {
- *   'TRADE_DECLINE' |
+ * A kind of transaction.
+ * @typedef {'TRADE_DECLINE' |
  *   'TRADE_PROPOSAL' |
  *   'TRADE_ACCEPT' |
  *   'TRADE_UPHOLD' |
@@ -826,16 +828,63 @@ export const scoringIdToItem = Object.fromEntries(
  *   'FUTURE_ROSTER' |
  *   'RETRO_ROSTER' |
  *   'FREEAGENT' |
- *   'DRAFT'
- * } TRANSACTION_TYPES
+ *   'DRAFT' |
+ *   (string & {})} TransactionType
  */
 
 /**
- * Which team won a matchup.
- * @typedef {
- *   'HOME' |
+ * Which side won a matchup.
+ * @typedef {'HOME' |
  *   'AWAY' |
  *   'TIE' |
- *   'UNDECIDED'
- * } WINNING_TEAM
+ *   'UNDECIDED' |
+ *   (string & {})} WinningTeam
  */
+
+/**
+ * Runtime values for {@link WinningTeam}, so a consumer can compare against a constant rather than
+ * repeating a string literal.
+ * @type {Readonly<Record<'HOME'|'AWAY'|'TIE'|'UNDECIDED', WinningTeam>>}
+ */
+export const WINNING_TEAM = Object.freeze({
+  HOME: 'HOME',
+  AWAY: 'AWAY',
+  TIE: 'TIE',
+  UNDECIDED: 'UNDECIDED'
+});
+
+/**
+ * Runtime values for {@link MatchupResult}.
+ * @type {Readonly<Record<'WIN'|'LOSS'|'TIE'|'NONE', MatchupResult>>}
+ */
+export const MATCHUP_RESULT = Object.freeze({
+  WIN: 'WIN',
+  LOSS: 'LOSS',
+  TIE: 'TIE',
+  NONE: 'NONE'
+});
+
+/**
+ * Runtime values for {@link PlayerAvailabilityStatus}.
+ * @type {Readonly<Record<'FREEAGENT'|'ONTEAM'|'WAIVERS', PlayerAvailabilityStatus>>}
+ */
+export const PLAYER_AVAILABILITY_STATUS = Object.freeze({
+  FREEAGENT: 'FREEAGENT',
+  ONTEAM: 'ONTEAM',
+  WAIVERS: 'WAIVERS'
+});
+
+/**
+ * Runtime values for {@link InjuryStatus}. Only the statuses a fantasy manager acts on are given
+ * constants; the type accepts the rest, and any ESPN adds.
+ * @type {Readonly<Record<string, InjuryStatus>>}
+ */
+export const INJURY_STATUS = Object.freeze({
+  ACTIVE: 'ACTIVE',
+  DAY_TO_DAY: 'DAY_TO_DAY',
+  DOUBTFUL: 'DOUBTFUL',
+  INJURY_RESERVE: 'INJURY_RESERVE',
+  OUT: 'OUT',
+  QUESTIONABLE: 'QUESTIONABLE',
+  SUSPENSION: 'SUSPENSION'
+});

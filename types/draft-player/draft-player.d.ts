@@ -1,4 +1,8 @@
 export default DraftPlayer;
+export type PlayerStats = import("../player-stats/player-stats").default;
+/**
+ * @typedef {import('../player-stats/player-stats').default} PlayerStats
+ */
 /**
  * Represents a player in a draft.
  *

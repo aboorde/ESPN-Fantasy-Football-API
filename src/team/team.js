@@ -59,8 +59,9 @@ class Team extends BaseObject {
    * @property {number} awayLosses The number of regular season match-ups the team has lost away.
    * @property {number} awayTies The number of regular season match-ups the team has tied away.
    *
-   * @property {string} streakType Whether the team's current run of results is a `WIN`, a `LOSS`,
-   *                               or `NONE` when no games have been played.
+   * @property {import('../constants').MatchupResult} streakType Whether the team's current run of
+   *                               results is a `WIN`, a `LOSS`, or `NONE` when none have been
+   *                               played.
    * @property {number} streakLength How many consecutive results the `streakType` covers.
    * @property {number} gamesBack How far the team trails the leader, in games.
    *
@@ -87,7 +88,8 @@ class Team extends BaseObject {
    * @property {number} currentProjectedRank The rank ESPN currently projects the team to finish in.
    * @property {number} draftDayProjectedRank The rank ESPN projected on draft day.
    * @property {string} playoffClinchType Whether the team has clinched a playoff spot, a bye, or a
-   *                                      division. `UNKNOWN` until ESPN can determine it.
+   *                                      division. `UNKNOWN` until ESPN can determine it. Left as
+   *                                      `string`: the exact clinch strings are not verified here.
    * @property {boolean} isEliminated Whether the team is mathematically out of the playoff race.
    * @property {number} eliminationMatchupPeriod The matchup period in which the team was
    *                                             eliminated, or 0 if it has not been.

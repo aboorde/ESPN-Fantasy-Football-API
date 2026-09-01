@@ -18,22 +18,29 @@
  * declaration that no longer matches src/ fails the build the same way a stale bundle does.
  *
  * KNOWN LIMITATION: the emitted declarations do not typecheck standalone -- `tsc --strict
- * node.d.ts` without `skipLibCheck` reports around 23 errors. They are invisible to consumers,
+ * node.d.ts` without `skipLibCheck` reports 9 errors, all TS2417. They are invisible to consumers,
  * because `skipLibCheck` has been the tsc default since 5.0 and every consumer here sets it, and
- * they do not affect instance types, which is all a consumer reads. Two causes, both structural:
+ * they do not affect instance types, which is all a consumer reads.
  *
- *   - TS2417, static-side incompatibility. `@type {XMap}` deliberately describes `responseMap` as
- *     the attributes it produces rather than the `{key, manualParse}` objects it holds. That is
- *     the whole mechanism this file depends on. A subclass documenting only its own additions is
- *     then not assignable to its parent's static. Fixing it means every subclass map restating its
- *     parent's, which is the duplication the class hierarchy exists to avoid.
- *   - TS2304, unresolved names. The jsdoc references `PlayerStats` and the union typedefs in
- *     constants.js (`DRAFT_TYPE`, `INJURY_STATUSES`, ...) by bare name. tsc drops a module-scope
- *     typedef nothing exported refers to, so those never reach `constants.d.ts`. Resolving them
- *     needs the typedefs rehomed or the unions inlined at each use.
+ * TS2417 is static-side incompatibility. `@type {XMap}` deliberately describes `responseMap` as the
+ * attributes it produces rather than the `{key, manualParse}` objects it holds. That is the whole
+ * mechanism this file depends on. A subclass documenting only its own additions is then not
+ * assignable to its parent's static. Fixing it means every subclass map restating its parent's,
+ * which is the duplication the class hierarchy exists to avoid.
  *
- * Both are worth doing if the declarations ever need to stand on their own. Neither is a silent
- * defect: this note is here so the next person knows the count is accounted for.
+ * There used to be 11 TS2304 errors here too -- unresolved names -- and the note claimed tsc drops
+ * a module-scope typedef nothing exported refers to. That diagnosis was wrong. The real cause was
+ * formatting: a jsdoc typedef written as
+ *
+ *     @typedef {
+ *       'A' |
+ *       'B'
+ *     } Name
+ *
+ * does not parse. tsc loses the name, emits `export type <next declaration> = any`, and the type is
+ * gone. Closing the brace on the last type line -- `'B'} Name` -- parses correctly, and cross-file
+ * references resolve when written as `import('../constants').Name` rather than as a bare name.
+ * Both were fixed, so every ESPN string union now reaches the declarations.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -123,9 +130,27 @@ const projected = emitted.flatMap(projectInstanceTypes);
 // types in the file that declares them, but `types/index` only re-exports what src/index.js
 // exports, which is classes. Without these lines a consumer can see the shape in a return type but
 // cannot name it, so `import type { ActivityAction }` fails.
+// Deduplicated, and never shadowing a class. A local alias such as
+// `@typedef {import('...').default} PlayerStats` is emitted as an exported type in every file that
+// declares one, and `PlayerStats` is also a class on `types/index`. Re-exporting both, or the same
+// alias from three files, is a duplicate identifier -- so the first declaration of a name wins and
+// anything `types/index` already exports is skipped.
+const indexExports = new Set(
+  [...fs.readFileSync(path.join(OUT_DIR, 'index.d.ts'), 'utf8').matchAll(/\b(\w+)\b/g)]
+    .map((match) => match[1])
+);
+const seenTypes = new Set();
 const namedTypes = emitted.flatMap((file) => {
   const from = `./${file.replace(/\.d\.ts$/, '')}`;
   return [...fs.readFileSync(file, 'utf8').matchAll(/^export type (\w+)/gm)]
+    .filter((match) => {
+      const name = match[1];
+      if (seenTypes.has(name) || indexExports.has(name)) {
+        return false;
+      }
+      seenTypes.add(name);
+      return true;
+    })
     .map((match) => `export type { ${match[1]} } from '${from}';`);
 });
 

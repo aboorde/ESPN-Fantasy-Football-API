@@ -15,7 +15,7 @@ Legend: `pending` / `in progress` / `done` / `revised` / `abandoned`
 | 5b | Timeout, retry, per-Client cache | done | `PENDING` |
 | 6 | Drop lodash | done | `PENDING` |
 | 7 | Fixture layer | done | `PENDING` |
-| 8 | Types: open unions, exported constants | pending | |
+| 8 | Types: open unions, exported constants | done (diagnosis corrected) | `PENDING` |
 | 9 | Distribution: `prepare`, drop committed artifacts | pending | |
 | 10 | API surface: activity normalization, pagination | pending | |
 
@@ -231,3 +231,43 @@ Verified by injecting violations: a real-looking SWID fails, a non-synthetic mem
 reintroducing the `defaultPosition` bug fails exactly the four positions it originally broke.
 
 504 tests green, coverage still 100%. `integration-tests/` untouched.
+
+### Step 8 - types
+
+**done, and the plan's diagnosis was wrong.** The design said the unions never reached the `.d.ts`
+because tsc drops a module-scope typedef nothing exported refers to, and that the fix was
+`import('../constants').X`. The import half was right. The other half was not.
+
+Probing it directly: **this project's multi-line typedef format does not parse at all.**
+
+```
+@typedef {
+  'A' |
+  'B'
+} Name
+```
+
+tsc loses the name, emits `export type <whatever declares next> = any`, and the type vanishes. That
+is also how a phantom `export type WINNING_TEAM = any` appeared and collided with the new constant
+of the same name - the first symptom that led to the probe. Closing the brace on the last type line
+(`'B'} Name`) parses correctly, verified before touching the real file.
+
+Result: all 12 unions emit, TS2304 drops from 11 to 0, TS2300 from 3 to 0, named type re-exports go
+5 -> 18. TS2417 is 9 (up from 4 only because more types now resolve, so more static-side
+comparisons actually happen); that category stays, for the reason `build-types.mjs` documents. Its
+KNOWN LIMITATION note has been rewritten, since it recorded the wrong cause.
+
+Unions are **open** (`| (string & {})`). Three fields - `playoffTierType`, `scoringType`,
+`playoffClinchType` - stay bare `string` with a note each, because their value sets are not
+verified here and inventing one would repeat exactly the defaultPositionId mistake.
+`ACTIVITY_ACTION` is closed, correctly: those are values this client produces.
+
+Two extras that fell out of the same work: `build-types.mjs` now dedupes named type re-exports and
+skips names `types/index` already exports (a `PlayerStats` alias in three files was emitting three
+colliding re-exports), and `ResponseMapValueObject` was lifted out of a method body to module scope
+so it resolves.
+
+Verified by compiling a consumer file against `node.d.ts` under `--strict`: instance fields, the
+runtime constants and the imported union types all typecheck.
+
+504 tests green, coverage still 100%.

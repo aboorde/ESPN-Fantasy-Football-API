@@ -5,14 +5,11 @@ import jest from 'eslint-plugin-jest';
 import jsdoc from 'eslint-plugin-jsdoc';
 import globals from 'globals';
 
-// Type names referenced only from jsdoc annotations. Declaring them here replaces the inline
-// global comments the source used to carry, which ESLint now reports as unused bindings because
-// nothing outside the jsdoc annotations ever reads them.
+// Type names referenced from jsdoc without a local definition. The ESPN string enums used to live
+// here too; they are now referenced as `import('../constants').X`, which resolves for real and
+// reaches the generated declarations. What is left is genuinely local: types declared in one file
+// and named from another's jsdoc.
 const JSDOC_DEFINED_TYPES = [
-  'DRAFT_TYPE',
-  'INJURY_STATUSES',
-  'LINEUP_LOCK_TIMES',
-  'PLAYER_AVAILABILITY_STATUSES',
   'PlayerMap',
   'PlayerStats',
   'ScoringItems'

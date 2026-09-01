@@ -6,6 +6,10 @@ import { parsePlayerStats } from '../player-stats/player-stats';
 import { slotCategoryIdToPositionMap } from '../constants';
 
 /**
+ * @typedef {import('../player-stats/player-stats').default} PlayerStats
+ */
+
+/**
  * Represents a player and their stats on a boxscore.
  *
  * @augments {Player}
@@ -19,8 +23,8 @@ class BoxscorePlayer extends Player {
    * The attributes BoxscorePlayer adds. Everything on Player is inherited through the class
    * hierarchy rather than restated here.
    *
-   * @property {PLAYER_AVAILABILITY_STATUSES} availabilityStatus The fantasy roster status of the
-   *                                                             player.
+   * @property {import('../constants').PlayerAvailabilityStatus} availabilityStatus The fantasy
+   *                                                             roster status of the player.
    * @property {string} rosteredPosition The position the player is slotted at in the fantasy
    *                                     lineup.
    * @property {number} totalPoints The total points scored by the player.

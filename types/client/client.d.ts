@@ -336,6 +336,16 @@ declare class Client {
      */
     private _buildRequestConfig;
 }
+/**
+ * The labels `getRecentActivity` reports, as a frozen object.
+ *
+ * Unlike the ESPN enums in `constants.js`, this union is closed and safe to treat as exhaustive:
+ * these are values this client produces, not values ESPN sends. `UNKNOWN` covers every message
+ * type not in the map above.
+ *
+ * @type {Readonly<Record<string, ActivityAction['action']>>}
+ */
+export const ACTIVITY_ACTION: Readonly<Record<string, ActivityAction["action"]>>;
 import Boxscore from '../boxscore/boxscore';
 import Matchup from '../matchup/matchup';
 import DraftPlayer from '../draft-player/draft-player';

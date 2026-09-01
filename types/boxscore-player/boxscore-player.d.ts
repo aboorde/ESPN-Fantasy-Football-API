@@ -1,4 +1,8 @@
 export default BoxscorePlayer;
+export type PlayerStats = import("../player-stats/player-stats").default;
+/**
+ * @typedef {import('../player-stats/player-stats').default} PlayerStats
+ */
 /**
  * Represents a player and their stats on a boxscore.
  *
@@ -11,8 +15,8 @@ declare class BoxscorePlayer extends Player {
      * The attributes BoxscorePlayer adds. Everything on Player is inherited through the class
      * hierarchy rather than restated here.
      *
-     * @property {PLAYER_AVAILABILITY_STATUSES} availabilityStatus The fantasy roster status of the
-     *                                                             player.
+     * @property {import('../constants').PlayerAvailabilityStatus} availabilityStatus The fantasy
+     *                                                             roster status of the player.
      * @property {string} rosteredPosition The position the player is slotted at in the fantasy
      *                                     lineup.
      * @property {number} totalPoints The total points scored by the player.
@@ -30,10 +34,10 @@ declare class BoxscorePlayer extends Player {
      */
     static responseMap: {
         /**
-         * The fantasy roster status of the
-         * player.
+         * The fantasy
+         * roster status of the player.
          */
-        availabilityStatus: PLAYER_AVAILABILITY_STATUSES;
+        availabilityStatus: import("../constants").PlayerAvailabilityStatus;
         /**
          * The position the player is slotted at in the fantasy
          * lineup.

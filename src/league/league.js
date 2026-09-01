@@ -24,12 +24,12 @@ class League extends BaseObject {
    * @typedef {object} DraftSettings
    *
    * @property {Date} date The date of the draft.
-   * @property {DRAFT_TYPE} type The type of draft.
+   * @property {import('../constants').DraftType} type The type of draft.
    * @property {number} timePerPick The amount of time to make a selection.
    * @property {boolean} canTradeDraftPicks Whether or not draft picks can be traded.
    * @property {number} auctionBudget The budget each team bids with in an auction draft.
    * @property {number} keeperCount The number of players each team may keep.
-   * @property {string} orderType How the draft order was determined.
+   * @property {import('../constants').KeeperOrderType} orderType How the order was determined.
    * @property {number[]} pickOrder The team ids in draft order.
    */
 
@@ -40,7 +40,7 @@ class League extends BaseObject {
    *                                        lineup. Key is position; value is count.
    * @property {object} positionLimits The maximum number of players that may be rostered of each
    *                                   position. Key is position; value is count.
-   * @property {LINEUP_LOCK_TIMES} locktime When the starting lineup for a roster locks.
+   * @property {import('../constants').LineupLockTime} locktime When the lineup locks.
    */
 
   /**
@@ -54,7 +54,8 @@ class League extends BaseObject {
    * @property {number} playoffMatchupLength How many weeks each playoff matchup lasts.
    * @property {number} numberOfPlayoffTeams The number of playoff teams there will be.
    * @property {object[]} divisions The league's divisions. Each has an `id`, `name` and `size`.
-   * @property {string} playoffSeedingRule The tiebreak used to seed the playoffs.
+   * @property {import('../constants').PlayoffSeedingRule} playoffSeedingRule The tiebreak used
+   *   to seed the playoffs.
    * @property {boolean} playoffReseed Whether the bracket reseeds between playoff rounds.
    */
 
@@ -65,7 +66,7 @@ class League extends BaseObject {
    *                           `Team#acquisitionBudgetSpent` for a team's remaining budget.
    * @property {boolean} isUsingBudget Whether the league bids FAAB rather than running a waiver
    *                                  order.
-   * @property {string} type How players are acquired, e.g. `WAIVERS_TRADITIONAL`.
+   * @property {import('../constants').AcquisitionType} type How players are acquired.
    * @property {number} limit The season-long acquisition cap, or -1 when unlimited.
    * @property {number} minimumBid The smallest FAAB bid the league accepts.
    * @property {number} waiverHours How long a dropped player sits on waivers.
@@ -129,9 +130,12 @@ class League extends BaseObject {
    * @property {boolean} isActive Whether the league is currently active.
    * @property {boolean} isFull Whether every team slot has been claimed.
    * @property {number} teamsJoined The number of teams that have joined.
-   * @property {string} scoringType How matchups are scored, e.g. `H2H_POINTS`.
-   * @property {string} matchupTieRule The tiebreak applied to a tied regular season matchup.
-   * @property {string} playoffMatchupTieRule The tiebreak applied to a tied playoff matchup.
+   * @property {string} scoringType How matchups are scored, e.g. `H2H_POINTS`. Left as `string`:
+   *   the full set of ESPN scoring types is not verified here.
+   * @property {import('../constants').MatchupTiebreaker} matchupTieRule The tiebreak applied to
+   *   a tied regular season matchup.
+   * @property {import('../constants').MatchupTiebreaker} playoffMatchupTieRule The tiebreak
+   *   applied to a tied playoff matchup.
    *
    * @property {DraftSettings} draftSettings The draft settings of the league.
    * @property {RosterSettings} rosterSettings The roster settings of the league.

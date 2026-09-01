@@ -84,6 +84,23 @@ const ACTIVITY_TYPE_BY_MESSAGE_ID = {
 };
 
 /**
+ * The labels `getRecentActivity` reports, as a frozen object.
+ *
+ * Unlike the ESPN enums in `constants.js`, this union is closed and safe to treat as exhaustive:
+ * these are values this client produces, not values ESPN sends. `UNKNOWN` covers every message
+ * type not in the map above.
+ *
+ * @type {Readonly<Record<string, ActivityAction['action']>>}
+ */
+const ACTIVITY_ACTION = Object.freeze({
+  FA_ADDED: 'FA ADDED',
+  WAIVER_ADDED: 'WAIVER ADDED',
+  DROPPED: 'DROPPED',
+  TRADED: 'TRADED',
+  UNKNOWN: 'UNKNOWN'
+});
+
+/**
  * Maps a caller's `msgType` onto every `messageTypeId` it covers.
  *
  * This was previously folded into the same object as the id-to-label map, which had two
@@ -678,3 +695,4 @@ class Client {
 }
 
 export default Client;
+export { ACTIVITY_ACTION };
