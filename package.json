@@ -6,6 +6,7 @@
   "files": [
     "web.js",
     "node.js",
+    "node.js.LICENSE.txt",
     "web-dev.js",
     "node-dev.js"
   ],
