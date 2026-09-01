@@ -1,10 +1,8 @@
-import forEach from 'lodash/forEach';
 import get from 'lodash/get';
 
 import {
   nflTeamIdToNFLTeam,
-  nflTeamIdToNFLTeamAbbreviation,
-  slotCategoryIdToPositionMap
+  nflTeamIdToNFLTeamAbbreviation
 } from '../constants.js';
 
 import Player from './player.js';
@@ -99,32 +97,42 @@ describe('Player', () => {
 
     describe('defaultPosition', () => {
       describe('manualParse', () => {
-        test('maps id to human readable position', () => {
-          const defaultPositionId = 2;
-          const data = { defaultPositionId };
+        // Literal expectations rather than a lookup through the map the parser itself uses. The
+        // previous version asserted `parse(id) === map[id]`, which held no matter what the map
+        // said, and picked id 2 -- one of only two ids the wrong map happened to get right.
+        //
+        // Ids and players verified against real 2026 ESPN payloads.
+        describe.each([
+          [1, 'QB', 'Josh Allen'],
+          [2, 'RB', 'Jahmyr Gibbs'],
+          [3, 'WR', 'Ja\'Marr Chase'],
+          [4, 'TE', 'Trey McBride'],
+          [5, 'K', 'Brandon Aubrey'],
+          [16, 'D/ST', 'Texans D/ST']
+        ])('when defaultPositionId is %i', (defaultPositionId, position, example) => {
+          test(`is ${position} (${example})`, () => {
+            const player = buildPlayer({ defaultPositionId });
+            expect(player.defaultPosition).toBe(position);
+          });
+        });
 
-          const player = buildPlayer(data);
-          expect(player.defaultPosition).toBe(
-            get(slotCategoryIdToPositionMap, defaultPositionId)
-          );
+        describe('when ESPN sends an id this project has not verified', () => {
+          test('leaves the position undefined rather than guessing', () => {
+            const player = buildPlayer({ defaultPositionId: 11 });
+            expect(player.defaultPosition).toBeUndefined();
+          });
         });
       });
     });
 
     describe('eligiblePositions', () => {
       describe('manualParse', () => {
-        test('maps ids to positions', () => {
-          const eligibleSlots = [0, 1, 2];
-          const data = { eligibleSlots };
+        test('maps lineup slot ids to positions', () => {
+          // Josh Allen's real eligibleSlots. Note 1 is TQB here while defaultPositionId 1 is QB:
+          // the two enums are different, and this pair of tests is what pins them apart.
+          const player = buildPlayer({ eligibleSlots: [0, 1, 7, 20, 21] });
 
-          const player = buildPlayer(data);
-
-          expect.hasAssertions();
-          forEach(player.eligiblePositions, (position, index) => {
-            expect(position).toBe(
-              get(slotCategoryIdToPositionMap, eligibleSlots[index])
-            );
-          });
+          expect(player.eligiblePositions).toEqual(['QB', 'TQB', 'OP', 'Bench', 'IR']);
         });
       });
     });

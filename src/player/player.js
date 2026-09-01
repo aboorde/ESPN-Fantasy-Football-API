@@ -5,6 +5,7 @@ import toNumber from 'lodash/toNumber';
 import BaseCacheableObject from '../base-classes/base-cacheable-object/base-cacheable-object.js';
 
 import {
+  defaultPositionIdToPosition,
   nflTeamIdToNFLTeam,
   nflTeamIdToNFLTeamAbbreviation,
   slotCategoryIdToPositionMap
@@ -57,7 +58,9 @@ class Player extends BaseCacheableObject {
    * @property {number} jerseyNumber The jersey number the player wears.
    * @property {string} proTeam The NFL team the player is rostered on.
    * @property {string} proTeamAbbreviation The NFL team abbreviation the player is rostered on.
-   * @property {string} defaultPosition The default position in a fantasy roster for the player.
+   * @property {string} defaultPosition The position the player plays. `undefined` for the IDP
+   *                                     position ids this project cannot verify.
+   *   NOTE: this comes from a different ESPN enum than `eligiblePositions`.
    * @property {string[]} eligiblePositions A list of the eligible positions in a fantasy roster the
    *                                        player may be slotted in.
    *
@@ -105,7 +108,10 @@ class Player extends BaseCacheableObject {
     },
     defaultPosition: {
       key: 'defaultPositionId',
-      manualParse: (responseData) => get(slotCategoryIdToPositionMap, responseData)
+      // `defaultPositionId` and `eligibleSlots` below are two different ESPN enums that overlap on
+      // RB and D/ST. Reading this one through the slot map reported Josh Allen as a TQB, Ja'Marr
+      // Chase as an RB/WR, Trey McBride as a WR and every kicker as a WR/TE.
+      manualParse: (responseData) => get(defaultPositionIdToPosition, responseData)
     },
     eligiblePositions: {
       key: 'eligibleSlots',
