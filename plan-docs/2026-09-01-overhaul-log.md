@@ -11,7 +11,7 @@ Legend: `pending` / `in progress` / `done` / `revised` / `abandoned`
 | 2 | De-tautologize self-referential assertions | done | `PENDING` |
 | 3 | Reshape `League#scoringSettings` | done | `PENDING` |
 | 4 | Delete `BaseCacheableObject` and the `defer` pass | done | `PENDING` |
-| 5a | Injectable transport (pure refactor) | pending | |
+| 5a | Injectable transport (pure refactor) | done (revised) | `PENDING` |
 | 5b | Timeout, retry, per-Client cache | pending | |
 | 6 | Drop lodash | pending | |
 | 7 | Fixture layer | pending | |
@@ -132,3 +132,27 @@ Also dropped the README's "Built for speed and efficiency with caching support" 
 which was describing this.
 
 348 tests green (45 fewer, all of them cache tests), coverage still 100%.
+
+### Step 5a - injectable transport
+
+**done, with a revision to the plan.** `http.js` is now `createHttp({ fetch })` and each `Client`
+holds its own instance. `fetch` is resolved per request rather than captured at construction, so
+the default path behaves identically to the previous direct global call.
+
+**Revision:** the plan said to migrate the client tests wholesale from `jest.spyOn(http, 'get')` to
+a fake fetch, asserting on resolved URLs and request init. Doing that to all 79 call sites would
+have rewritten a 1683-line file for little gain - those tests are about *which route each method
+builds*, and a fetch-level rewrite would restate the same thing more verbosely while risking
+transcription errors across 79 assertions.
+
+Instead the existing tests were renamed onto the instance (`client._http.get`), keeping their
+meaning, and a separate suite was **added** for the thing they genuinely could not check: the join
+of route to base URL. Seven tests drive a real `Client` through an injected fetch and assert the
+fully resolved URL, including the three routes that resolve against a host other than the default,
+and two private-league requests asserting `Cookie` and `x-fantasy-filter` survive together at the
+fetch boundary.
+
+That gap was not hypothetical. Repointing `getNFLGamesForPeriod` from `site.api.espn.com` to the
+fantasy host passes the entire old suite and fails the new one.
+
+355 tests green, coverage still 100%.

@@ -16,7 +16,7 @@ import NFLGame from '../nfl-game/nfl-game';
 import Team from '../team/team';
 
 import { flattenObjectSansNumericKeys } from '../utils';
-import http from './http';
+import createHttp from './http';
 
 /**
  * @typedef  {object} ActivityTeam
@@ -126,8 +126,18 @@ class Client {
     }
   }
 
+  /**
+   * @param {object} [options] Options.
+   * @param {number} [options.leagueId] The league to make requests against.
+   * @param {string} [options.espnS2] The `espn_s2` cookie value, for private leagues.
+   * @param {string} [options.SWID] The `SWID` cookie value, for private leagues.
+   * @param {Function} [options.fetch] A stand-in for the platform's `fetch`. Supplying one is how
+   *                                   a caller observes, records or replays requests.
+   */
   constructor(options = {}) {
     this.leagueId = options.leagueId;
+
+    this._http = createHttp({ fetch: options.fetch });
 
     this.setCookies({ espnS2: options.espnS2, SWID: options.SWID });
   }
@@ -171,7 +181,7 @@ class Client {
       params: `?view=mMatchup&view=mMatchupScore&scoringPeriodId=${scoringPeriodId}`
     });
 
-    return http.get(route, this._buildRequestConfig()).then((data) => {
+    return this._http.get(route, this._buildRequestConfig()).then((data) => {
       const schedule = get(data, 'schedule');
       const matchups = filter(schedule, { matchupPeriodId });
 
@@ -207,7 +217,7 @@ class Client {
       params: '?view=mMatchup&view=mMatchupScore'
     });
 
-    return http.get(route, this._buildRequestConfig()).then((data) => (
+    return this._http.get(route, this._buildRequestConfig()).then((data) => (
       map(get(data, 'schedule'), (matchup) => (
         Matchup.buildFromServer(matchup, { leagueId: this.leagueId, seasonId })
       ))
@@ -237,8 +247,8 @@ class Client {
     });
 
     return Promise.all([
-      http.get(draftRoute, this._buildRequestConfig()),
-      http.get(playerRoute, this._buildRequestConfig({
+      this._http.get(draftRoute, this._buildRequestConfig()),
+      this._http.get(playerRoute, this._buildRequestConfig({
         headers: {
           'x-fantasy-filter': JSON.stringify({
             players: {
@@ -299,7 +309,7 @@ class Client {
     const requestConfig = this._buildRequestConfig({
       baseURL: 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/leagueHistory/'
     });
-    return http.get(route, requestConfig).then((data) => {
+    return this._http.get(route, requestConfig).then((data) => {
       const schedule = get(data[0], 'schedule'); // Data is an array instead of object
       const matchups = filter(schedule, { matchupPeriodId });
 
@@ -344,7 +354,7 @@ class Client {
       }
     });
 
-    return http.get(route, config).then((data) => {
+    return this._http.get(route, config).then((data) => {
       const players = get(data, 'players');
       return map(players, (player) => (
         FreeAgentPlayer.buildFromServer(player, {
@@ -374,7 +384,7 @@ class Client {
       params: `?scoringPeriodId=${scoringPeriodId}&view=mRoster&view=mTeam&view=mStandings`
     });
 
-    return http.get(route, this._buildRequestConfig()).then((data) => (
+    return this._http.get(route, this._buildRequestConfig()).then((data) => (
       this._parseTeamResponse(data, seasonId, scoringPeriodId)
     ));
   }
@@ -408,7 +418,7 @@ class Client {
       baseURL: 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/leagueHistory/'
     });
 
-    return http.get(route, requestConfig).then((data) => (
+    return this._http.get(route, requestConfig).then((data) => (
       // Data returns an array for historical teams (??)
       this._parseTeamResponse(data[0], seasonId, scoringPeriodId)
     ));
@@ -447,7 +457,7 @@ class Client {
 
     const requestConfig = this._buildRequestConfig({ baseURL: 'https://site.api.espn.com/' });
 
-    return http.get(route, requestConfig).then((data) => {
+    return this._http.get(route, requestConfig).then((data) => {
       const events = get(data, 'events');
       return map(events, (game) => NFLGame.buildFromServer(game));
     });
@@ -468,7 +478,7 @@ class Client {
       params: '?view=mSettings'
     });
 
-    return http.get(route, this._buildRequestConfig()).then((data) => {
+    return this._http.get(route, this._buildRequestConfig()).then((data) => {
       // The whole `status` object is handed through rather than picked apart here. League's
       // responseMap is where response paths belong, and reshaping in the client is exactly what
       // left previousSeasons, firstScoringPeriod and the rest unreachable.
@@ -535,8 +545,8 @@ class Client {
     // below does, because it needs the target ids the topics resolve to. Running the first two
     // together takes a round trip off every call.
     return Promise.all([
-      http.get(route, config),
-      http.get(leagueRoute, leagueConfig)
+      this._http.get(route, config),
+      this._http.get(leagueRoute, leagueConfig)
     ]).then(([communicationData, leagueData]) => {
       const activity = map(
         communicationData.topics,
@@ -573,7 +583,7 @@ class Client {
         }
       });
 
-      return http.get(playerRoute, playerConfig).then((playerData) => (
+      return this._http.get(playerRoute, playerConfig).then((playerData) => (
         map(activity, (action) => map(action, (msg) => {
           if (!msg.player) {
             return {

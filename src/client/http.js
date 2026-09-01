@@ -39,7 +39,20 @@ class HttpError extends Error {
   }
 }
 
-const http = {
+/**
+ * Builds the HTTP client a `Client` makes its requests through.
+ *
+ * `fetch` is a parameter rather than a global reference so that tests -- and anything else wanting
+ * to observe or stand in for the network -- can supply their own. It is what lets a recorded ESPN
+ * payload be replayed through the whole parse stack, and what lets a test assert the *resolved*
+ * URL rather than the route fragment that goes into it.
+ *
+ * @param   {object} [options] Options.
+ * @param   {Function} [options.fetch] The fetch implementation to use. Defaults to the platform's,
+ *                                    resolved per request rather than captured here.
+ * @returns {{get: Function}} An HTTP client bound to that fetch.
+ */
+const createHttp = ({ fetch: fetchImpl } = {}) => ({
   /**
    * Performs a GET request and resolves with the parsed JSON body.
    *
@@ -56,7 +69,11 @@ const http = {
     const { baseURL = DEFAULT_BASE_URL, headers, credentials } = config;
     const url = new URL(route, baseURL).toString();
 
-    const response = await fetch(url, {
+    // Resolved per request rather than captured at construction, so that this behaves exactly as
+    // the previous direct `fetch(...)` call did for anything that patches the global.
+    const doFetch = fetchImpl || globalThis.fetch;
+
+    const response = await doFetch(url, {
       headers: { ...DEFAULT_HEADERS, ...headers },
       credentials
     });
@@ -97,7 +114,7 @@ const http = {
 
     return data;
   }
-};
+});
 
-export default http;
+export default createHttp;
 export { DEFAULT_BASE_URL, HttpError };

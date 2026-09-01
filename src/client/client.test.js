@@ -11,7 +11,6 @@ import Player from '../player/player';
 import Team from '../team/team';
 
 import Client from './client';
-import http from './http';
 
 // A response stand-in for the assertions that only care how a request was built, not how its
 // response is parsed. It never settles, so the client assembles and returns its promise chain
@@ -241,7 +240,7 @@ describe('Client', () => {
 
         client = new Client({ leagueId });
 
-        jest.spyOn(http, 'get').mockImplementation();
+        jest.spyOn(client._http, 'get').mockImplementation();
       });
 
       describe('when the seasonId is prior to 2018', () => {
@@ -256,7 +255,7 @@ describe('Client', () => {
 
       describe('when the seasonId is 2018 or after', () => {
         test('does not throw an error', () => {
-          http.get.mockReturnValue(UNSETTLED_RESPONSE);
+          client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getBoxscoreForWeek({
             seasonId: 2018,
@@ -265,23 +264,23 @@ describe('Client', () => {
           })).not.toThrow();
         });
 
-        test('calls http.get with the correct params', () => {
+        test('calls the http client with the correct params', () => {
           const routeBase = `${seasonId}/segments/0/leagues/${leagueId}`;
           const routeParams = `?view=mMatchup&view=mMatchupScore&scoringPeriodId=${scoringPeriodId}`;
           const route = `${routeBase}${routeParams}`;
 
           const config = {};
           jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
-          http.get.mockReturnValue(UNSETTLED_RESPONSE);
+          client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getBoxscoreForWeek({ seasonId, matchupPeriodId, scoringPeriodId });
-          expect(http.get).toHaveBeenCalledWith(route, config);
+          expect(client._http.get).toHaveBeenCalledWith(route, config);
         });
 
         describe('before the promise resolves', () => {
           test('does not invoke callback', () => {
             jest.spyOn(Boxscore, 'buildFromServer').mockImplementation();
-            http.get.mockReturnValue(UNSETTLED_RESPONSE);
+            client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
             client.getBoxscoreForWeek({ seasonId, matchupPeriodId, scoringPeriodId });
             expect(Boxscore.buildFromServer).not.toHaveBeenCalled();
@@ -307,7 +306,7 @@ describe('Client', () => {
             };
 
             const promise = Promise.resolve(response);
-            http.get.mockReturnValue(promise);
+            client._http.get.mockReturnValue(promise);
 
             const boxscores = await client.getBoxscoreForWeek({
               seasonId, matchupPeriodId, scoringPeriodId
@@ -336,7 +335,7 @@ describe('Client', () => {
 
         client = new Client({ leagueId });
 
-        jest.spyOn(http, 'get').mockImplementation();
+        jest.spyOn(client._http, 'get').mockImplementation();
       });
 
       describe('when the seasonId is prior to 2018', () => {
@@ -347,28 +346,28 @@ describe('Client', () => {
 
       describe('when the seasonId is 2018 or after', () => {
         test('does not throw an error', () => {
-          http.get.mockReturnValue(UNSETTLED_RESPONSE);
+          client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getScheduleForSeason({ seasonId: 2018 })).not.toThrow();
         });
 
-        test('calls http.get with the correct params', () => {
+        test('calls the http client with the correct params', () => {
           const routeBase = `${seasonId}/segments/0/leagues/${leagueId}`;
           const routeParams = '?view=mMatchup&view=mMatchupScore';
           const route = `${routeBase}${routeParams}`;
 
           const config = {};
           jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
-          http.get.mockReturnValue(UNSETTLED_RESPONSE);
+          client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getScheduleForSeason({ seasonId });
-          expect(http.get).toHaveBeenCalledWith(route, config);
+          expect(client._http.get).toHaveBeenCalledWith(route, config);
         });
 
         describe('before the promise resolves', () => {
           test('does not invoke callback', () => {
             jest.spyOn(Matchup, 'buildFromServer').mockImplementation();
-            http.get.mockReturnValue(UNSETTLED_RESPONSE);
+            client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
             client.getScheduleForSeason({ seasonId });
             expect(Matchup.buildFromServer).not.toHaveBeenCalled();
@@ -389,7 +388,7 @@ describe('Client', () => {
                 home: { teamId: 2, totalPoints: 0 }, away: { teamId: 5, totalPoints: 0 }
               }]
             };
-            http.get.mockReturnValue(Promise.resolve(response));
+            client._http.get.mockReturnValue(Promise.resolve(response));
 
             const schedule = await client.getScheduleForSeason({ seasonId });
 
@@ -403,7 +402,7 @@ describe('Client', () => {
 
           describe('when the league has no schedule yet', () => {
             test('returns an empty array', async () => {
-              http.get.mockReturnValue(Promise.resolve({}));
+              client._http.get.mockReturnValue(Promise.resolve({}));
 
               const schedule = await client.getScheduleForSeason({ seasonId });
               expect(schedule).toEqual([]);
@@ -426,7 +425,7 @@ describe('Client', () => {
 
         client = new Client({ leagueId });
 
-        jest.spyOn(http, 'get').mockImplementation();
+        jest.spyOn(client._http, 'get').mockImplementation();
       });
 
       describe('when the seasonId is prior to 2018', () => {
@@ -440,7 +439,7 @@ describe('Client', () => {
 
       describe('when the seasonId is 2018 or after', () => {
         test('does not throw an error', () => {
-          http.get.mockReturnValue(Promise.resolve({
+          client._http.get.mockReturnValue(Promise.resolve({
             draftDetail: {
               picks: []
             },
@@ -453,7 +452,7 @@ describe('Client', () => {
           })).not.toThrow();
         });
 
-        test('calls http.get with the correct params', () => {
+        test('calls the http client with the correct params', () => {
           const draftRouteBase = `${seasonId}/segments/0/leagues/${leagueId}`;
           const draftRouteParams = `?view=mDraftDetail&view=mMatchup&view=mMatchupScore&scoringPeriodId=${scoringPeriodId}`;
           const draftRoute = `${draftRouteBase}${draftRouteParams}`;
@@ -464,7 +463,7 @@ describe('Client', () => {
 
           const config = {};
           jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
-          http.get.mockReturnValue(Promise.resolve({
+          client._http.get.mockReturnValue(Promise.resolve({
             draftDetail: {
               picks: []
             },
@@ -472,12 +471,12 @@ describe('Client', () => {
           }));
 
           client.getDraftInfo({ seasonId, scoringPeriodId });
-          expect(http.get).toHaveBeenCalledWith(draftRoute, config);
-          expect(http.get).toHaveBeenCalledWith(playerRoute, config);
+          expect(client._http.get).toHaveBeenCalledWith(draftRoute, config);
+          expect(client._http.get).toHaveBeenCalledWith(playerRoute, config);
         });
 
         describe('when scoringPeriodId is not passed', () => {
-          test('calls http.get with the correct params', () => {
+          test('calls the http client with the correct params', () => {
             const draftRouteBase = `${seasonId}/segments/0/leagues/${leagueId}`;
             const draftRouteParams = '?view=mDraftDetail&view=mMatchup&view=mMatchupScore&scoringPeriodId=0';
             const draftRoute = `${draftRouteBase}${draftRouteParams}`;
@@ -488,7 +487,7 @@ describe('Client', () => {
 
             const config = {};
             jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
-            http.get.mockReturnValue(Promise.resolve({
+            client._http.get.mockReturnValue(Promise.resolve({
               draftDetail: {
                 picks: []
               },
@@ -496,8 +495,8 @@ describe('Client', () => {
             }));
 
             client.getDraftInfo({ seasonId });
-            expect(http.get).toHaveBeenCalledWith(draftRoute, config);
-            expect(http.get).toHaveBeenCalledWith(playerRoute, config);
+            expect(client._http.get).toHaveBeenCalledWith(draftRoute, config);
+            expect(client._http.get).toHaveBeenCalledWith(playerRoute, config);
           });
         });
 
@@ -525,7 +524,7 @@ describe('Client', () => {
             };
 
             const promise = Promise.resolve(response);
-            http.get.mockReturnValue(promise);
+            client._http.get.mockReturnValue(promise);
 
             const draftPlayers = await client.getDraftInfo({ seasonId, scoringPeriodId });
 
@@ -554,7 +553,7 @@ describe('Client', () => {
 
         client = new Client({ leagueId });
 
-        jest.spyOn(http, 'get').mockImplementation();
+        jest.spyOn(client._http, 'get').mockImplementation();
       });
 
       describe('when the seasonId is prior to 2018', () => {
@@ -566,7 +565,7 @@ describe('Client', () => {
           })).toThrow();
         });
 
-        test('calls http.get with the correct params', () => {
+        test('calls the http client with the correct params', () => {
           const routeBase = `${leagueId}`;
           const routeParams = `?scoringPeriodId=${scoringPeriodId}&seasonId=${seasonId}` +
             '&view=mMatchupScore&view=mScoreboard&view=mSettings&view=mTopPerformers&view=mTeam';
@@ -574,16 +573,16 @@ describe('Client', () => {
 
           const config = {};
           jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
-          http.get.mockReturnValue(UNSETTLED_RESPONSE);
+          client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getHistoricalScoreboardForWeek({ seasonId, matchupPeriodId, scoringPeriodId });
-          expect(http.get).toHaveBeenCalledWith(route, config);
+          expect(client._http.get).toHaveBeenCalledWith(route, config);
         });
 
         describe('before the promise resolves', () => {
           test('does not invoke callback', () => {
             jest.spyOn(Boxscore, 'buildFromServer').mockImplementation();
-            http.get.mockReturnValue(UNSETTLED_RESPONSE);
+            client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
             client.getHistoricalScoreboardForWeek({ seasonId, matchupPeriodId, scoringPeriodId });
             expect(Boxscore.buildFromServer).not.toHaveBeenCalled();
@@ -609,7 +608,7 @@ describe('Client', () => {
             }];
 
             const promise = Promise.resolve(response);
-            http.get.mockReturnValue(promise);
+            client._http.get.mockReturnValue(promise);
 
             const boxscores = await client.getHistoricalScoreboardForWeek({
               seasonId, matchupPeriodId, scoringPeriodId
@@ -628,7 +627,7 @@ describe('Client', () => {
 
       describe('when the seasonId is 2018 or after', () => {
         test('throws an error', () => {
-          http.get.mockReturnValue(UNSETTLED_RESPONSE);
+          client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getHistoricalScoreboardForWeek({
             seasonId: 2018,
@@ -652,7 +651,7 @@ describe('Client', () => {
 
         client = new Client({ leagueId });
 
-        jest.spyOn(http, 'get').mockImplementation();
+        jest.spyOn(client._http, 'get').mockImplementation();
       });
 
       describe('when the seasonId is prior to 2018', () => {
@@ -666,7 +665,7 @@ describe('Client', () => {
 
       describe('when the seasonId is 2018 or after', () => {
         test('does not throw an error', () => {
-          http.get.mockReturnValue(UNSETTLED_RESPONSE);
+          client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getFreeAgents({
             seasonId: 2018,
@@ -676,7 +675,7 @@ describe('Client', () => {
 
         test('calls _buildRequestConfig with additional headers', () => {
           jest.spyOn(client, '_buildRequestConfig').mockImplementation();
-          http.get.mockReturnValue(UNSETTLED_RESPONSE);
+          client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getFreeAgents({ seasonId, scoringPeriodId });
           expect(client._buildRequestConfig).toHaveBeenCalledWith({
@@ -697,23 +696,23 @@ describe('Client', () => {
           });
         });
 
-        test('calls http.get with the correct params', () => {
+        test('calls the http client with the correct params', () => {
           const routeBase = `${seasonId}/segments/0/leagues/${leagueId}`;
           const routeParams = `?scoringPeriodId=${scoringPeriodId}&view=kona_player_info`;
           const route = `${routeBase}${routeParams}`;
 
           const config = {};
           jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
-          http.get.mockReturnValue(UNSETTLED_RESPONSE);
+          client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getFreeAgents({ seasonId, scoringPeriodId });
-          expect(http.get).toHaveBeenCalledWith(route, config);
+          expect(client._http.get).toHaveBeenCalledWith(route, config);
         });
 
         describe('before the promise resolves', () => {
           test('does not invoke callback', () => {
             jest.spyOn(FreeAgentPlayer, 'buildFromServer').mockImplementation();
-            http.get.mockReturnValue(UNSETTLED_RESPONSE);
+            client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
             client.getFreeAgents({ seasonId, scoringPeriodId });
             expect(FreeAgentPlayer.buildFromServer).not.toHaveBeenCalled();
@@ -757,7 +756,7 @@ describe('Client', () => {
             };
 
             const promise = Promise.resolve(response);
-            http.get.mockReturnValue(promise);
+            client._http.get.mockReturnValue(promise);
 
             const freeAgents = await client.getFreeAgents({ seasonId, scoringPeriodId });
 
@@ -788,12 +787,12 @@ describe('Client', () => {
 
         client = new Client({ leagueId });
 
-        jest.spyOn(http, 'get').mockImplementation();
+        jest.spyOn(client._http, 'get').mockImplementation();
       });
 
       describe('when the seasonId is prior to 2018', () => {
         test('throws an error', () => {
-          http.get.mockReturnValue(UNSETTLED_RESPONSE);
+          client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getTeamsAtWeek({
             seasonId: 2017,
@@ -804,7 +803,7 @@ describe('Client', () => {
 
       describe('when the seasonId is 2018 or after', () => {
         test('does not throw an error', () => {
-          http.get.mockReturnValue(UNSETTLED_RESPONSE);
+          client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getTeamsAtWeek({
             seasonId: 2018,
@@ -812,7 +811,7 @@ describe('Client', () => {
           })).not.toThrow();
         });
 
-        test('calls http.get with the correct params', () => {
+        test('calls the http client with the correct params', () => {
           const routeBase = `${seasonId}/segments/0/leagues/${leagueId}`;
           const routeParams =
             `?scoringPeriodId=${scoringPeriodId}&view=mRoster&view=mTeam&view=mStandings`;
@@ -820,16 +819,16 @@ describe('Client', () => {
 
           const config = {};
           jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
-          http.get.mockReturnValue(UNSETTLED_RESPONSE);
+          client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getTeamsAtWeek({ seasonId, scoringPeriodId });
-          expect(http.get).toHaveBeenCalledWith(route, config);
+          expect(client._http.get).toHaveBeenCalledWith(route, config);
         });
 
         describe('before the promise resolves', () => {
           test('does not invoke callback', () => {
             jest.spyOn(Team, 'buildFromServer').mockImplementation();
-            http.get.mockReturnValue(UNSETTLED_RESPONSE);
+            client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
             client.getTeamsAtWeek({ seasonId, scoringPeriodId });
             expect(Team.buildFromServer).not.toHaveBeenCalled();
@@ -913,7 +912,7 @@ describe('Client', () => {
             };
 
             const promise = Promise.resolve(response);
-            http.get.mockReturnValue(promise);
+            client._http.get.mockReturnValue(promise);
 
             const teams = await client.getTeamsAtWeek({ seasonId, scoringPeriodId });
 
@@ -944,7 +943,7 @@ describe('Client', () => {
                   { abbrev: 'GONE', primaryOwner: '{DEPARTED-MANAGER}' }
                 ]
               };
-              http.get.mockReturnValue(Promise.resolve(response));
+              client._http.get.mockReturnValue(Promise.resolve(response));
 
               const teams = await client.getTeamsAtWeek({ seasonId, scoringPeriodId });
 
@@ -958,7 +957,7 @@ describe('Client', () => {
           describe('when the response carries no members at all', () => {
             test('builds the teams without ownerNames rather than throwing', async () => {
               const response = { teams: [{ abbrev: 'SWAG', primaryOwner: '{ANY}' }] };
-              http.get.mockReturnValue(Promise.resolve(response));
+              client._http.get.mockReturnValue(Promise.resolve(response));
 
               const teams = await client.getTeamsAtWeek({ seasonId, scoringPeriodId });
 
@@ -984,12 +983,12 @@ describe('Client', () => {
 
         client = new Client({ leagueId });
 
-        jest.spyOn(http, 'get').mockImplementation();
+        jest.spyOn(client._http, 'get').mockImplementation();
       });
 
       describe('when the seasonId is prior to 2018', () => {
         test('does not throw an error', () => {
-          http.get.mockReturnValue(UNSETTLED_RESPONSE);
+          client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getHistoricalTeamsAtWeek({
             seasonId,
@@ -997,22 +996,22 @@ describe('Client', () => {
           })).not.toThrow();
         });
 
-        test('calls http.get with the correct params', () => {
+        test('calls the http client with the correct params', () => {
           const routeBase = `${leagueId}`;
           const routeParams = `?scoringPeriodId=${scoringPeriodId}&seasonId=${seasonId}&view=mMatchupScore&view=mScoreboard&view=mSettings&view=mTopPerformers&view=mTeam&view=mRoster`;
           const route = `${routeBase}${routeParams}`;
           const config = {};
           jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
-          http.get.mockReturnValue(UNSETTLED_RESPONSE);
+          client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getHistoricalTeamsAtWeek({ seasonId, scoringPeriodId });
-          expect(http.get).toHaveBeenCalledWith(route, config);
+          expect(client._http.get).toHaveBeenCalledWith(route, config);
         });
 
         describe('before the promise resolves', () => {
           test('does not invoke callback', () => {
             jest.spyOn(Team, 'buildFromServer').mockImplementation();
-            http.get.mockReturnValue(UNSETTLED_RESPONSE);
+            client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
             client.getHistoricalTeamsAtWeek({ seasonId, scoringPeriodId });
             expect(Team.buildFromServer).not.toHaveBeenCalled();
@@ -1096,7 +1095,7 @@ describe('Client', () => {
             }];
 
             const promise = Promise.resolve(response);
-            http.get.mockReturnValue(promise);
+            client._http.get.mockReturnValue(promise);
 
             const teams = await client.getHistoricalTeamsAtWeek({ seasonId, scoringPeriodId });
 
@@ -1140,12 +1139,12 @@ describe('Client', () => {
 
         client = new Client({ leagueId: 213213 });
 
-        jest.spyOn(http, 'get').mockImplementation();
+        jest.spyOn(client._http, 'get').mockImplementation();
       });
 
       describe('when the seasonId is prior to 2018', () => {
         test('does not throw an error', () => {
-          http.get.mockReturnValue(UNSETTLED_RESPONSE);
+          client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getNFLGamesForPeriod({
             startDate: '20171010'
@@ -1155,30 +1154,30 @@ describe('Client', () => {
 
       describe('when the seasonId is 2018 or after', () => {
         test('does not throw an error', () => {
-          http.get.mockReturnValue(UNSETTLED_RESPONSE);
+          client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
           expect(() => client.getNFLGamesForPeriod({
             startDate: '20181010'
           })).not.toThrow();
         });
       });
 
-      test('calls http.get with the correct params', () => {
+      test('calls the http client with the correct params', () => {
         const routeBase = 'apis/fantasy/v2/games/ffl/games';
         const routeParams = `?dates=${startDate}-${endDate}&pbpOnly=true`; // cspell:disable-line pbp
         const route = `${routeBase}${routeParams}`;
 
         const config = {};
         jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
-        http.get.mockReturnValue(UNSETTLED_RESPONSE);
+        client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
         client.getNFLGamesForPeriod({ startDate, endDate });
-        expect(http.get).toHaveBeenCalledWith(route, config);
+        expect(client._http.get).toHaveBeenCalledWith(route, config);
       });
 
       describe('before the promise resolves', () => {
         test('does not invoke callback', () => {
           jest.spyOn(NFLGame, 'buildFromServer').mockImplementation();
-          http.get.mockReturnValue(UNSETTLED_RESPONSE);
+          client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getNFLGamesForPeriod({ startDate, endDate });
           expect(NFLGame.buildFromServer).not.toHaveBeenCalled();
@@ -1192,7 +1191,7 @@ describe('Client', () => {
           };
 
           const promise = Promise.resolve(response);
-          http.get.mockReturnValue(promise);
+          client._http.get.mockReturnValue(promise);
 
           const games = await client.getNFLGamesForPeriod({ startDate, endDate });
 
@@ -1214,10 +1213,10 @@ describe('Client', () => {
 
         client = new Client({ leagueId: 213213 });
 
-        jest.spyOn(http, 'get').mockImplementation();
+        jest.spyOn(client._http, 'get').mockImplementation();
         // The tests relying on this mock only assert request construction, so they get a
         // response that never settles rather than one whose body the handler would reject.
-        http.get.mockReturnValue(UNSETTLED_RESPONSE);
+        client._http.get.mockReturnValue(UNSETTLED_RESPONSE);
       });
 
       describe('when the seasonId is prior to 2018', () => {
@@ -1231,7 +1230,7 @@ describe('Client', () => {
           expect(() => client.getLeagueInfo({ seasonId: 2018 })).not.toThrow();
         });
 
-        test('calls http.get with the correct params', () => {
+        test('calls the http client with the correct params', () => {
           const routeBase = `${seasonId}/segments/0/leagues/${client.leagueId}`;
           const routeParams = '?view=mSettings';
           const route = `${routeBase}${routeParams}`;
@@ -1240,7 +1239,7 @@ describe('Client', () => {
           jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
 
           client.getLeagueInfo({ seasonId });
-          expect(http.get).toHaveBeenCalledWith(route, config);
+          expect(client._http.get).toHaveBeenCalledWith(route, config);
         });
 
         describe('before the promise resolves', () => {
@@ -1274,7 +1273,7 @@ describe('Client', () => {
             };
 
             const promise = Promise.resolve(response);
-            http.get.mockReturnValue(promise);
+            client._http.get.mockReturnValue(promise);
 
             const league = await client.getLeagueInfo({ seasonId });
             expect(league).toBeInstanceOf(League);
@@ -1298,14 +1297,14 @@ describe('Client', () => {
       const routeBase = (id, leagueId) => `apis/v3/games/ffl/seasons/${id}/segments/0/leagues/${leagueId}`;
 
       const mockResponses = ({ topics = [], teams = [], players = [] }) => {
-        http.get
+        client._http.get
           .mockReturnValueOnce(Promise.resolve({ topics }))
           .mockReturnValueOnce(Promise.resolve({ teams }))
           .mockReturnValueOnce(Promise.resolve({ players }));
       };
 
       const filterOf = (callIndex) => JSON.parse(
-        http.get.mock.calls[callIndex][1].headers['x-fantasy-filter']
+        client._http.get.mock.calls[callIndex][1].headers['x-fantasy-filter']
       );
 
       beforeEach(() => {
@@ -1313,7 +1312,7 @@ describe('Client', () => {
 
         client = new Client({ leagueId: 213213 });
 
-        jest.spyOn(http, 'get').mockImplementation();
+        jest.spyOn(client._http, 'get').mockImplementation();
         mockResponses({});
       });
 
@@ -1328,18 +1327,18 @@ describe('Client', () => {
           expect(() => client.getRecentActivity({ seasonId })).not.toThrow();
         });
 
-        test('calls http.get with the communication route first', () => {
+        test('calls the http client with the communication route first', () => {
           client.getRecentActivity({ seasonId });
 
           const route = `${routeBase(seasonId, client.leagueId)}/communication` +
             '?view=kona_league_communication';
-          expect(http.get.mock.calls[0][0]).toBe(route);
+          expect(client._http.get.mock.calls[0][0]).toBe(route);
         });
 
         test('requests the communication route from the lm-api-reads host', () => {
           client.getRecentActivity({ seasonId });
 
-          expect(http.get.mock.calls[0][1].baseURL).toBe('https://lm-api-reads.fantasy.espn.com/');
+          expect(client._http.get.mock.calls[0][1].baseURL).toBe('https://lm-api-reads.fantasy.espn.com/');
         });
 
         describe('when msgType is not passed', () => {
@@ -1397,11 +1396,11 @@ describe('Client', () => {
 
             const route = `${routeBase(seasonId, client.leagueId)}` +
               '?view=mTeam&view=mRoster&view=mStandings';
-            expect(http.get.mock.calls[1][0]).toBe(route);
+            expect(client._http.get.mock.calls[1][0]).toBe(route);
           });
 
           test('requests the player card view third for players it could not resolve', async () => {
-            http.get.mockReset();
+            client._http.get.mockReset();
             mockResponses({
               topics: [{
                 date: 1600000000000,
@@ -1414,7 +1413,7 @@ describe('Client', () => {
             await client.getRecentActivity({ seasonId });
 
             const route = `${routeBase(seasonId, client.leagueId)}?view=kona_playercard`;
-            expect(http.get.mock.calls[2][0]).toBe(route);
+            expect(client._http.get.mock.calls[2][0]).toBe(route);
             expect(filterOf(2).players.filterIds.value).toEqual([555]);
           });
 
@@ -1422,7 +1421,7 @@ describe('Client', () => {
             test('skips the player card request entirely', async () => {
               // It would ask ESPN to match an empty id list: a whole round trip for a result that
               // is empty by construction.
-              http.get.mockReset();
+              client._http.get.mockReset();
               mockResponses({
                 topics: [{
                   date: 1600000000000,
@@ -1437,7 +1436,7 @@ describe('Client', () => {
 
               await client.getRecentActivity({ seasonId });
 
-              expect(http.get).toHaveBeenCalledTimes(2);
+              expect(client._http.get).toHaveBeenCalledTimes(2);
             });
           });
 
@@ -1446,7 +1445,7 @@ describe('Client', () => {
               const rosterEntry = { playerId: 555, playerPoolEntry: { player: { fullName: 'A' } } };
               const cardPlayer = { id: 777, player: { fullName: 'B' } };
 
-              http.get.mockReset();
+              client._http.get.mockReset();
               mockResponses({
                 topics: [{
                   date: 1600000000000,
@@ -1470,7 +1469,7 @@ describe('Client', () => {
 
           describe('when the same player is targeted more than once', () => {
             test('asks for the id once', async () => {
-              http.get.mockReset();
+              client._http.get.mockReset();
               mockResponses({
                 topics: [{
                   date: 1600000000000,
@@ -1493,7 +1492,7 @@ describe('Client', () => {
             test('uses the roster entry and does not look the player up', async () => {
               const rosterEntry = { playerId: 555, playerPoolEntry: { player: { fullName: 'A' } } };
 
-              http.get.mockReset();
+              client._http.get.mockReset();
               mockResponses({
                 topics: [{
                   date: 1600000000000,
@@ -1506,7 +1505,7 @@ describe('Client', () => {
               const activity = await client.getRecentActivity({ seasonId });
 
               expect(activity[0][0].player).toBe(rosterEntry);
-              expect(http.get).toHaveBeenCalledTimes(2);
+              expect(client._http.get).toHaveBeenCalledTimes(2);
             });
           });
 
@@ -1514,7 +1513,7 @@ describe('Client', () => {
             test('backfills the player from the player card response', async () => {
               const cardPlayer = { id: 777, player: { fullName: 'B' } };
 
-              http.get.mockReset();
+              client._http.get.mockReset();
               mockResponses({
                 topics: [{
                   date: 1600000000000,
@@ -1530,7 +1529,7 @@ describe('Client', () => {
             });
 
             test('requests only the unresolved player ids', async () => {
-              http.get.mockReset();
+              client._http.get.mockReset();
               mockResponses({
                 topics: [{
                   date: 1600000000000,
@@ -1548,7 +1547,7 @@ describe('Client', () => {
 
           describe('when a topic holds several messages', () => {
             test('returns one action per message', async () => {
-              http.get.mockReset();
+              client._http.get.mockReset();
               mockResponses({
                 topics: [{
                   date: 1600000000000,
@@ -1695,6 +1694,112 @@ describe('Client', () => {
           expect(client._buildActivity(buildTopic(undefined), { teams: [] })).toEqual([]);
         });
       });
+    });
+  });
+
+  // Everything above stubs the http client and asserts the *route fragment* a method builds. That
+  // leaves the join of route to base URL untested, which is the half that decides whether a request
+  // reaches ESPN at all -- three of these routes resolve against a different host than the default.
+  //
+  // These drive a real Client through an injected fetch and assert the fully resolved URL.
+  describe('resolved request URLs', () => {
+    const leagueId = 213213;
+    const seasonId = 2018;
+
+    let fetchMock;
+    let client;
+
+    const respondWith = (body) => {
+      fetchMock.mockResolvedValue({
+        ok: true, status: 200, statusText: 'OK', text: () => Promise.resolve(JSON.stringify(body))
+      });
+    };
+
+    const urlOfCall = (index = 0) => fetchMock.mock.calls[index][0];
+
+    beforeEach(() => {
+      fetchMock = jest.fn();
+      respondWith({});
+      client = new Client({ leagueId, fetch: fetchMock });
+    });
+
+    test('getBoxscoreForWeek resolves against the default fantasy host', async () => {
+      await client.getBoxscoreForWeek({ seasonId, matchupPeriodId: 2, scoringPeriodId: 3 });
+
+      expect(urlOfCall()).toBe(
+        'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/2018/segments/0/' +
+        'leagues/213213?view=mMatchup&view=mMatchupScore&scoringPeriodId=3'
+      );
+    });
+
+    test('getLeagueInfo resolves against the default fantasy host', async () => {
+      await client.getLeagueInfo({ seasonId });
+
+      expect(urlOfCall()).toBe(
+        'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/2018/segments/0/' +
+        'leagues/213213?view=mSettings'
+      );
+    });
+
+    test('getNFLGamesForPeriod resolves against the site host, not the fantasy one', async () => {
+      respondWith({ events: [] });
+      await client.getNFLGamesForPeriod({ startDate: '20181001', endDate: '20181008' });
+
+      expect(urlOfCall()).toBe(
+        'https://site.api.espn.com/apis/fantasy/v2/games/ffl/games' +
+        '?dates=20181001-20181008&pbpOnly=true' // cspell:disable-line
+      );
+    });
+
+    test('getHistoricalTeamsAtWeek resolves against the leagueHistory path', async () => {
+      respondWith([{ teams: [], members: [] }]);
+      await client.getHistoricalTeamsAtWeek({ seasonId: 2016, scoringPeriodId: 1 });
+
+      expect(urlOfCall()).toBe(
+        'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/leagueHistory/213213' +
+        '?scoringPeriodId=1&seasonId=2016&view=mMatchupScore&view=mScoreboard&view=mSettings' +
+        '&view=mTopPerformers&view=mTeam&view=mRoster'
+      );
+    });
+
+    test('getRecentActivity resolves the communication route off the host root', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true, status: 200, statusText: 'OK', text: () => Promise.resolve('{"topics":[]}')
+        })
+        .mockResolvedValueOnce({
+          ok: true, status: 200, statusText: 'OK', text: () => Promise.resolve('{"teams":[]}')
+        });
+
+      await client.getRecentActivity({ seasonId });
+
+      expect(urlOfCall()).toBe(
+        'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/2018/segments/0/' +
+        'leagues/213213/communication?view=kona_league_communication'
+      );
+    });
+
+    test('sends the cookie header on a private league request', async () => {
+      const privateClient = new Client({
+        leagueId, fetch: fetchMock, espnS2: 'some_s2', SWID: 'some_swid'
+      });
+
+      await privateClient.getLeagueInfo({ seasonId });
+
+      expect(fetchMock.mock.calls[0][1].headers.Cookie).toBe('espn_s2=some_s2; SWID=some_swid;');
+    });
+
+    test('keeps the fantasy filter alongside the cookie header', async () => {
+      const privateClient = new Client({
+        leagueId, fetch: fetchMock, espnS2: 'some_s2', SWID: 'some_swid'
+      });
+      respondWith({ players: [] });
+
+      await privateClient.getFreeAgents({ seasonId, scoringPeriodId: 3 });
+
+      const { headers } = fetchMock.mock.calls[0][1];
+      expect(headers.Cookie).toBe('espn_s2=some_s2; SWID=some_swid;');
+      expect(JSON.parse(headers['x-fantasy-filter']).players.limit).toBe(2000);
     });
   });
 });

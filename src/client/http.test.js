@@ -1,6 +1,10 @@
-import http, { DEFAULT_BASE_URL, HttpError } from './http';
+import createHttp, { DEFAULT_BASE_URL, HttpError } from './http';
 
 describe('http', () => {
+  // The factory takes a fetch, but these tests exercise the default path -- no fetch passed, so
+  // the platform's is resolved per request and the global spy below is what answers.
+  const http = createHttp();
+
   /**
    * Builds a stand-in for a `fetch` Response. Only the members `http.get` reads are defined, so a
    * test that starts depending on more of the interface fails loudly rather than silently.
