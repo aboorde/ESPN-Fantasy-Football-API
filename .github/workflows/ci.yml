@@ -5,85 +5,55 @@ on:
   push:
     branches: [master]
 jobs:
-  dependencies-cache:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [22, 24]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-      - run: npm ci
-      - name: Cache node_modules
-        id: cache-node-modules-node
-        uses: actions/cache/save@v4
-        with:
-          path: '**/node_modules'
-          key: ${{ runner.os }}-node-modules-${{ matrix.node-version }}-${{ hashFiles('package-lock.json') }}
+  # Lint output does not vary with the host Node version, so it runs once rather than
+  # once per matrix leg. `test` covers both supported versions.
   lint:
     runs-on: ubuntu-latest
-    needs: dependencies-cache
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [22, 24]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-      - name: Restore node_modules cache
-        id: restore-cache-node-modules-node
-        uses: actions/cache/restore@v4
-        with:
-          path: '**/node_modules'
-          key: ${{ runner.os }}-node-modules-${{ matrix.node-version }}-${{ hashFiles('package-lock.json') }}
-      - run: npm run lint
-  test:
-    runs-on: ubuntu-latest
-    needs: dependencies-cache
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [22, 24]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-      - name: Restore node_modules cache
-        id: restore-cache-node-modules-node
-        uses: actions/cache/restore@v4
-        with:
-          path: '**/node_modules'
-          key: ${{ runner.os }}-node-modules-${{ matrix.node-version }}-${{ hashFiles('package-lock.json') }}
-      - run: npm run test
-  build:
-    runs-on: ubuntu-latest
-    needs: dependencies-cache
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Restore node_modules cache
-        id: restore-cache-node-modules-node
-        uses: actions/cache/restore@v4
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          path: '**/node_modules'
-          key: ${{ runner.os }}-node-modules-24-${{ hashFiles('package-lock.json') }}
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: npm run test
+
+  # Pinned to the version in .nvmrc. The committed bundles are byte-compared below, so this
+  # must match the version contributors build on.
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
       - run: npm run build
       # The built bundles are committed so that consumers can install this repo
       # straight from git. Fail if they drift from src/.
       - name: Verify committed bundles are up to date
         run: |
-          if ! git diff --quiet -- web.js node.js web-dev.js node-dev.js node.js.LICENSE.txt \
-               web.js.map node.js.map web-dev.js.map node-dev.js.map; then
+          bundles="web.js node.js web-dev.js node-dev.js node.js.LICENSE.txt \
+                   web.js.map node.js.map web-dev.js.map node-dev.js.map"
+          drift=$(git diff --stat -- $bundles)
+          if [ -n "$drift" ]; then
             echo "::error::Committed bundles are stale. Run 'npm run build' and commit the result."
-            git diff --stat -- web.js node.js web-dev.js node-dev.js node.js.LICENSE.txt \
-              web.js.map node.js.map web-dev.js.map node-dev.js.map
+            echo "$drift"
             exit 1
           fi

@@ -13,24 +13,13 @@ import Team from '../team/team';
 
 import Client from './client';
 
-/**
- * A response stand-in for assertions that only care how a request was built, not how its response
- * is parsed. It never settles, so the client assembles and returns its promise chain without any
- * response handler running.
- *
- * `q()` filled this role previously. A native promise cannot: resolving to an empty body makes the
- * response parsing throw, and the resulting rejection is unobserved because these tests discard
- * the returned promise. Q swallowed such rejections silently; Node treats them as fatal.
- *
- * @returns {object} A thenable that returns itself, so chains of any length stay pending.
- */
-const unsettledResponse = () => {
-  const thenable = {
-    then: () => thenable,
-    catch: () => thenable
-  };
-  return thenable;
-};
+// A response stand-in for the assertions that only care how a request was built, not how its
+// response is parsed. It never settles, so the client assembles and returns its promise chain
+// without any response handler running. `q()` filled this role before: a promise that resolves to
+// an empty body makes the response parsing throw, and these tests discard the promise they
+// trigger, so nothing observes the rejection. Q swallowed those silently; Node treats them as
+// fatal.
+const UNSETTLED_RESPONSE = new Promise(() => {});
 
 describe('Client', () => {
   describe('constructor', () => {
@@ -250,7 +239,7 @@ describe('Client', () => {
 
       describe('when the seasonId is 2018 or after', () => {
         test('does not throw an error', () => {
-          axios.get.mockReturnValue(unsettledResponse());
+          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getBoxscoreForWeek({
             seasonId: 2018,
@@ -266,7 +255,7 @@ describe('Client', () => {
 
           const config = {};
           jest.spyOn(client, '_buildAxiosConfig').mockReturnValue(config);
-          axios.get.mockReturnValue(unsettledResponse());
+          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getBoxscoreForWeek({ seasonId, matchupPeriodId, scoringPeriodId });
           expect(axios.get).toHaveBeenCalledWith(route, config);
@@ -275,7 +264,7 @@ describe('Client', () => {
         describe('before the promise resolves', () => {
           test('does not invoke callback', () => {
             jest.spyOn(Boxscore, 'buildFromServer').mockImplementation();
-            axios.get.mockReturnValue(unsettledResponse());
+            axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
             client.getBoxscoreForWeek({ seasonId, matchupPeriodId, scoringPeriodId });
             expect(Boxscore.buildFromServer).not.toHaveBeenCalled();
@@ -490,7 +479,7 @@ describe('Client', () => {
 
           const config = {};
           jest.spyOn(client, '_buildAxiosConfig').mockReturnValue(config);
-          axios.get.mockReturnValue(unsettledResponse());
+          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getHistoricalScoreboardForWeek({ seasonId, matchupPeriodId, scoringPeriodId });
           expect(axios.get).toHaveBeenCalledWith(route, config);
@@ -499,7 +488,7 @@ describe('Client', () => {
         describe('before the promise resolves', () => {
           test('does not invoke callback', () => {
             jest.spyOn(Boxscore, 'buildFromServer').mockImplementation();
-            axios.get.mockReturnValue(unsettledResponse());
+            axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
             client.getHistoricalScoreboardForWeek({ seasonId, matchupPeriodId, scoringPeriodId });
             expect(Boxscore.buildFromServer).not.toHaveBeenCalled();
@@ -546,7 +535,7 @@ describe('Client', () => {
 
       describe('when the seasonId is 2018 or after', () => {
         test('throws an error', () => {
-          axios.get.mockReturnValue(unsettledResponse());
+          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getHistoricalScoreboardForWeek({
             seasonId: 2018,
@@ -584,7 +573,7 @@ describe('Client', () => {
 
       describe('when the seasonId is 2018 or after', () => {
         test('does not throw an error', () => {
-          axios.get.mockReturnValue(unsettledResponse());
+          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getFreeAgents({
             seasonId: 2018,
@@ -594,7 +583,7 @@ describe('Client', () => {
 
         test('calls _buildAxiosConfig with additional headers', () => {
           jest.spyOn(client, '_buildAxiosConfig').mockImplementation();
-          axios.get.mockReturnValue(unsettledResponse());
+          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getFreeAgents({ seasonId, scoringPeriodId });
           expect(client._buildAxiosConfig).toHaveBeenCalledWith({
@@ -622,7 +611,7 @@ describe('Client', () => {
 
           const config = {};
           jest.spyOn(client, '_buildAxiosConfig').mockReturnValue(config);
-          axios.get.mockReturnValue(unsettledResponse());
+          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getFreeAgents({ seasonId, scoringPeriodId });
           expect(axios.get).toHaveBeenCalledWith(route, config);
@@ -631,7 +620,7 @@ describe('Client', () => {
         describe('before the promise resolves', () => {
           test('does not invoke callback', () => {
             jest.spyOn(FreeAgentPlayer, 'buildFromServer').mockImplementation();
-            axios.get.mockReturnValue(unsettledResponse());
+            axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
             client.getFreeAgents({ seasonId, scoringPeriodId });
             expect(FreeAgentPlayer.buildFromServer).not.toHaveBeenCalled();
@@ -713,7 +702,7 @@ describe('Client', () => {
 
       describe('when the seasonId is prior to 2018', () => {
         test('throws an error', () => {
-          axios.get.mockReturnValue(unsettledResponse());
+          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getTeamsAtWeek({
             seasonId: 2017,
@@ -724,7 +713,7 @@ describe('Client', () => {
 
       describe('when the seasonId is 2018 or after', () => {
         test('does not throw an error', () => {
-          axios.get.mockReturnValue(unsettledResponse());
+          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getTeamsAtWeek({
             seasonId: 2018,
@@ -739,7 +728,7 @@ describe('Client', () => {
 
           const config = {};
           jest.spyOn(client, '_buildAxiosConfig').mockReturnValue(config);
-          axios.get.mockReturnValue(unsettledResponse());
+          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getTeamsAtWeek({ seasonId, scoringPeriodId });
           expect(axios.get).toHaveBeenCalledWith(route, config);
@@ -748,7 +737,7 @@ describe('Client', () => {
         describe('before the promise resolves', () => {
           test('does not invoke callback', () => {
             jest.spyOn(Team, 'buildFromServer').mockImplementation();
-            axios.get.mockReturnValue(unsettledResponse());
+            axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
             client.getTeamsAtWeek({ seasonId, scoringPeriodId });
             expect(Team.buildFromServer).not.toHaveBeenCalled();
@@ -877,7 +866,7 @@ describe('Client', () => {
 
       describe('when the seasonId is prior to 2018', () => {
         test('does not throw an error', () => {
-          axios.get.mockReturnValue(unsettledResponse());
+          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getHistoricalTeamsAtWeek({
             seasonId,
@@ -891,7 +880,7 @@ describe('Client', () => {
           const route = `${routeBase}${routeParams}`;
           const config = {};
           jest.spyOn(client, '_buildAxiosConfig').mockReturnValue(config);
-          axios.get.mockReturnValue(unsettledResponse());
+          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getHistoricalTeamsAtWeek({ seasonId, scoringPeriodId });
           expect(axios.get).toHaveBeenCalledWith(route, config);
@@ -900,7 +889,7 @@ describe('Client', () => {
         describe('before the promise resolves', () => {
           test('does not invoke callback', () => {
             jest.spyOn(Team, 'buildFromServer').mockImplementation();
-            axios.get.mockReturnValue(unsettledResponse());
+            axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
             client.getHistoricalTeamsAtWeek({ seasonId, scoringPeriodId });
             expect(Team.buildFromServer).not.toHaveBeenCalled();
@@ -1035,7 +1024,7 @@ describe('Client', () => {
 
       describe('when the seasonId is prior to 2018', () => {
         test('does not throw an error', () => {
-          axios.get.mockReturnValue(unsettledResponse());
+          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getNFLGamesForPeriod({
             startDate: '20171010'
@@ -1045,7 +1034,7 @@ describe('Client', () => {
 
       describe('when the seasonId is 2018 or after', () => {
         test('does not throw an error', () => {
-          axios.get.mockReturnValue(unsettledResponse());
+          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
           expect(() => client.getNFLGamesForPeriod({
             startDate: '20181010'
           })).not.toThrow();
@@ -1059,7 +1048,7 @@ describe('Client', () => {
 
         const config = {};
         jest.spyOn(client, '_buildAxiosConfig').mockReturnValue(config);
-        axios.get.mockReturnValue(unsettledResponse());
+        axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
         client.getNFLGamesForPeriod({ startDate, endDate });
         expect(axios.get).toHaveBeenCalledWith(route, config);
@@ -1068,7 +1057,7 @@ describe('Client', () => {
       describe('before the promise resolves', () => {
         test('does not invoke callback', () => {
           jest.spyOn(NFLGame, 'buildFromServer').mockImplementation();
-          axios.get.mockReturnValue(unsettledResponse());
+          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getNFLGamesForPeriod({ startDate, endDate });
           expect(NFLGame.buildFromServer).not.toHaveBeenCalled();
@@ -1110,7 +1099,7 @@ describe('Client', () => {
         // This shape was missing the `data` wrapper a real axios response carries, so the
         // response handler always threw. Q swallowed that; the tests relying on this mock only
         // assert request construction, so they get a response that never settles instead.
-        axios.get.mockReturnValue(unsettledResponse());
+        axios.get.mockReturnValue(UNSETTLED_RESPONSE);
       });
 
       describe('when the seasonId is prior to 2018', () => {

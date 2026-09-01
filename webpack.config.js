@@ -1,4 +1,4 @@
-const _ = require('lodash');
+const merge = require('lodash/merge');
 const path = require('path');
 
 const baseConfig = {
@@ -23,19 +23,19 @@ const baseConfig = {
 };
 
 module.exports = [
-  _.merge({}, baseConfig, {
+  merge({}, baseConfig, {
     output: {
       filename: 'web.js'
     },
     mode: 'production',
     devtool: undefined,
   }),
-  _.merge({}, baseConfig, {
+  merge({}, baseConfig, {
     output: {
       filename: 'web-dev.js'
     }
   }),
-  _.merge({}, baseConfig, {
+  merge({}, baseConfig, {
     output: {
       filename: 'node.js'
     },
@@ -43,7 +43,7 @@ module.exports = [
     devtool: undefined,
     target: 'node'
   }),
-  _.merge({}, baseConfig, {
+  merge({}, baseConfig, {
     output: {
       filename: 'node-dev.js'
     },

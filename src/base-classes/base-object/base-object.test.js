@@ -94,7 +94,7 @@ describe('BaseObject', () => {
     describe('when options are passed', () => {
       test('calls _populateObject with local data', () => {
         jest.spyOn(BaseObject, '_populateObject');
-        const options = { someValue: 'yeahhhhhhhhhhh' };
+        const options = { someValue: 'some opaque value' };
 
         const returnedInstance = new TestBaseObject(options);
         expect(TestBaseObject._populateObject).toHaveBeenCalledWith({
@@ -105,7 +105,7 @@ describe('BaseObject', () => {
       });
 
       test('populates instance with local data', () => {
-        const options = { someValue: 'yeahhhhhhhhhhh' };
+        const options = { someValue: 'some opaque value' };
 
         const returnedInstance = new TestBaseObject(options);
         expect(returnedInstance.someValue).toBe(options.someValue);
