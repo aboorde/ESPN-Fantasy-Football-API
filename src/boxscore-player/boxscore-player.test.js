@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import get from 'lodash/get';
 
 import PlayerStats from '../player-stats/player-stats';
 
@@ -66,7 +66,7 @@ describe('BoxscorePlayer', () => {
         test('maps id to human readable rosteredPosition', () => {
           const player = buildBoxscorePlayer(data);
           expect(player.rosteredPosition).toBe(
-            _.get(slotCategoryIdToPositionMap, data.lineupSlotId)
+            get(slotCategoryIdToPositionMap, data.lineupSlotId)
           );
         });
       });

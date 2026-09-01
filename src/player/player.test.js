@@ -1,4 +1,5 @@
-import _ from 'lodash';
+import forEach from 'lodash/forEach';
+import get from 'lodash/get';
 
 import {
   nflTeamIdToNFLTeam,
@@ -14,7 +15,7 @@ describe('Player', () => {
       const testPropIsUndefined = (prop) => {
         test(`${prop} is undefined`, () => {
           const newInstance = new Player();
-          expect(_.get(newInstance, prop)).toBeUndefined();
+          expect(get(newInstance, prop)).toBeUndefined();
         });
       };
 
@@ -27,7 +28,7 @@ describe('Player', () => {
         test(`${prop} is set from options`, () => {
           const value = 25;
           const newInstance = new Player({ [prop]: value });
-          expect(_.get(newInstance, prop)).toBe(value);
+          expect(get(newInstance, prop)).toBe(value);
         });
       };
 
@@ -68,7 +69,7 @@ describe('Player', () => {
           const data = { proTeamId };
 
           const player = buildPlayer(data);
-          expect(player.proTeam).toBe(_.get(nflTeamIdToNFLTeam, proTeamId));
+          expect(player.proTeam).toBe(get(nflTeamIdToNFLTeam, proTeamId));
         });
       });
     });
@@ -80,7 +81,7 @@ describe('Player', () => {
           const data = { proTeamId };
 
           const player = buildPlayer(data);
-          expect(player.proTeamAbbreviation).toBe(_.get(nflTeamIdToNFLTeamAbbreviation, proTeamId));
+          expect(player.proTeamAbbreviation).toBe(get(nflTeamIdToNFLTeamAbbreviation, proTeamId));
         });
       });
     });
@@ -93,7 +94,7 @@ describe('Player', () => {
 
           const player = buildPlayer(data);
           expect(player.defaultPosition).toBe(
-            _.get(slotCategoryIdToPositionMap, defaultPositionId)
+            get(slotCategoryIdToPositionMap, defaultPositionId)
           );
         });
       });
@@ -108,9 +109,9 @@ describe('Player', () => {
           const player = buildPlayer(data);
 
           expect.hasAssertions();
-          _.forEach(player.eligiblePositions, (position, index) => {
+          forEach(player.eligiblePositions, (position, index) => {
             expect(position).toBe(
-              _.get(slotCategoryIdToPositionMap, eligibleSlots[index])
+              get(slotCategoryIdToPositionMap, eligibleSlots[index])
             );
           });
         });

@@ -1,4 +1,6 @@
-import _ from 'lodash';
+import get from 'lodash/get';
+import map from 'lodash/map';
+import toNumber from 'lodash/toNumber';
 
 import BaseCacheableObject from '../base-classes/base-cacheable-object/base-cacheable-object.js';
 
@@ -90,24 +92,24 @@ class Player extends BaseCacheableObject {
     lastName: 'lastName',
     jerseyNumber: {
       key: 'jersey',
-      manualParse: (responseData) => (responseData ? _.toNumber(responseData) : undefined)
+      manualParse: (responseData) => (responseData ? toNumber(responseData) : undefined)
     },
     proTeam: {
       key: 'proTeamId',
-      manualParse: (responseData) => _.get(nflTeamIdToNFLTeam, responseData)
+      manualParse: (responseData) => get(nflTeamIdToNFLTeam, responseData)
     },
     proTeamAbbreviation: {
       key: 'proTeamId',
-      manualParse: (responseData) => _.get(nflTeamIdToNFLTeamAbbreviation, responseData)
+      manualParse: (responseData) => get(nflTeamIdToNFLTeamAbbreviation, responseData)
     },
     defaultPosition: {
       key: 'defaultPositionId',
-      manualParse: (responseData) => _.get(slotCategoryIdToPositionMap, responseData)
+      manualParse: (responseData) => get(slotCategoryIdToPositionMap, responseData)
     },
     eligiblePositions: {
       key: 'eligibleSlots',
-      manualParse: (responseData) => _.map(responseData, (posId) => (
-        _.get(slotCategoryIdToPositionMap, posId)
+      manualParse: (responseData) => map(responseData, (posId) => (
+        get(slotCategoryIdToPositionMap, posId)
       ))
     },
 

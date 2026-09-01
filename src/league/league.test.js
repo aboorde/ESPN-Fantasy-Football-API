@@ -1,4 +1,7 @@
-import _ from 'lodash';
+import forEach from 'lodash/forEach';
+import get from 'lodash/get';
+import keys from 'lodash/keys';
+import toSafeInteger from 'lodash/toSafeInteger';
 
 import { slotCategoryIdToPositionMap } from '../constants.js';
 
@@ -91,21 +94,21 @@ describe('League', () => {
 
       test('maps lineupSlotCounts to object using slotCategoryIdToPositionMap for keys', () => {
         const league = League.buildFromServer(data);
-        expect.assertions(_.keys(rosterSettings.lineupSlotCounts).length);
+        expect.assertions(keys(rosterSettings.lineupSlotCounts).length);
 
-        _.forEach(rosterSettings.lineupSlotCounts, (value, key) => {
-          const position = _.get(slotCategoryIdToPositionMap, key);
-          expect(_.get(league.rosterSettings.lineupPositionCount, position)).toBe(value);
+        forEach(rosterSettings.lineupSlotCounts, (value, key) => {
+          const position = get(slotCategoryIdToPositionMap, key);
+          expect(get(league.rosterSettings.lineupPositionCount, position)).toBe(value);
         });
       });
 
       test('maps positionLimits to object using slotCategoryIdToPositionMap for keys', () => {
         const league = League.buildFromServer(data);
-        expect.assertions(_.keys(rosterSettings.positionLimits).length);
+        expect.assertions(keys(rosterSettings.positionLimits).length);
 
-        _.forEach(rosterSettings.positionLimits, (value, key) => {
-          const position = _.get(slotCategoryIdToPositionMap, key);
-          expect(_.get(league.rosterSettings.positionLimits, position)).toBe(value);
+        forEach(rosterSettings.positionLimits, (value, key) => {
+          const position = get(slotCategoryIdToPositionMap, key);
+          expect(get(league.rosterSettings.positionLimits, position)).toBe(value);
         });
       });
 
@@ -137,7 +140,7 @@ describe('League', () => {
 
       test('calculates numberOfPlayoffMatchups', () => {
         const league = League.buildFromServer(data);
-        const expected = _.toSafeInteger(
+        const expected = toSafeInteger(
           (
             17 - (scheduleSettings.matchupPeriodCount * scheduleSettings.matchupPeriodLength)
           ) / scheduleSettings.playoffMatchupPeriodLength

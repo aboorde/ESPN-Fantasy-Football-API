@@ -1,5 +1,7 @@
 import axios from 'axios';
-import _ from 'lodash';
+import forEach from 'lodash/forEach';
+import get from 'lodash/get';
+import merge from 'lodash/merge';
 import q from 'q';
 
 import Boxscore from '../boxscore/boxscore';
@@ -18,7 +20,7 @@ describe('Client', () => {
       const testPropIsUndefined = (prop) => {
         test(`${prop} is undefined`, () => {
           const newInstance = new Client();
-          expect(_.get(newInstance, prop)).toBeUndefined();
+          expect(get(newInstance, prop)).toBeUndefined();
         });
       };
 
@@ -30,7 +32,7 @@ describe('Client', () => {
         test(`${prop} is set from options`, () => {
           const value = 203123;
           const newInstance = new Client({ [prop]: value });
-          expect(_.get(newInstance, prop)).toBe(value);
+          expect(get(newInstance, prop)).toBe(value);
         });
       };
 
@@ -98,7 +100,7 @@ describe('Client', () => {
 
             const client = new Client({ espnS2, SWID });
             const axiosConfig = client._buildAxiosConfig(passedConfig);
-            expect(axiosConfig).toEqual(_.merge({}, passedConfig, cookieConfig));
+            expect(axiosConfig).toEqual(merge({}, passedConfig, cookieConfig));
           });
         });
 
@@ -291,7 +293,7 @@ describe('Client', () => {
 
             expect.hasAssertions();
             expect(boxscores.length).toBe(2);
-            _.forEach(boxscores, (boxscore, index) => {
+            forEach(boxscores, (boxscore, index) => {
               expect(boxscore).toBeInstanceOf(Boxscore);
               expect(boxscore.homeTeamId).toBe(response.data.schedule[index].home.teamId);
               expect(boxscore.awayTeamId).toBe(response.data.schedule[index].away.teamId);
@@ -427,7 +429,7 @@ describe('Client', () => {
 
             expect.hasAssertions();
             expect(draftPlayers.length).toBe(2);
-            _.forEach(draftPlayers, (draftPlayer) => {
+            forEach(draftPlayers, (draftPlayer) => {
               expect(draftPlayer).toBeInstanceOf(DraftPlayer);
             });
           });
@@ -515,7 +517,7 @@ describe('Client', () => {
 
             expect.hasAssertions();
             expect(boxscores.length).toBe(2);
-            _.forEach(boxscores, (boxscore, index) => {
+            forEach(boxscores, (boxscore, index) => {
               expect(boxscore).toBeInstanceOf(Boxscore);
               expect(boxscore.homeTeamId).toBe(response.data[0].schedule[index].home.teamId);
               expect(boxscore.awayTeamId).toBe(response.data[0].schedule[index].away.teamId);
@@ -663,7 +665,7 @@ describe('Client', () => {
 
             expect.hasAssertions();
             expect(freeAgents.length).toBe(2);
-            _.forEach(freeAgents, (freeAgent, index) => {
+            forEach(freeAgents, (freeAgent, index) => {
               expect(freeAgent).toBeInstanceOf(FreeAgentPlayer);
               expect(freeAgent.firstName).toBe(
                 response.data.players[index].player.firstName
@@ -820,7 +822,7 @@ describe('Client', () => {
 
             expect.hasAssertions();
             expect(teams.length).toBe(3);
-            _.forEach(teams, (team, index) => {
+            forEach(teams, (team, index) => {
               expect(team).toBeInstanceOf(Team);
               expect(team.abbreviation).toBe(response.data.teams[index].abbrev);
               expect(team.ownerName).toBe('Owner Dude');
@@ -972,7 +974,7 @@ describe('Client', () => {
 
             expect.hasAssertions();
             expect(teams.length).toBe(3);
-            _.forEach(teams, (team, index) => {
+            forEach(teams, (team, index) => {
               expect(team).toBeInstanceOf(Team);
               expect(team.abbreviation).toBe(response.data[0].teams[index].abbrev);
 
@@ -1070,7 +1072,7 @@ describe('Client', () => {
 
           expect.hasAssertions();
           expect(games.length).toBe(3);
-          _.forEach(games, (game) => {
+          forEach(games, (game) => {
             expect(game).toBeInstanceOf(NFLGame);
           });
         });

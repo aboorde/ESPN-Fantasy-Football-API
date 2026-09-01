@@ -1,4 +1,5 @@
-import _ from 'lodash';
+import forEach from 'lodash/forEach';
+import get from 'lodash/get';
 
 import { flattenObject } from '../../utils.js';
 
@@ -351,7 +352,7 @@ describe('BaseObject', () => {
                       const returnedInstance = callPopulate();
 
                       expect.hasAssertions();
-                      _.forEach(returnedInstance.someObjects, (populatedInstance, index) => {
+                      forEach(returnedInstance.someObjects, (populatedInstance, index) => {
                         expect(populatedInstance).toBeInstanceOf(MappingTestBaseObject);
 
                         expect(populatedInstance.mappingId).toBe(
@@ -361,7 +362,7 @@ describe('BaseObject', () => {
                           data.map_objects[index].some_value
                         );
                         expect(populatedInstance.someNestedData).toBe(
-                          _.get(data.map_objects[index], 'nested.item')
+                          get(data.map_objects[index], 'nested.item')
                         );
                       });
                     });
@@ -380,8 +381,8 @@ describe('BaseObject', () => {
 
                           const emptyObject = returnedInstance.someObject;
                           expect(emptyObject).toBeInstanceOf(MappingTestBaseObject);
-                          _.forEach(MappingTestBaseObject.responseMap, (v, key) => {
-                            expect(_.get(emptyObject, key)).toBeUndefined();
+                          forEach(MappingTestBaseObject.responseMap, (v, key) => {
+                            expect(get(emptyObject, key)).toBeUndefined();
                           });
                         }
                       );
@@ -412,7 +413,7 @@ describe('BaseObject', () => {
                       expect(populatedInstance.mappingId).toBe(data.map_object.mapping_id);
                       expect(populatedInstance.someValue).toBe(data.map_object.some_value);
                       expect(populatedInstance.someNestedData).toBe(
-                        _.get(data.map_object, 'nested.item')
+                        get(data.map_object, 'nested.item')
                       );
                     });
                   });
@@ -469,7 +470,7 @@ describe('BaseObject', () => {
             test('maps the data attribute at the map key, ignoring the map value', () => {
               expect.hasAssertions();
               const returnedInstance = callPopulate(Klass);
-              _.forEach(data, (value, key) => {
+              forEach(data, (value, key) => {
                 expect(returnedInstance[key]).toBe(data[key]);
               });
             });

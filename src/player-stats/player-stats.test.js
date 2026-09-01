@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import get from 'lodash/get';
 
 import PlayerStats, { parsePlayerStats } from './player-stats';
 
@@ -8,7 +8,7 @@ describe('PlayerStats', () => {
       const testPropIsUndefined = (prop) => {
         test(`${prop} is undefined`, () => {
           const newInstance = new PlayerStats();
-          expect(_.get(newInstance, prop)).toBeUndefined();
+          expect(get(newInstance, prop)).toBeUndefined();
         });
       };
 
@@ -20,7 +20,7 @@ describe('PlayerStats', () => {
         test(`${prop} is set from options`, () => {
           const value = true;
           const newInstance = new PlayerStats({ [prop]: value });
-          expect(_.get(newInstance, prop)).toBe(value);
+          expect(get(newInstance, prop)).toBe(value);
         });
       };
 

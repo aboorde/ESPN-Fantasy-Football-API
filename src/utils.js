@@ -1,4 +1,10 @@
-import _ from 'lodash';
+import assignWith from 'lodash/assignWith';
+import forEach from 'lodash/forEach';
+import isNaN from 'lodash/isNaN';
+import isPlainObject from 'lodash/isPlainObject';
+import keys from 'lodash/keys';
+import set from 'lodash/set';
+import some from 'lodash/some';
 
 const setWithWarning = (objValue, newValue, key, object) => {
   // istanbul ignore next
@@ -12,16 +18,16 @@ const setWithWarning = (objValue, newValue, key, object) => {
 const flattenObject = (object) => {
   const flatObject = {};
 
-  _.forEach(object, (value, key) => {
-    if (_.isPlainObject(value)) {
-      _.assignWith(flatObject, flattenObject(value), setWithWarning);
+  forEach(object, (value, key) => {
+    if (isPlainObject(value)) {
+      assignWith(flatObject, flattenObject(value), setWithWarning);
     } else {
       // istanbul ignore next
       if (process.env.NODE_ENV === 'development' && flatObject[key] && value !== flatObject[key]) {
         console.warn(`espn-fantasy-football-api: Assigning non-empty key ${key}. Set value: ${flatObject[key]}, new value: ${value}!`);
       }
 
-      _.set(flatObject, key, value);
+      set(flatObject, key, value);
     }
   });
 
@@ -31,16 +37,16 @@ const flattenObject = (object) => {
 const flattenObjectSansNumericKeys = (object) => {
   const flatObject = {};
 
-  _.forEach(object, (value, key) => {
-    if (_.isPlainObject(value) && !_.some(_.keys(value), (k) => !_.isNaN(Number(k)))) {
-      _.assignWith(flatObject, flattenObjectSansNumericKeys(value), setWithWarning);
+  forEach(object, (value, key) => {
+    if (isPlainObject(value) && !some(keys(value), (k) => !isNaN(Number(k)))) {
+      assignWith(flatObject, flattenObjectSansNumericKeys(value), setWithWarning);
     } else {
       // istanbul ignore next
       if (process.env.NODE_ENV === 'development' && flatObject[key] && value !== flatObject[key]) {
         console.warn(`espn-fantasy-football-api: Assigning non-empty key ${key}. Set value: ${flatObject[key]}, new value: ${value}!`);
       }
 
-      _.set(flatObject, key, value);
+      set(flatObject, key, value);
     }
   });
 

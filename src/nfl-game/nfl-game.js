@@ -1,4 +1,6 @@
-import _ from 'lodash';
+import find from 'lodash/find';
+import get from 'lodash/get';
+import toSafeInteger from 'lodash/toSafeInteger';
 
 import BaseObject from '../base-classes/base-object/base-object';
 
@@ -62,29 +64,29 @@ class NFLGame extends BaseObject {
 
     gameStatus: {
       key: 'status',
-      manualParse: (responseData) => _.get(this.GAME_STATUSES, responseData)
+      manualParse: (responseData) => get(this.GAME_STATUSES, responseData)
     },
     homeTeam: {
       key: 'competitors',
       manualParse: (responseData) => this._buildTeamAttribute(
-        _.find(responseData, { homeAway: 'home' })
+        find(responseData, { homeAway: 'home' })
       )
     },
     awayTeam: {
       key: 'competitors',
       manualParse: (responseData) => this._buildTeamAttribute(
-        _.find(responseData, { homeAway: 'away' })
+        find(responseData, { homeAway: 'away' })
       )
     }
   };
 
   static _buildTeamAttribute(teamResponseData) {
     return {
-      id: _.toSafeInteger(teamResponseData.id),
-      team: _.get(nflTeamIdToNFLTeam, teamResponseData.id),
-      teamAbbrev: _.get(nflTeamIdToNFLTeamAbbreviation, teamResponseData.id),
+      id: toSafeInteger(teamResponseData.id),
+      team: get(nflTeamIdToNFLTeam, teamResponseData.id),
+      teamAbbrev: get(nflTeamIdToNFLTeamAbbreviation, teamResponseData.id),
       record: teamResponseData.record,
-      score: _.toSafeInteger(teamResponseData.score)
+      score: toSafeInteger(teamResponseData.score)
     };
   }
 }

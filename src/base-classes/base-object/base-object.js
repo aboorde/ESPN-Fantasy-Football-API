@@ -1,4 +1,13 @@
-import _ from 'lodash';
+import assignWith from 'lodash/assignWith';
+import forEach from 'lodash/forEach';
+import get from 'lodash/get';
+import isEmpty from 'lodash/isEmpty';
+import isFunction from 'lodash/isFunction';
+import isPlainObject from 'lodash/isPlainObject';
+import isString from 'lodash/isString';
+import isUndefined from 'lodash/isUndefined';
+import map from 'lodash/map';
+import set from 'lodash/set';
 
 import { flattenObjectSansNumericKeys } from '../../utils.js';
 
@@ -11,7 +20,7 @@ class BaseObject {
   }
 
   static set responseMap(_responseMap) {
-    this._responseMap = _.assignWith({}, this._responseMap, _responseMap);
+    this._responseMap = assignWith({}, this._responseMap, _responseMap);
   }
 
 
@@ -21,7 +30,7 @@ class BaseObject {
    *                         `constructor`.
    */
   constructor(options = {}) {
-    if (!_.isEmpty(options)) {
+    if (!isEmpty(options)) {
       this.constructor._populateObject({
         data: options,
         instance: this,
@@ -58,15 +67,15 @@ class BaseObject {
       );
     }
 
-    const responseData = _.get(data, value.key);
-    if (_.isFunction(value.manualParse)) {
+    const responseData = get(data, value.key);
+    if (isFunction(value.manualParse)) {
       return value.manualParse(responseData, data, rawData, constructorParams, instance);
     } else if (value.BaseObject) {
       const buildInstance = (passedData) => (
         value.BaseObject.buildFromServer(passedData, constructorParams, rawData)
       );
 
-      return value.isArray ? _.map(responseData, buildInstance) : buildInstance(responseData);
+      return value.isArray ? map(responseData, buildInstance) : buildInstance(responseData);
     }
 
     throw new Error(
@@ -140,10 +149,10 @@ class BaseObject {
     let item;
 
     if (!isDataFromServer) {
-      item = _.get(data, key);
-    } else if (_.isString(value)) {
-      item = _.get(data, value);
-    } else if (_.isPlainObject(value)) {
+      item = get(data, key);
+    } else if (isString(value)) {
+      item = get(data, value);
+    } else if (isPlainObject(value)) {
       item = this._processObjectValue({
         data, rawData, constructorParams, instance, value
       });
@@ -154,8 +163,8 @@ class BaseObject {
       );
     }
 
-    if (!_.isUndefined(item)) {
-      _.set(instance, key, item);
+    if (!isUndefined(item)) {
+      set(instance, key, item);
     }
   }
 
@@ -175,14 +184,14 @@ class BaseObject {
   }) {
     if (!instance) {
       throw new Error(`${this.displayName}: _populateObject: Did not receive instance to populate`);
-    } else if (_.isEmpty(data)) {
+    } else if (isEmpty(data)) {
       return instance;
     }
 
     const deferredMapItems = {};
-    _.forEach(this.responseMap, (value, key) => {
-      if (_.isPlainObject(value) && value.defer) {
-        _.set(deferredMapItems, key, value);
+    forEach(this.responseMap, (value, key) => {
+      if (isPlainObject(value) && value.defer) {
+        set(deferredMapItems, key, value);
       } else {
         this._processResponseMapItem({
           data, rawData, constructorParams, instance, isDataFromServer, key, value
@@ -190,7 +199,7 @@ class BaseObject {
       }
     });
 
-    _.forEach(deferredMapItems, (value, key) => {
+    forEach(deferredMapItems, (value, key) => {
       this._processResponseMapItem({
         data, rawData, constructorParams, instance, isDataFromServer, key, value
       });

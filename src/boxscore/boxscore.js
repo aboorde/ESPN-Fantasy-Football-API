@@ -1,4 +1,5 @@
-import _ from 'lodash';
+import get from 'lodash/get';
+import map from 'lodash/map';
 
 import BaseObject from '../base-classes/base-object/base-object';
 
@@ -37,7 +38,7 @@ class Boxscore extends BaseObject {
     homeScore: {
       key: 'home',
       manualParse: (responseData) => (
-        _.get(responseData, 'totalPointsLive') || _.get(responseData, 'totalPoints')
+        get(responseData, 'totalPointsLive') || get(responseData, 'totalPoints')
       )
     },
     homeProjectedScore: 'home.totalProjectedPointsLive',
@@ -45,7 +46,7 @@ class Boxscore extends BaseObject {
     homeRoster: {
       key: 'home.rosterForCurrentScoringPeriod.entries',
       isArray: true,
-      manualParse: (responseData, data, rawData, constructorParams) => _.map(
+      manualParse: (responseData, data, rawData, constructorParams) => map(
         responseData,
         (playerData) => BoxscorePlayer.buildFromServer(playerData, constructorParams)
       )
@@ -54,7 +55,7 @@ class Boxscore extends BaseObject {
     awayScore: {
       key: 'away',
       manualParse: (responseData) => (
-        _.get(responseData, 'totalPointsLive') || _.get(responseData, 'totalPoints')
+        get(responseData, 'totalPointsLive') || get(responseData, 'totalPoints')
       )
     },
     awayProjectedScore: 'away.totalProjectedPointsLive',
@@ -62,7 +63,7 @@ class Boxscore extends BaseObject {
     awayRoster: {
       key: 'away.rosterForCurrentScoringPeriod.entries',
       isArray: true,
-      manualParse: (responseData, data, rawData, constructorParams) => _.map(
+      manualParse: (responseData, data, rawData, constructorParams) => map(
         responseData,
         (playerData) => BoxscorePlayer.buildFromServer(playerData, constructorParams)
       )

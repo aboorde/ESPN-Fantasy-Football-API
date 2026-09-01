@@ -1,4 +1,5 @@
-import _ from 'lodash';
+import forEach from 'lodash/forEach';
+import get from 'lodash/get';
 
 import Player from '../player/player';
 
@@ -10,7 +11,7 @@ describe('Team', () => {
       const testPropIsUndefined = (prop) => {
         test(`${prop} is undefined`, () => {
           const newInstance = new Team();
-          expect(_.get(newInstance, prop)).toBeUndefined();
+          expect(get(newInstance, prop)).toBeUndefined();
         });
       };
 
@@ -23,7 +24,7 @@ describe('Team', () => {
         test(`${prop} is set from options`, () => {
           const value = 25;
           const newInstance = new Team({ [prop]: value });
-          expect(_.get(newInstance, prop)).toBe(value);
+          expect(get(newInstance, prop)).toBe(value);
         });
       };
 
@@ -58,7 +59,7 @@ describe('Team', () => {
           const team = buildTeam(data, { seasonId: 2018 });
 
           expect.hasAssertions();
-          _.forEach(team.roster, (player, index) => {
+          forEach(team.roster, (player, index) => {
             expect(player).toBeInstanceOf(Player);
             expect(player.id).toBe(index);
             expect(player.seasonId).toBe(team.seasonId);

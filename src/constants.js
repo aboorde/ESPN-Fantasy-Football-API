@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import reduce from 'lodash/reduce';
 
 /**
  * Maps `slotCategoryId`'s numerical enum to readable positions.
@@ -660,7 +660,7 @@ export const scoringItemToId = {
   teamLossMargin1To4: '167'
 };
 
-export const scoringIdToItem = _.reduce(scoringItemToId, (acc, value, key) => {
+export const scoringIdToItem = reduce(scoringItemToId, (acc, value, key) => {
   acc[value] = key;
   return acc;
 }, {});

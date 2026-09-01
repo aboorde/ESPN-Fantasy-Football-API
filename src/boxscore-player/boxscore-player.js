@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import get from 'lodash/get';
 
 import Player from '../player/player';
 import { parsePlayerStats } from '../player-stats/player-stats';
@@ -39,7 +39,7 @@ class BoxscorePlayer extends Player {
     },
     rosteredPosition: {
       key: 'lineupSlotId',
-      manualParse: (responseData) => _.get(slotCategoryIdToPositionMap, responseData)
+      manualParse: (responseData) => get(slotCategoryIdToPositionMap, responseData)
     },
     totalPoints: 'appliedStatTotal',
     pointBreakdown: {

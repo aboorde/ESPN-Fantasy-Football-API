@@ -1,4 +1,6 @@
-import _ from 'lodash';
+import getByPath from 'lodash/get';
+import isEmpty from 'lodash/isEmpty';
+import map from 'lodash/map';
 
 import BaseObject from '../base-object/base-object.js';
 
@@ -76,7 +78,7 @@ class BaseCacheableObject extends BaseObject {
    * @return {BaseCacheableObject|undefined}
    */
   static get(id) {
-    return _.get(this.cache, id);
+    return getByPath(this.cache, id);
   }
 
   /**
@@ -95,8 +97,8 @@ class BaseCacheableObject extends BaseObject {
    * @return {string|undefined}
    */
   static getCacheId(idParams) {
-    const cacheId = _.map(this.getIDParams(idParams), (value, key) => `${key}=${value};`).join('');
-    return _.isEmpty(cacheId) ? undefined : cacheId;
+    const cacheId = map(this.getIDParams(idParams), (value, key) => `${key}=${value};`).join('');
+    return isEmpty(cacheId) ? undefined : cacheId;
   }
 
   /**

@@ -1,5 +1,10 @@
 import axios from 'axios';
-import _ from 'lodash';
+import filter from 'lodash/filter';
+import find from 'lodash/find';
+import forEach from 'lodash/forEach';
+import get from 'lodash/get';
+import map from 'lodash/map';
+import merge from 'lodash/merge';
 
 import Boxscore from '../boxscore/boxscore';
 import DraftPlayer from '../draft-player/draft-player';
@@ -92,10 +97,10 @@ class Client {
     });
 
     return axios.get(route, this._buildAxiosConfig()).then((response) => {
-      const schedule = _.get(response.data, 'schedule');
-      const data = _.filter(schedule, { matchupPeriodId });
+      const schedule = get(response.data, 'schedule');
+      const data = filter(schedule, { matchupPeriodId });
 
-      return _.map(data, (matchup) => (
+      return map(data, (matchup) => (
         Boxscore.buildFromServer(matchup, { leagueId: this.leagueId, seasonId, scoringPeriodId })
       ));
     });
@@ -139,8 +144,8 @@ class Client {
         }
       }))
     ]).then(([draftResponse, playerResponse]) => (
-      _.map(draftResponse.data.draftDetail.picks, (draftPick) => {
-        const playerInfo = _.find(
+      map(draftResponse.data.draftDetail.picks, (draftPick) => {
+        const playerInfo = find(
           playerResponse.data.players,
           (player) => player.player.id === draftPick.playerId
         );
@@ -187,10 +192,10 @@ class Client {
       baseURL: 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/leagueHistory/'
     });
     return axios.get(route, axiosConfig).then((response) => {
-      const schedule = _.get(response.data[0], 'schedule'); // Data is an array instead of object
-      const data = _.filter(schedule, { matchupPeriodId });
+      const schedule = get(response.data[0], 'schedule'); // Data is an array instead of object
+      const data = filter(schedule, { matchupPeriodId });
 
-      return _.map(data, (matchup) => (
+      return map(data, (matchup) => (
         Boxscore.buildFromServer(matchup, { leagueId: this.leagueId, seasonId, scoringPeriodId })
       ));
     });
@@ -232,8 +237,8 @@ class Client {
     });
 
     return axios.get(route, config).then((response) => {
-      const data = _.get(response.data, 'players');
-      return _.map(data, (player) => (
+      const data = get(response.data, 'players');
+      return map(data, (player) => (
         FreeAgentPlayer.buildFromServer(player, {
           leagueId: this.leagueId,
           seasonId,
@@ -301,15 +306,15 @@ class Client {
 
   _parseTeamResponse(responseData, seasonId, scoringPeriodId) {
     // Join member (owner) information with team data before dumping into builder
-    const teams = _.get(responseData, 'teams');
-    const members = _.get(responseData, 'members');
+    const teams = get(responseData, 'teams');
+    const members = get(responseData, 'members');
 
-    const mergedData = _.map(teams, (team) => {
+    const mergedData = map(teams, (team) => {
       const owner = members.find((member) => member.id === team.primaryOwner);
       return { owner, ...team }; // Don't spread owner to prevent id and other attributes clashing
     });
 
-    return _.map(mergedData, (team) => (
+    return map(mergedData, (team) => (
       Team.buildFromServer(team, { leagueId: this.leagueId, seasonId, scoringPeriodId })
     ));
   }
@@ -331,8 +336,8 @@ class Client {
     const axiosConfig = this._buildAxiosConfig({ baseURL: 'https://site.api.espn.com/' });
 
     return axios.get(route, axiosConfig).then((response) => {
-      const data = _.get(response.data, 'events');
-      return _.map(data, (game) => NFLGame.buildFromServer(game));
+      const data = get(response.data, 'events');
+      return map(data, (game) => NFLGame.buildFromServer(game));
     });
   }
 
@@ -352,8 +357,8 @@ class Client {
     });
 
     return axios.get(route, this._buildAxiosConfig()).then((response) => {
-      const settingsData = _.get(response.data, 'settings');
-      const statusData = _.get(response.data, 'status');
+      const settingsData = get(response.data, 'settings');
+      const statusData = get(response.data, 'status');
       const data = {
         currentMatchupPeriodId: statusData.currentMatchupPeriod,
         currentScoringPeriodId: statusData.latestScoringPeriod,
@@ -422,9 +427,9 @@ class Client {
       topics = response.data.topics;
       return axios.get(leagueRoute, leagueConfig);
     }).then((res) => {
-      activity = _.map(topics, (topic) => this._buildActivity(topic, res.data));
-      _.forEach(activity, (action) => {
-        _.forEach(action, (msg) => {
+      activity = map(topics, (topic) => this._buildActivity(topic, res.data));
+      forEach(activity, (action) => {
+        forEach(action, (msg) => {
           if (!msg.player) {
             searchIds.push(msg.targetId);
           }
@@ -451,11 +456,11 @@ class Client {
       });
 
       return axios.get(playerRoute, playerConfig);
-    }).then((resp) => _.map(activity, (action) => _.map(action, (msg) => {
+    }).then((resp) => map(activity, (action) => map(action, (msg) => {
       if (!msg.player) {
         return {
           ...msg,
-          player: _.find(resp.data.players, (player) => player.id === msg.targetId)
+          player: find(resp.data.players, (player) => player.id === msg.targetId)
         };
       }
       return msg;
@@ -476,7 +481,7 @@ class Client {
     const { teams } = data;
     const { date } = topic;
 
-    return _.map(topic.messages, (message) => {
+    return map(topic.messages, (message) => {
       let team = '';
       let action = 'UNKNOWN';
       let player = null;
@@ -484,11 +489,11 @@ class Client {
       const msgId = message.messageTypeId;
 
       if (msgId === 244) {
-        team = _.find(teams, (x) => x.id === message.from);
+        team = find(teams, (x) => x.id === message.from);
       } else if (msgId === 239) {
-        team = _.find(teams, (x) => x.id === message.for);
+        team = find(teams, (x) => x.id === message.for);
       } else {
-        team = _.find(teams, (x) => x.id === message.to);
+        team = find(teams, (x) => x.id === message.to);
       }
 
       if (this.ACTIVITY_MAP[msgId]) {
@@ -498,7 +503,7 @@ class Client {
         bidAmount = message.from || 0;
       }
       if (team) {
-        player = _.find(team.roster.entries, (x) => x.playerId === message.targetId);
+        player = find(team.roster.entries, (x) => x.playerId === message.targetId);
       }
 
       const ids = {
@@ -523,7 +528,7 @@ class Client {
   _buildAxiosConfig(config) {
     if ((this.espnS2 && this.SWID)) {
       const headers = { Cookie: `espn_s2=${this.espnS2}; SWID=${this.SWID};` };
-      return _.merge({}, config, { headers, withCredentials: true });
+      return merge({}, config, { headers, withCredentials: true });
     }
 
     return config;

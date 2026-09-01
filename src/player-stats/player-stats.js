@@ -1,4 +1,6 @@
-import _ from 'lodash';
+import assign from 'lodash/assign';
+import find from 'lodash/find';
+import get from 'lodash/get';
 
 import BaseObject from '../base-classes/base-object/base-object';
 import { scoringItemToId } from '../constants';
@@ -53,9 +55,9 @@ export const parsePlayerStats = ({
     filters.scoringPeriodId = scoringPeriodId;
   }
 
-  const statData = _.find(responseData, filters);
-  const params = _.assign({}, constructorParams, { usesPoints });
-  return PlayerStats.buildFromServer(_.get(statData, statKey), params);
+  const statData = find(responseData, filters);
+  const params = assign({}, constructorParams, { usesPoints });
+  return PlayerStats.buildFromServer(get(statData, statKey), params);
 };
 
 export default PlayerStats;

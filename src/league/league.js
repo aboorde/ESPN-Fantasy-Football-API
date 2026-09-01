@@ -1,4 +1,9 @@
-import _ from 'lodash';
+import first from 'lodash/first';
+import get from 'lodash/get';
+import mapKeys from 'lodash/mapKeys';
+import reduce from 'lodash/reduce';
+import toSafeInteger from 'lodash/toSafeInteger';
+import values from 'lodash/values';
 
 import BaseObject from '../base-classes/base-object/base-object';
 
@@ -89,13 +94,13 @@ class League extends BaseObject {
     rosterSettings: {
       key: 'rosterSettings',
       manualParse: (responseData) => ({
-        lineupPositionCount: _.mapKeys(
+        lineupPositionCount: mapKeys(
           responseData.lineupSlotCounts,
-          (count, position) => _.get(slotCategoryIdToPositionMap, position)
+          (count, position) => get(slotCategoryIdToPositionMap, position)
         ),
-        positionLimits: _.mapKeys(
+        positionLimits: mapKeys(
           responseData.positionLimits,
-          (count, position) => _.get(slotCategoryIdToPositionMap, position)
+          (count, position) => get(slotCategoryIdToPositionMap, position)
         ),
         locktime: responseData.rosterLocktimeType
       })
@@ -104,7 +109,7 @@ class League extends BaseObject {
     scheduleSettings: {
       key: 'scheduleSettings',
       manualParse: (responseData) => {
-        const numberOfPlayoffMatchups = _.toSafeInteger(
+        const numberOfPlayoffMatchups = toSafeInteger(
           (
             17 - (responseData.matchupPeriodCount * responseData.matchupPeriodLength)
           ) / responseData.playoffMatchupPeriodLength
@@ -122,7 +127,7 @@ class League extends BaseObject {
 
     scoringSettings: {
       key: 'scoringSettings',
-      manualParse: (responseData) => _.reduce(
+      manualParse: (responseData) => reduce(
         responseData.scoringItems,
         (acc, { points, pointsOverrides, statId }) => {
           const key = scoringIdToItem[statId];
@@ -132,7 +137,7 @@ class League extends BaseObject {
           }
 
           if (pointsOverrides) {
-            acc[key] = _.first(_.values(pointsOverrides));
+            acc[key] = first(values(pointsOverrides));
           } else {
             acc[key] = points;
           }

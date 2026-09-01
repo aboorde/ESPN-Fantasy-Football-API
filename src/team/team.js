@@ -1,4 +1,6 @@
-import _ from 'lodash';
+import map from 'lodash/map';
+import round from 'lodash/round';
+import trim from 'lodash/trim';
 
 import BaseCacheableObject from '../base-classes/base-cacheable-object/base-cacheable-object.js';
 
@@ -89,7 +91,7 @@ class Team extends BaseCacheableObject {
     name: 'name',
     ownerName: {
       key: 'owner',
-      manualParse: ({ firstName, lastName }) => `${_.trim(firstName)} ${_.trim(lastName)}`
+      manualParse: ({ firstName, lastName }) => `${trim(firstName)} ${trim(lastName)}`
     },
     logoURL: 'logo',
     wavierRank: 'wavierRank',
@@ -97,7 +99,7 @@ class Team extends BaseCacheableObject {
     roster: {
       key: 'roster.entries',
       isArray: true,
-      manualParse: (responseData, data, rawData, constructorParams) => _.map(
+      manualParse: (responseData, data, rawData, constructorParams) => map(
         responseData,
         (playerData) => Player.buildFromServer(playerData.playerPoolEntry, constructorParams)
       )
@@ -121,7 +123,7 @@ class Team extends BaseCacheableObject {
     regularSeasonPointsAgainst: 'record.overall.pointsAgainst',
     winningPercentage: {
       key: 'record.overall.percentage',
-      manualParse: (responseData) => _.round(responseData * 100, 2)
+      manualParse: (responseData) => round(responseData * 100, 2)
     },
 
     playoffSeed: 'playoffSeed',
