@@ -1,26 +1,90 @@
 export default Client;
 /**
+ * The raw ESPN team object an action is attributed to, passed through untouched. Only the fields
+ * this client resolves against are declared; ESPN sends around two dozen more.
+ */
+export type ActivityTeam = {
+    /**
+     * The team's id within the league.
+     */
+    id: number;
+    /**
+     * The team's name.
+     */
+    name: string;
+    /**
+     * The team's abbreviation.
+     */
+    abbrev: string;
+};
+/**
+ * The player an action targeted. Two shapes, because there are two sources: a roster entry when the
+ * player is still on the team that moved them, and a player-card entry when they are not. Which one
+ * you get is not knowable in advance, so read both.
+ */
+export type ActivityPlayer = {
+    /**
+     * Set on a roster entry.
+     */
+    playerId?: number;
+    /**
+     * Set on a roster entry.
+     */
+    playerPoolEntry?: {
+        player: {
+            fullName: string;
+        };
+    };
+    /**
+     * Set on a player-card entry.
+     */
+    player?: {
+        fullName: string;
+    };
+};
+/**
+ * The message's raw ids, before this client resolves one of them to a team.
+ */
+export type ActivityIds = {
+    /**
+     * The team that gave up the player. For a waiver claim ESPN reuses this
+     *  field for the winning bid instead.
+     */
+    from?: number;
+    /**
+     * The team a drop is recorded against.
+     */
+    for?: number;
+    /**
+     * The team that received the player.
+     */
+    to?: number;
+};
+/**
  * One transaction within an activity topic. These are plain objects rather than a BaseObject:
  * `team` and `player` are ESPN's own raw shapes, passed through so a caller can read whatever it
  * needs from them.
+ *
+ * NOTE: `team` and `player` are both lookups that can miss -- a message naming a team that is no
+ * longer in the league, or a player neither on a roster nor returned by the player-card endpoint.
+ * They are optional here because they are genuinely absent in those cases, not as a formality.
  */
 export type ActivityAction = {
     /**
-     * The raw ESPN team object that made the move, resolved from the
-     * message's `from`, `for` or `to` id depending on the action.
+     * The team that made the move, resolved from the message's `from`,
+     *  `for` or `to` id depending on the action.
      */
-    team: object;
+    team?: ActivityTeam;
     /**
-     * One of `FA ADDED`, `WAIVER ADDED`, `DROPPED`, `TRADED`, or `UNKNOWN`
-     * when ESPN sends a message type this client does not label.
+     * The kind of
+     * transaction. `UNKNOWN` when ESPN sends a message type this client does
+     * not label.
      */
-    action: string;
+    action: "FA ADDED" | "WAIVER ADDED" | "DROPPED" | "TRADED" | "UNKNOWN";
     /**
-     * The raw ESPN player entry the action targeted. Resolved from the
-     * team's roster where the player is still on it, and from the player
-     * card endpoint otherwise.
+     * The player the action targeted.
      */
-    player: object;
+    player?: ActivityPlayer | null;
     /**
      * The winning FAAB bid, for a `WAIVER ADDED`. Zero otherwise.
      */
@@ -36,7 +100,7 @@ export type ActivityAction = {
     /**
      * The message's raw `from`, `for` and `to` ids.
      */
-    ids: object;
+    ids: ActivityIds;
 };
 /**
  * Provides functionality to make a variety of API calls to ESPN for a given fantasy football

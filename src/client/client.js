@@ -19,23 +19,60 @@ import { flattenObjectSansNumericKeys } from '../utils';
 import http from './http';
 
 /**
+ * @typedef  {object} ActivityTeam
+ *
+ * The raw ESPN team object an action is attributed to, passed through untouched. Only the fields
+ * this client resolves against are declared; ESPN sends around two dozen more.
+ *
+ * @property {number} id The team's id within the league.
+ * @property {string} name The team's name.
+ * @property {string} abbrev The team's abbreviation.
+ */
+
+/**
+ * @typedef  {object} ActivityPlayer
+ *
+ * The player an action targeted. Two shapes, because there are two sources: a roster entry when the
+ * player is still on the team that moved them, and a player-card entry when they are not. Which one
+ * you get is not knowable in advance, so read both.
+ *
+ * @property {number} [playerId] Set on a roster entry.
+ * @property {{player: {fullName: string}}} [playerPoolEntry] Set on a roster entry.
+ * @property {{fullName: string}} [player] Set on a player-card entry.
+ */
+
+/**
+ * @typedef  {object} ActivityIds
+ *
+ * The message's raw ids, before this client resolves one of them to a team.
+ *
+ * @property {number} [from] The team that gave up the player. For a waiver claim ESPN reuses this
+ *                           field for the winning bid instead.
+ * @property {number} [for] The team a drop is recorded against.
+ * @property {number} [to] The team that received the player.
+ */
+
+/**
  * @typedef  {object} ActivityAction
  *
  * One transaction within an activity topic. These are plain objects rather than a BaseObject:
  * `team` and `player` are ESPN's own raw shapes, passed through so a caller can read whatever it
  * needs from them.
  *
- * @property {object} team The raw ESPN team object that made the move, resolved from the
- *                         message's `from`, `for` or `to` id depending on the action.
- * @property {string} action One of `FA ADDED`, `WAIVER ADDED`, `DROPPED`, `TRADED`, or `UNKNOWN`
- *                          when ESPN sends a message type this client does not label.
- * @property {object} player The raw ESPN player entry the action targeted. Resolved from the
- *                           team's roster where the player is still on it, and from the player
- *                           card endpoint otherwise.
+ * NOTE: `team` and `player` are both lookups that can miss -- a message naming a team that is no
+ * longer in the league, or a player neither on a roster nor returned by the player-card endpoint.
+ * They are optional here because they are genuinely absent in those cases, not as a formality.
+ *
+ * @property {ActivityTeam} [team] The team that made the move, resolved from the message's `from`,
+ *                                 `for` or `to` id depending on the action.
+ * @property {'FA ADDED'|'WAIVER ADDED'|'DROPPED'|'TRADED'|'UNKNOWN'} action The kind of
+ *                          transaction. `UNKNOWN` when ESPN sends a message type this client does
+ *                          not label.
+ * @property {ActivityPlayer|null} [player] The player the action targeted.
  * @property {number} bidAmount The winning FAAB bid, for a `WAIVER ADDED`. Zero otherwise.
  * @property {number} date Epoch milliseconds for the topic the action belongs to.
  * @property {number} targetId The ESPN id of the player the action targeted.
- * @property {object} ids The message's raw `from`, `for` and `to` ids.
+ * @property {ActivityIds} ids The message's raw `from`, `for` and `to` ids.
  */
 
 /**
