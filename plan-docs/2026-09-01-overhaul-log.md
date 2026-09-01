@@ -16,7 +16,7 @@ Legend: `pending` / `in progress` / `done` / `revised` / `abandoned`
 | 6 | Drop lodash | done | `PENDING` |
 | 7 | Fixture layer | done | `PENDING` |
 | 8 | Types: open unions, exported constants | done (diagnosis corrected) | `PENDING` |
-| 9 | Distribution: `prepare`, drop committed artifacts | pending | |
+| 9 | Distribution: `prepare`, drop committed artifacts | done | `PENDING` |
 | 10 | API surface: activity normalization, pagination | pending | |
 
 ---
@@ -271,3 +271,16 @@ Verified by compiling a consumer file against `node.d.ts` under `--strict`: inst
 runtime constants and the imported union types all typecheck.
 
 504 tests green, coverage still 100%.
+
+### Step 9 - distribution
+
+**done.** `"prepare": "npm run build"` added; `node.js`, `node-dev.js`, `node.js.map`,
+`node.js.LICENSE.txt`, `node.d.ts` and `types/` untracked and gitignored; `verify:artifacts` and
+`prepublishOnly` removed; `ci` and the README scripts table updated; the README's false "CI enforces
+it" claim replaced with "there is no CI, run `npm run ci` locally".
+
+`build-types.mjs` no longer shells out to `npx tsc`. It resolves the local TypeScript binary through
+`createRequire`, because this now runs on a consumer's machine during install and an `npx` that
+fails to resolve locally would go to the network.
+
+Drift is no longer policed, it is impossible: there is nothing committed to drift from.

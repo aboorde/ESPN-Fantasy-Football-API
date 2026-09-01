@@ -10,17 +10,29 @@ This repository tracks [`mkreiser/ESPN-Fantasy-Football-API`](https://github.com
 `main` (currently v2.0.1) and adds one method on top of it: [`getRecentActivity`](#getting-recent-activity),
 which returns a league's recent transactions.
 
-It is not published to npm. The built bundles are committed so it can be installed straight from git,
-pinned to a commit:
+It is not published to npm. Install it straight from git, pinned to a commit:
 
 ```
 npm install --save git+https://github.com/aboorde/ESPN-Fantasy-Football-API.git#<commit-sha>
 ```
 
+The bundles are **not** committed. npm runs this package's `prepare` script when installing it as a
+git dependency, so `npm install` builds `node.js`, `node-dev.js` and the TypeScript declarations
+from the source at whatever commit you pinned. You always get artifacts that match that source.
+
+They used to be committed, and they drifted: 9 of 25 consecutive commits changed `src/` without
+rebuilding them, so anyone pinning to one of those got stale parse logic. One of them switched the
+HTTP layer from axios to `fetch` while shipping a bundle that still contained axios. Building at
+install time removes the possibility rather than policing it.
+
+(The one thing this gives up: `npm install --ignore-scripts` skips `prepare`, and there would then
+be no `node.js` at all. If that ever becomes necessary, publish `npm pack` tarballs on releases
+instead.)
+
 `package.json` carries a `-wpfl` prerelease suffix (e.g. `2.0.1-wpfl.2`) so that an installed copy is
 distinguishable from the published `espn-fantasy-football-api` at the same upstream version.
 
-When re-syncing with upstream, run `npm run build` and commit the regenerated bundles. CI enforces it.
+There is no CI. Run `npm run ci` locally before pushing.
 
 ### Toolchain
 
@@ -89,7 +101,7 @@ npm install --save git+https://github.com/aboorde/ESPN-Fantasy-Football-API.git#
 
 (Installing `espn-fantasy-football-api` from npm gets you upstream, without `getRecentActivity`.)
 
-There are two files exported in the package:
+Two files are built at install time and exported from the package:
 
 * `node.js` - Production build (**main/default file**). Despite the name it is universal: the UMD
   wrapper binds to `this`, so the same file loads under NodeJS, in a browser, and via AMD. The
@@ -358,11 +370,11 @@ This is my first time writing OSS and picking a license. Feel free to reach out 
 | clean            | Runs all clean scripts.                                      |
 | clean:dist       | Removes the built bundles and declarations.                  |
 | clean:docs       | Removes the docs folder.                                     |
-| ci               | Runs continuous integration tasks: clean, lint, unit tests, build, build:docs, and verify:artifacts. Does not run the integration tests. |
+| ci               | Runs the full local check: clean, lint, unit tests, build and build:docs. Does not run the integration tests. Nothing runs this automatically -- there is no CI. |
 | lint             | Runs all lint tasks                                          |
 | lint:js          | Ensures code style is correct. File set comes from `eslint.config.mjs`. |
 | lint:spelling    | Ensures spelling is correct.                                 |
 | serve:docs       | Builds and serves docs. Defaults to port 8080.               |
 | test             | Starts a jest test runner with access to all unit tests. Pass `--watch` to keep jest alive and watching for changes. Pass a string as a file inclusion pattern. |
-| test:integration | Runs the integration tests.                                  |
-| verify:artifacts | Fails if the committed bundles or declarations no longer match `src/`. Run `build` and commit the result. |
+| test:integration | Runs the integration tests against live ESPN. Needs credentials in a root `.env`. |
+| prepare          | Runs `build`. npm invokes this on install, including when this repo is installed as a git dependency, which is why the bundles are not committed. |

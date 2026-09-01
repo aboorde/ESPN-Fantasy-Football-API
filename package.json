@@ -26,15 +26,14 @@
     "clean": "npm run clean:dist && npm run clean:docs",
     "clean:dist": "rm -rf node.js node.js.map node-dev.js node.d.ts types",
     "clean:docs": "rm -rf docs",
-    "ci": "npm run clean && npm run lint && npm run test && npm run build && npm run build:docs && npm run verify:artifacts",
+    "ci": "npm run clean && npm run lint && npm run test && npm run build && npm run build:docs",
     "lint": "npm run lint:js && npm run lint:spelling",
     "lint:js": "eslint --cache",
     "lint:spelling": "cspell \"src/**/*.js\" \"integration-tests/**/*.js\" --quiet --cache",
-    "prepublishOnly": "npm run build",
+    "prepare": "npm run build",
     "serve:docs": "npm run build:docs && http-server ./docs -c-1",
     "test": "jest --maxWorkers=2",
-    "test:integration": "jest --maxWorkers=2 --config=jest-integration-tests.config.js",
-    "verify:artifacts": "git diff --exit-code -- node.js node.js.map node-dev.js node.js.LICENSE.txt node.d.ts types"
+    "test:integration": "jest --maxWorkers=2 --config=jest-integration-tests.config.js"
   },
   "repository": {
     "type": "git",

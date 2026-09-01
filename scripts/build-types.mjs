@@ -45,6 +45,7 @@
 
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 
 const OUT_DIR = 'types';
@@ -116,8 +117,14 @@ function projectInstanceTypes(file) {
 fs.rmSync(OUT_DIR, { recursive: true, force: true });
 fs.rmSync(ENTRY, { force: true });
 
-execFileSync('npx', [
-  'tsc',
+// Resolved rather than shelled out to via `npx`. This runs from `prepare`, which means it runs on
+// a consumer's machine during `npm install` of this repo as a git dependency; an `npx` that fails
+// to resolve locally goes to the network and installs something, which is not a thing an install
+// of this package should be able to do.
+const tsc = createRequire(import.meta.url).resolve('typescript/bin/tsc');
+
+execFileSync(process.execPath, [
+  tsc,
   '--allowJs', '--declaration', '--emitDeclarationOnly', '--skipLibCheck',
   '--target', 'es2022', '--module', 'esnext', '--moduleResolution', 'bundler',
   '--outDir', OUT_DIR, 'src/index.js'

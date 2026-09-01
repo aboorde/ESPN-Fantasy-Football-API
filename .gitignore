@@ -20,3 +20,13 @@ node_modules/
 .env
 
 .DS_Store
+
+# Build output. Not committed: `prepare` rebuilds it during `npm install`, including when this repo
+# is installed as a git dependency, so a consumer always gets artifacts matching the pinned commit.
+# Committing them meant they could drift from src/ -- and they did, in 9 of 25 consecutive commits.
+node.js
+node.js.map
+node.js.LICENSE.txt
+node-dev.js
+node.d.ts
+types/
