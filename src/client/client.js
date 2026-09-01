@@ -359,13 +359,10 @@ class Client {
     });
 
     return http.get(route, this._buildRequestConfig()).then((data) => {
-      const settingsData = get(data, 'settings');
-      const statusData = get(data, 'status');
-      const leagueData = {
-        currentMatchupPeriodId: statusData.currentMatchupPeriod,
-        currentScoringPeriodId: statusData.latestScoringPeriod,
-        ...settingsData
-      };
+      // The whole `status` object is handed through rather than picked apart here. League's
+      // responseMap is where response paths belong, and reshaping in the client is exactly what
+      // left previousSeasons, firstScoringPeriod and the rest unreachable.
+      const leagueData = { ...get(data, 'settings'), status: get(data, 'status') };
 
       return League.buildFromServer(leagueData, { leagueId: this.leagueId, seasonId });
     });

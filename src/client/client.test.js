@@ -1160,7 +1160,10 @@ describe('Client', () => {
               },
               status: {
                 currentMatchupPeriod: 7,
-                latestScoringPeriod: 7
+                latestScoringPeriod: 7,
+                firstScoringPeriod: 1,
+                finalScoringPeriod: 17,
+                previousSeasons: [2016, 2017]
               }
             };
 
@@ -1169,6 +1172,14 @@ describe('Client', () => {
 
             const league = await client.getLeagueInfo({ seasonId });
             expect(league).toBeInstanceOf(League);
+            // The whole `status` object is handed to League rather than picked apart here, so
+            // assert the fields that reach the model through it.
+            expect(league.name).toBe('some league');
+            expect(league.currentMatchupPeriodId).toBe(7);
+            expect(league.currentScoringPeriodId).toBe(7);
+            expect(league.firstScoringPeriodId).toBe(1);
+            expect(league.finalScoringPeriodId).toBe(17);
+            expect(league.previousSeasons).toEqual([2016, 2017]);
           });
         });
       });
