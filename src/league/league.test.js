@@ -1,9 +1,6 @@
 import forEach from 'lodash/forEach';
 import get from 'lodash/get';
-import keys from 'lodash/keys';
 import toSafeInteger from 'lodash/toSafeInteger';
-
-import { slotCategoryIdToPositionMap } from '../constants.js';
 
 import League from './league';
 
@@ -92,24 +89,16 @@ describe('League', () => {
         expect(league.rosterSettings).toEqual(expect.any(Object));
       });
 
-      test('maps lineupSlotCounts to object using slotCategoryIdToPositionMap for keys', () => {
+      // Literal keys rather than a lookup through the same map the parser uses. The fixture's
+      // lineup slot ids are 1 and 3, which the lineupSlotId enum calls TQB and RB/WR.
+      test('rekeys lineupSlotCounts by lineup slot position', () => {
         const league = League.buildFromServer(data);
-        expect.assertions(keys(rosterSettings.lineupSlotCounts).length);
-
-        forEach(rosterSettings.lineupSlotCounts, (value, key) => {
-          const position = get(slotCategoryIdToPositionMap, key);
-          expect(get(league.rosterSettings.lineupPositionCount, position)).toBe(value);
-        });
+        expect(league.rosterSettings.lineupPositionCount).toEqual({ TQB: 2, 'RB/WR': 3 });
       });
 
-      test('maps positionLimits to object using slotCategoryIdToPositionMap for keys', () => {
+      test('rekeys positionLimits by lineup slot position', () => {
         const league = League.buildFromServer(data);
-        expect.assertions(keys(rosterSettings.positionLimits).length);
-
-        forEach(rosterSettings.positionLimits, (value, key) => {
-          const position = get(slotCategoryIdToPositionMap, key);
-          expect(get(league.rosterSettings.positionLimits, position)).toBe(value);
-        });
+        expect(league.rosterSettings.positionLimits).toEqual({ TQB: 2, 'RB/WR': 3 });
       });
 
       test('maps locktime directly', () => {

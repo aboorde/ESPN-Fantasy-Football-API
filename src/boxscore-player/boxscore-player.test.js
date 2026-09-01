@@ -1,8 +1,4 @@
-import get from 'lodash/get';
-
 import PlayerStats from '../player-stats/player-stats';
-
-import { slotCategoryIdToPositionMap } from '../constants';
 
 import BoxscorePlayer from './boxscore-player.js';
 
@@ -41,7 +37,7 @@ describe('BoxscorePlayer', () => {
       };
 
       data = {
-        lineupSlotId: 2,
+        lineupSlotId: 6,
         playerPoolEntry: {
           player: {
             stats: [projectedStats, pointStats]
@@ -63,11 +59,11 @@ describe('BoxscorePlayer', () => {
 
     describe('rosteredPosition', () => {
       describe('manualParse', () => {
-        test('maps id to human readable rosteredPosition', () => {
+        // Slot id 6 rather than a value the two position enums agree on: `defaultPositionId` has
+        // no 6, so wiring this to the wrong map yields undefined and fails here.
+        test('maps lineup slot id to human readable rosteredPosition', () => {
           const player = buildBoxscorePlayer(data);
-          expect(player.rosteredPosition).toBe(
-            get(slotCategoryIdToPositionMap, data.lineupSlotId)
-          );
+          expect(player.rosteredPosition).toBe('TE');
         });
       });
     });

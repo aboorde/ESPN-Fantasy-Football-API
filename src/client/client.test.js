@@ -1,6 +1,5 @@
 import forEach from 'lodash/forEach';
 import get from 'lodash/get';
-import merge from 'lodash/merge';
 
 import Boxscore from '../boxscore/boxscore';
 import DraftPlayer from '../draft-player/draft-player';
@@ -94,20 +93,38 @@ describe('Client', () => {
     describe('_buildRequestConfig', () => {
       describe('when espnS2 is set on the instance', () => {
         describe('when SWID is set on the instance', () => {
-          test('returns a requestConfig with Cookie merged onto headers', () => {
+          // The expected value is written out rather than computed with the same `merge` the
+          // implementation uses. That assertion could not fail: it compared merge() to merge().
+          // What matters here is that the Cookie header is added *alongside* the caller's headers
+          // rather than replacing them -- `x-fantasy-filter` rides in that object on the free
+          // agent, draft and activity routes, and losing it breaks private leagues only.
+          test('adds the Cookie header without displacing the caller\'s headers', () => {
             const espnS2 = 'some_espn_s2';
             const SWID = 'some_swid';
-            const passedConfig = {
-              headers: { something: 'with a value' },
-              baseRoute: 'some/base/route'
-            };
-
-            const cookieHeaders = { Cookie: `espn_s2=${espnS2}; SWID=${SWID};` };
-            const cookieConfig = { headers: cookieHeaders, credentials: 'include' };
 
             const client = new Client({ espnS2, SWID });
-            const requestConfig = client._buildRequestConfig(passedConfig);
-            expect(requestConfig).toEqual(merge({}, passedConfig, cookieConfig));
+            const requestConfig = client._buildRequestConfig({
+              headers: { 'x-fantasy-filter': '{"players":{"limit":2000}}' },
+              baseRoute: 'some/base/route'
+            });
+
+            expect(requestConfig).toEqual({
+              headers: {
+                'x-fantasy-filter': '{"players":{"limit":2000}}',
+                Cookie: 'espn_s2=some_espn_s2; SWID=some_swid;'
+              },
+              baseRoute: 'some/base/route',
+              credentials: 'include'
+            });
+          });
+
+          test('does not mutate the config it was passed', () => {
+            const client = new Client({ espnS2: 'some_espn_s2', SWID: 'some_swid' });
+            const passedConfig = { headers: { something: 'with a value' } };
+
+            client._buildRequestConfig(passedConfig);
+
+            expect(passedConfig).toEqual({ headers: { something: 'with a value' } });
           });
         });
 

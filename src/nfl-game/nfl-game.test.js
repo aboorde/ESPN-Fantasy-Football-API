@@ -1,10 +1,3 @@
-import get from 'lodash/get';
-
-import {
-  nflTeamIdToNFLTeam,
-  nflTeamIdToNFLTeamAbbreviation
-} from '../constants.js';
-
 import NFLGame from './nfl-game';
 
 describe('NFLGame', () => {
@@ -45,7 +38,7 @@ describe('NFLGame', () => {
     describe('gameStatus', () => {
       test('maps to GAME_STATUSES', () => {
         const game = NFLGame.buildFromServer(data);
-        expect(game.gameStatus).toBe(get(NFLGame.GAME_STATUSES, data.status));
+        expect(game.gameStatus).toBe('Not Started');
       });
     });
 
@@ -62,12 +55,12 @@ describe('NFLGame', () => {
 
       test('maps team id to full team name', () => {
         const game = NFLGame.buildFromServer(data);
-        expect(game.homeTeam.team).toBe(get(nflTeamIdToNFLTeam, homeTeam.id));
+        expect(game.homeTeam.team).toBe('Chicago Bears');
       });
 
       test('maps team id to team abbreviation', () => {
         const game = NFLGame.buildFromServer(data);
-        expect(game.homeTeam.teamAbbrev).toBe(get(nflTeamIdToNFLTeamAbbreviation, homeTeam.id));
+        expect(game.homeTeam.teamAbbrev).toBe('CHI');
       });
 
       test('maps record directly', () => {
@@ -94,12 +87,12 @@ describe('NFLGame', () => {
 
       test('maps team id to full team name', () => {
         const game = NFLGame.buildFromServer(data);
-        expect(game.awayTeam.team).toBe(get(nflTeamIdToNFLTeam, awayTeam.id));
+        expect(game.awayTeam.team).toBe('Denver Broncos');
       });
 
       test('maps team id to team abbreviation', () => {
         const game = NFLGame.buildFromServer(data);
-        expect(game.awayTeam.teamAbbrev).toBe(get(nflTeamIdToNFLTeamAbbreviation, awayTeam.id));
+        expect(game.awayTeam.teamAbbrev).toBe('DEN');
       });
 
       test('maps record directly', () => {

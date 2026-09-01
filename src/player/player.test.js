@@ -1,10 +1,5 @@
 import get from 'lodash/get';
 
-import {
-  nflTeamIdToNFLTeam,
-  nflTeamIdToNFLTeamAbbreviation
-} from '../constants.js';
-
 import Player from './player.js';
 
 describe('Player', () => {
@@ -74,11 +69,8 @@ describe('Player', () => {
     describe('proTeam', () => {
       describe('manualParse', () => {
         test('maps team id to human readable string', () => {
-          const proTeamId = 22;
-          const data = { proTeamId };
-
-          const player = buildPlayer(data);
-          expect(player.proTeam).toBe(get(nflTeamIdToNFLTeam, proTeamId));
+          const player = buildPlayer({ proTeamId: 22 });
+          expect(player.proTeam).toBe('Arizona Cardinals');
         });
       });
     });
@@ -86,11 +78,8 @@ describe('Player', () => {
     describe('proTeamAbbreviation', () => {
       describe('manualParse', () => {
         test('maps team id to human readable abbreviation', () => {
-          const proTeamId = 22;
-          const data = { proTeamId };
-
-          const player = buildPlayer(data);
-          expect(player.proTeamAbbreviation).toBe(get(nflTeamIdToNFLTeamAbbreviation, proTeamId));
+          const player = buildPlayer({ proTeamId: 22 });
+          expect(player.proTeamAbbreviation).toBe('ARI');
         });
       });
     });

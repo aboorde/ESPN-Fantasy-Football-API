@@ -8,7 +8,7 @@ Legend: `pending` / `in progress` / `done` / `revised` / `abandoned`
 | --- | --- | --- | --- |
 | 0 | Plan + adversarial review of the plan | done | `b6cd355` |
 | 1 | Fix `defaultPosition`; split the position enums | done | `PENDING` |
-| 2 | De-tautologize self-referential assertions | pending | |
+| 2 | De-tautologize self-referential assertions | done | `PENDING` |
 | 3 | Reshape `League#scoringSettings` | pending | |
 | 4 | Delete `BaseCacheableObject` and the `defer` pass | pending | |
 | 5a | Injectable transport (pure refactor) | pending | |
@@ -57,3 +57,29 @@ Acceptance verified by mutation: changing `defaultPositionIdToPosition[1]` to `'
 `Expected: "QB" / Received: "TQB"`. Under the old test that mutation was invisible.
 
 386 tests green, coverage still 100%.
+
+### Step 2 - de-tautologize
+
+**done.** Ten assertions across four files asserted the implementation against itself and could not
+fail. Replaced with literal expected values:
+
+* `player.test.js` - `proTeam` / `proTeamAbbreviation` now expect `'Arizona Cardinals'` / `'ARI'`.
+* `nfl-game.test.js` - `gameStatus`, and both teams' `team` / `teamAbbrev`, now expect
+  `'Not Started'`, `'Chicago Bears'` / `'CHI'`, `'Denver Broncos'` / `'DEN'`.
+* `league.test.js` - `rosterSettings` position rekeying now expects `{ TQB: 2, 'RB/WR': 3 }`.
+* `boxscore-player.test.js` - `rosteredPosition` now expects `'TE'`, and the fixture's
+  `lineupSlotId` moved from `2` to `6` on purpose: `2` is one of only two values the two position
+  enums agree on, whereas `defaultPositionId` has no `6`, so wiring this to the wrong map now
+  produces `undefined` and fails.
+
+The important one is `client.test.js`. `expect(requestConfig).toEqual(merge({}, passedConfig,
+cookieConfig))` compared `merge` to `merge` - guarding, unfalsifiably, the single place auth
+cookies combine with the `x-fantasy-filter` header. Rewritten to a literal expected object holding
+both headers, plus a non-mutation test.
+
+Acceptance verified by mutation: replacing the deep `merge` in `_buildRequestConfig` with a shallow
+spread - exactly the regression step 6 could introduce - now fails with `x-fantasy-filter` missing.
+Under the old assertion that change was invisible.
+
+387 tests green, coverage still 100%. Four now-unused lodash imports dropped from test files, which
+is a down payment on step 6.
