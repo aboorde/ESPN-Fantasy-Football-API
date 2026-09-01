@@ -69,4 +69,42 @@ export const parsePlayerStats = ({
   return PlayerStats.buildFromServer(getPath(statData, statKey), params);
 };
 
+/**
+ * Builds the whole `responseMap` entry for one flavour of player stats.
+ *
+ * Ten of these exist across FreeAgentPlayer, BoxscorePlayer and DraftPlayer, differing only in
+ * which stat row they select and what the result is called. Written out, each one restates the
+ * `manualParse` signature -- which this branch has already had to change once, in three files.
+ *
+ * @param   {object} options Options.
+ * @param   {string} options.statKey The key on the selected row holding the values: `stats` for
+ *                                   raw ones, `appliedStats` for fantasy points.
+ * @param   {number} options.statSourceId `0` for real stats, `1` for projections.
+ * @param   {number} options.statSplitTypeId `0` for a season total, `1` for a scoring period.
+ * @param   {boolean} [options.usesPoints] Whether the values are fantasy points.
+ * @param   {boolean} [options.useSeason] Whether to pin the row to the season being parsed.
+ * @param   {boolean} [options.useScoringPeriod] Whether to pin it to the scoring period as well.
+ * @returns {object} A `responseMap` entry.
+ */
+export const statsEntry = ({
+  statKey,
+  statSourceId,
+  statSplitTypeId,
+  usesPoints = false,
+  useSeason = false,
+  useScoringPeriod = false
+}) => ({
+  key: 'stats',
+  manualParse: (responseData, data, rawData, constructorParams) => parsePlayerStats({
+    responseData,
+    constructorParams,
+    usesPoints,
+    seasonId: useSeason ? constructorParams.seasonId : undefined,
+    scoringPeriodId: useScoringPeriod ? constructorParams.scoringPeriodId : undefined,
+    statKey,
+    statSourceId,
+    statSplitTypeId
+  })
+});
+
 export default PlayerStats;

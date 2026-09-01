@@ -1,6 +1,6 @@
 import Player from '../player/player';
 
-import { parsePlayerStats } from '../player-stats/player-stats';
+import { statsEntry } from '../player-stats/player-stats';
 
 /**
  * @typedef {import('../player-stats/player-stats').default} PlayerStats
@@ -38,57 +38,19 @@ class FreeAgentPlayer extends Player {
   static responseMap = {
     ...Player.responseMap,
 
-    rawStatsForYear: {
-      key: 'stats',
-      manualParse: (responseData, data, rawData, constructorParams) => parsePlayerStats({
-        responseData,
-        constructorParams,
-        usesPoints: false,
-        seasonId: constructorParams.seasonId,
-        statKey: 'stats',
-        statSourceId: 0,
-        statSplitTypeId: 0
-      })
-    },
-    projectedRawStatsForYear: {
-      key: 'stats',
-      manualParse: (responseData, data, rawData, constructorParams) => parsePlayerStats({
-        responseData,
-        constructorParams,
-        usesPoints: false,
-        seasonId: constructorParams.seasonId,
-        statKey: 'stats',
-        statSourceId: 1,
-        statSplitTypeId: 0
-      })
-    },
+    rawStatsForYear: statsEntry({
+      statKey: 'stats', statSourceId: 0, statSplitTypeId: 0, useSeason: true
+    }),
+    projectedRawStatsForYear: statsEntry({
+      statKey: 'stats', statSourceId: 1, statSplitTypeId: 0, useSeason: true
+    }),
 
-    rawStatsForScoringPeriod: {
-      key: 'stats',
-      manualParse: (responseData, data, rawData, constructorParams) => parsePlayerStats({
-        responseData,
-        constructorParams,
-        usesPoints: false,
-        seasonId: constructorParams.seasonId,
-        scoringPeriodId: constructorParams.scoringPeriodId,
-        statKey: 'stats',
-        statSourceId: 0,
-        statSplitTypeId: 1
-      })
-    },
-    projectedRawStatsForScoringPeriod: {
-      key: 'stats',
-      manualParse: (responseData, data, rawData, constructorParams) => parsePlayerStats({
-        responseData,
-        constructorParams,
-        usesPoints: false,
-        seasonId: constructorParams.seasonId,
-        scoringPeriodId: constructorParams.scoringPeriodId,
-        statKey: 'stats',
-        statSourceId: 1,
-        statSplitTypeId: 1
-      })
-    }
+    rawStatsForScoringPeriod: statsEntry({
+      statKey: 'stats', statSourceId: 0, statSplitTypeId: 1, useSeason: true, useScoringPeriod: true
+    }),
+    projectedRawStatsForScoringPeriod: statsEntry({
+      statKey: 'stats', statSourceId: 1, statSplitTypeId: 1, useSeason: true, useScoringPeriod: true
+    })
   };
 }
 

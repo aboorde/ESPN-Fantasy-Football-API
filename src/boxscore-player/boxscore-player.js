@@ -1,7 +1,7 @@
 import { getPath } from '../internal/objects.js';
 
 import Player from '../player/player';
-import { parsePlayerStats } from '../player-stats/player-stats';
+import { statsEntry } from '../player-stats/player-stats';
 
 import { slotCategoryIdToPositionMap } from '../constants';
 
@@ -49,58 +49,25 @@ class BoxscorePlayer extends Player {
     ...Player.responseMap,
 
     availabilityStatus: {
-      key: 'status',
-      manualParse: (responseData, data, rawData) => rawData.playerPoolEntry.status
+      // No `key`: this reads `rawData`, not a key of its own. It previously declared `key:
+      // 'status'` purely so the absent-key guard would not short-circuit it -- which coupled it to
+      // a key it never read, and meant it stopped populating if ESPN dropped that key while the
+      // real source was still there.
+      manualParse: (responseData, data, rawData) => getPath(rawData, 'playerPoolEntry.status')
     },
     rosteredPosition: {
       key: 'lineupSlotId',
       manualParse: (responseData) => getPath(slotCategoryIdToPositionMap, responseData)
     },
     totalPoints: 'appliedStatTotal',
-    pointBreakdown: {
-      key: 'stats',
-      manualParse: (responseData, data, rawData, constructorParams) => parsePlayerStats({
-        responseData,
-        constructorParams,
-        usesPoints: true,
-        statKey: 'appliedStats',
-        statSourceId: 0,
-        statSplitTypeId: 1
-      })
-    },
-    projectedPointBreakdown: {
-      key: 'stats',
-      manualParse: (responseData, data, rawData, constructorParams) => parsePlayerStats({
-        responseData,
-        constructorParams,
-        usesPoints: true,
-        statKey: 'appliedStats',
-        statSourceId: 1,
-        statSplitTypeId: 1
-      })
-    },
-    rawStats: {
-      key: 'stats',
-      manualParse: (responseData, data, rawData, constructorParams) => parsePlayerStats({
-        responseData,
-        constructorParams,
-        usesPoints: false,
-        statKey: 'stats',
-        statSourceId: 0,
-        statSplitTypeId: 1
-      })
-    },
-    projectedRawStats: {
-      key: 'stats',
-      manualParse: (responseData, data, rawData, constructorParams) => parsePlayerStats({
-        responseData,
-        constructorParams,
-        usesPoints: false,
-        statKey: 'stats',
-        statSourceId: 1,
-        statSplitTypeId: 1
-      })
-    }
+    pointBreakdown: statsEntry({
+      statKey: 'appliedStats', statSourceId: 0, statSplitTypeId: 1, usesPoints: true
+    }),
+    projectedPointBreakdown: statsEntry({
+      statKey: 'appliedStats', statSourceId: 1, statSplitTypeId: 1, usesPoints: true
+    }),
+    rawStats: statsEntry({ statKey: 'stats', statSourceId: 0, statSplitTypeId: 1 }),
+    projectedRawStats: statsEntry({ statKey: 'stats', statSourceId: 1, statSplitTypeId: 1 })
   };
 }
 

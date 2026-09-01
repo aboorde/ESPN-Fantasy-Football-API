@@ -381,6 +381,16 @@ findings, and what happened to each.
 before and after. The three causes were all introduced by the lodash removal, and all three were
 invisible to a suite that only ever parses a handful of objects at a time.
 
+### Second round (agents' remaining findings)
+
+| Finding | Where | Outcome |
+| --- | --- | --- |
+| `new Date(responseData)` instead of the project's `toDate` | `nfl-game.js` | `toDate`. It was the only model converting a timestamp by hand, so `null`/`''` gave an Invalid Date here and `undefined` everywhere else |
+| `availabilityStatus` declared `key: 'status'` but read `rawData` | `boxscore-player.js` | The key was a presence proxy: it worked only because flattening happens to merge `playerPoolEntry.status` up over the entry's own, and it would have stopped populating had ESPN dropped the top-level key |
+| ...so a `manualParse` entry may now omit `key` | `base-object.js` | The docs already described this case ("one that reads `rawData` rather than its own key") while the code forbade it. Now the mechanism allows it rather than requiring a dummy key |
+| Ten copies of the stats `responseMap` entry | free-agent, boxscore, draft player | `statsEntry({statKey, statSourceId, statSplitTypeId, usesPoints, useSeason, useScoringPeriod})`. Each copy restated the `manualParse` signature, which this branch already changed once across all three files |
+| Closure allocated per `BaseObject` entry, including the branch calling it once | `base-object.js` | Built only for the `isArray` case |
+
 ### Skipped, with reasons
 
 - **Abort-signal plumbing in `http.js` has no reachable caller.** True: `signal` appears nowhere
@@ -390,6 +400,12 @@ invisible to a suite that only ever parses a handful of objects at a time.
 - **`mergeConfig`'s conditional headers spread has one always-true caller.** Making it
   unconditional would return `{headers: {}}` where it now returns no `headers` key, for no gain.
   The branch is only "dead" because there is currently one caller.
+- **Collapsing the three `find(teams, ...)` calls into a message-id-to-field lookup.** The
+  `?? message.to` fallback such a lookup needs fires on a `message.from` that is genuinely
+  `undefined`, which is not the same as the current explicit branch. Not worth the subtlety.
+- **One-pass rebuild of `getRecentActivity`'s four-walk chain, and `max` counting bytes rather
+  than entries in the cache.** Both flagged as theoretical by the agent that raised them, at a
+  default `limit` of 25 messages. Left alone.
 - **A uniform unknown-id policy across all six enum lookups.** The rule that actually holds is
   narrower: an unresolved id must stay unique where it becomes a *key*, because collisions there
   lose data. As a *value*, `Player#defaultPosition` reading `undefined` is honest, and a fabricated

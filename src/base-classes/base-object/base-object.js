@@ -12,8 +12,10 @@ import { flattenObjectSansNumericKeys } from '../../utils.js';
  * manually parsed with a provided `manualParse function`. Either result is attached to the
  * BaseObject being populated.
  *
- * @property {string} key The key on the response data where the data can be found. This must be
- *                        defined.
+ * @property {string} key The key on the response data where the data can be found. Required,
+ *                        except on a `manualParse` entry that sources from `rawData` rather than
+ *                        from a key of its own -- omitting it there says so, instead of naming a
+ *                        key the parser never reads just to satisfy this check.
  * @property {BaseObject} BaseObject The BaseObject to create with the response data.
  * @property {boolean} isArray Whether or not the response data is an array. Useful for
  *                             attributes such as "teams".
@@ -24,8 +26,8 @@ import { flattenObjectSansNumericKeys } from '../../utils.js';
  *                                 `_processResponseMapItem` already does with an undefined
  *                                 result. Turn it on for a parser whose output is meaningful
  *                                 without input -- `map(undefined)` giving `[]` for a roster
- *                                 ESPN has not sent, say -- or one that reads `rawData` rather
- *                                 than its own key.
+ *                                 ESPN has not sent, say. A parser sourcing from `rawData` should
+ *                                 omit `key` instead; there is then no key to be absent.
  * @property {Function} manualParse A function to manually apply logic to the response. This
  *                                  function must return its result to be attached to the
  *                                  populated BaseObject. It is called with five arguments, in
@@ -107,14 +109,14 @@ class BaseObject {
   static _processObjectValue({
     data, rawData, constructorParams, instance, value
   }) {
-    if (!value.key) {
+    if (!value.key && !value.manualParse) {
       throw new Error(
         `${this.displayName}: _populateObject: Invalid responseMap object. Object must define ` +
         'key. See docs for typedef of ResponseMapValueObject.'
       );
     }
 
-    const responseData = getPath(data, value.key);
+    const responseData = value.key ? getPath(data, value.key) : undefined;
     if (typeof value.manualParse === 'function') {
       // ESPN omits keys constantly -- a settings block for a league that has none, a roster for a
       // week it has not scored, a member for a departed manager. A parser written to shape a value
@@ -122,16 +124,18 @@ class BaseObject {
       // idioms across nine files, and three sites that still had none. Returning `undefined` here
       // completes the contract the output side already keeps at `_processResponseMapItem`, where
       // an undefined result leaves the attribute unset. `parseAbsent` opts out.
-      if (responseData === undefined && !value.parseAbsent) {
+      if (value.key && responseData === undefined && !value.parseAbsent) {
         return undefined;
       }
       return value.manualParse(responseData, data, rawData, constructorParams, instance);
     } else if (value.BaseObject) {
-      const buildInstance = (passedData) => (
-        value.BaseObject.buildFromServer(passedData, constructorParams, rawData)
-      );
+      if (!value.isArray) {
+        return value.BaseObject.buildFromServer(responseData, constructorParams, rawData);
+      }
 
-      return value.isArray ? map(responseData, buildInstance) : buildInstance(responseData);
+      return map(responseData, (passedData) => (
+        value.BaseObject.buildFromServer(passedData, constructorParams, rawData)
+      ));
     }
 
     throw new Error(

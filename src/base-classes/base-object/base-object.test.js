@@ -226,6 +226,29 @@ describe('BaseObject', () => {
           });
 
           describe('when a value in the static responseMap is a plain object', () => {
+            describe('when the object omits key but defines manualParse', () => {
+              // A parser sourcing from rawData has no key of its own. Naming one anyway coupled it
+              // to a key it never read: BoxscorePlayer#availabilityStatus stopped populating if
+              // ESPN dropped that key, though its real source was still present.
+              test('runs the parser and passes it rawData', () => {
+                class RawDataTestBaseObject extends BaseObject {
+                  static displayName = 'RawDataTestBaseObject';
+
+                  static responseMap = {
+                    fromRaw: {
+                      manualParse: (responseData, data, rawData) => rawData.nested.value
+                    }
+                  };
+                }
+
+                const instance = RawDataTestBaseObject.buildFromServer({
+                  nested: { value: 'read from rawData' }
+                });
+
+                expect(instance.fromRaw).toBe('read from rawData');
+              });
+            });
+
             describe('when the object does not define key', () => {
               test('throws error', () => {
                 expect(() => callPopulate(KeyErrorTestBaseObject)).toThrow(

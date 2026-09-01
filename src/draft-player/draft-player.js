@@ -1,5 +1,5 @@
 import Player from '../player/player';
-import { parsePlayerStats } from '../player-stats/player-stats';
+import { statsEntry } from '../player-stats/player-stats';
 
 /**
  * @typedef {import('../player-stats/player-stats').default} PlayerStats
@@ -71,30 +71,12 @@ class DraftPlayer extends Player {
       manualParse: (responseData) => Object.values(responseData)[0]?.totalRanking
     },
 
-    rawStatsForYear: {
-      key: 'stats',
-      manualParse: (responseData, data, rawData, constructorParams) => parsePlayerStats({
-        responseData,
-        constructorParams,
-        usesPoints: false,
-        seasonId: constructorParams.seasonId,
-        statKey: 'stats',
-        statSourceId: 0,
-        statSplitTypeId: 0
-      })
-    },
-    projectedRawStatsForYear: {
-      key: 'stats',
-      manualParse: (responseData, data, rawData, constructorParams) => parsePlayerStats({
-        responseData,
-        constructorParams,
-        usesPoints: false,
-        seasonId: constructorParams.seasonId,
-        statKey: 'stats',
-        statSourceId: 1,
-        statSplitTypeId: 0
-      })
-    },
+    rawStatsForYear: statsEntry({
+      statKey: 'stats', statSourceId: 0, statSplitTypeId: 0, useSeason: true
+    }),
+    projectedRawStatsForYear: statsEntry({
+      statKey: 'stats', statSourceId: 1, statSplitTypeId: 0, useSeason: true
+    }),
 
     pointsScoredThisSeason: {
       key: 'ratings',

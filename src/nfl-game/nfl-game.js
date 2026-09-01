@@ -8,6 +8,7 @@ import {
   nflTeamIdToNFLTeam,
   nflTeamIdToNFLTeamAbbreviation
 } from '../constants.js';
+import { toDate } from '../utils.js';
 
 /**
  * Represents an NFL game between two NFL teams.
@@ -55,7 +56,10 @@ class NFLGame extends BaseObject {
   static responseMap = {
     startTime: {
       key: 'date',
-      manualParse: (responseData) => new Date(responseData)
+      // `toDate`, not `new Date`: every other model converts ESPN timestamps through it, and it
+      // answers `undefined` rather than an Invalid Date for the `null` and `''` ESPN sends for a
+      // game with no scheduled time. An Invalid Date survives every downstream presence check.
+      manualParse: toDate
     },
     quarter: 'period',
     clock: 'clock',
