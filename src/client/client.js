@@ -1,11 +1,11 @@
 import filter from 'lodash/filter';
 import find from 'lodash/find';
-import forEach from 'lodash/forEach';
+import flatten from 'lodash/flatten';
 import get from 'lodash/get';
-import keys from 'lodash/keys';
+import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
 import merge from 'lodash/merge';
-import toSafeInteger from 'lodash/toSafeInteger';
+import uniq from 'lodash/uniq';
 
 import Boxscore from '../boxscore/boxscore';
 import DraftPlayer from '../draft-player/draft-player';
@@ -104,7 +104,7 @@ const MESSAGE_IDS_BY_ACTIVITY_TYPE = {
   TRADED: [244]
 };
 
-const ALL_ACTIVITY_MESSAGE_IDS = map(keys(ACTIVITY_TYPE_BY_MESSAGE_ID), toSafeInteger);
+const ALL_ACTIVITY_MESSAGE_IDS = Object.keys(ACTIVITY_TYPE_BY_MESSAGE_ID).map(Number);
 
 /**
  * Provides functionality to make a variety of API calls to ESPN for a given fantasy football
@@ -494,8 +494,6 @@ class Client {
   getRecentActivity({ seasonId, msgType = '' }) {
     this.constructor._validateV3Params(seasonId, 'getRecentActivity');
 
-    const searchIds = [];
-    let activity = [];
     const msgTypes = get(MESSAGE_IDS_BY_ACTIVITY_TYPE, msgType, ALL_ACTIVITY_MESSAGE_IDS);
 
     const route = this.constructor._buildRoute({
@@ -522,7 +520,11 @@ class Client {
 
     const leagueRoute = this.constructor._buildRoute({
       base: `apis/v3/games/ffl/seasons/${seasonId}/segments/0/leagues/${this.leagueId}`,
-      params: '?view=mTeam&view=mRoster&view=mMatchup&view=mSettings&view=mStandings'
+      // mMatchup and mSettings contribute only top-level `schedule` and `settings`/`status`, none
+      // of which this method reads -- mMatchup alone is most of a 1.4 MB response, fetched and
+      // parsed on every call. mStandings stays: unlike those two it enriches `teams[]`, and each
+      // team is passed to callers untouched on ActivityAction#team.
+      params: '?view=mTeam&view=mRoster&view=mStandings'
     });
 
     const leagueConfig = this._buildRequestConfig({
@@ -536,14 +538,21 @@ class Client {
       http.get(route, config),
       http.get(leagueRoute, leagueConfig)
     ]).then(([communicationData, leagueData]) => {
-      activity = map(communicationData.topics, (topic) => this._buildActivity(topic, leagueData));
-      forEach(activity, (action) => {
-        forEach(action, (msg) => {
-          if (!msg.player) {
-            searchIds.push(msg.targetId);
-          }
-        });
-      });
+      const activity = map(
+        communicationData.topics,
+        (topic) => this._buildActivity(topic, leagueData)
+      );
+      // Only the players `_buildActivity` could not resolve off a roster need looking up, and a
+      // topic set can name the same player more than once.
+      const searchIds = uniq(
+        map(filter(flatten(activity), (msg) => !msg.player), 'targetId')
+      );
+
+      // Every player resolved from a roster, so the player-card request would be a round trip
+      // asking ESPN to match an empty id list.
+      if (isEmpty(searchIds)) {
+        return activity;
+      }
 
       const playerRoute = this.constructor._buildRoute({
         base: `apis/v3/games/ffl/seasons/${seasonId}/segments/0/leagues/${this.leagueId}`,
@@ -564,16 +573,18 @@ class Client {
         }
       });
 
-      return http.get(playerRoute, playerConfig);
-    }).then((playerData) => map(activity, (action) => map(action, (msg) => {
-      if (!msg.player) {
-        return {
-          ...msg,
-          player: find(playerData.players, (player) => player.id === msg.targetId)
-        };
-      }
-      return msg;
-    })));
+      return http.get(playerRoute, playerConfig).then((playerData) => (
+        map(activity, (action) => map(action, (msg) => {
+          if (!msg.player) {
+            return {
+              ...msg,
+              player: find(playerData.players, (player) => player.id === msg.targetId)
+            };
+          }
+          return msg;
+        }))
+      ));
+    });
   }
 
   /**

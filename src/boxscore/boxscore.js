@@ -1,63 +1,45 @@
-import get from 'lodash/get';
 import map from 'lodash/map';
 
-import BaseObject from '../base-classes/base-object/base-object';
-
 import BoxscorePlayer from '../boxscore-player/boxscore-player';
+import Matchup from '../matchup/matchup';
 
 /**
- * Represents a boxscore for a week.
+ * Represents a boxscore for a week: a {@link Matchup} plus the rosters that produced its scores.
  *
- * @augments {BaseObject}
+ * Both are built from the same `schedule` entry, so the pairing, the result and the scores are
+ * inherited rather than restated. What a Boxscore adds is the part ESPN only sends for the scoring
+ * period you asked about: the two lineups and their projections.
+ *
+ * @augments {Matchup}
  */
-class Boxscore extends BaseObject {
+class Boxscore extends Matchup {
   static displayName = 'Boxscore';
 
   /**
    * @typedef {object} BoxscoreMap
    *
-   * @property {number} matchupPeriodId The matchup period this boxscore belongs to.
-   * @property {string} winner Which side won: `HOME`, `AWAY`, `TIE`, or `UNDECIDED` while the
-   *                           matchup is unplayed or in progress.
-   * @property {string} playoffTierType Which bracket the matchup belongs to. `NONE` for a regular
-   *                                    season game, otherwise a playoff or consolation tier.
+   * The attributes Boxscore adds. Everything on Matchup -- `id`, `matchupPeriodId`, `winner`,
+   * `playoffTierType`, both team ids, both scores and both win probabilities -- is inherited
+   * through the class hierarchy rather than restated here.
    *
-   * @property {number} homeScore The total points scored by the home team.
    * @property {number} homeProjectedScore The projected total points scored by the home team.
    *   NOTE: This field is only populated in the boxscore for the current matchup period!
-   * @property {number} homeTeamId The home team's id. Can be used to load a cached Team.
    * @property {BoxscorePlayer[]} homeRoster The home team's roster, containing player info and
    *                                         stats.
-   * @property {number} homeWinProbability ESPN's live probability the home team wins, from 0 to 1.
-   *   NOTE: This field is only populated in the boxscore for the current matchup period!
    *
-   * @property {number} awayScore The total points scored by the away team.
    * @property {number} awayProjectedScore The projected total points scored by the away team.
    *   NOTE: This field is only populated in the boxscore for the current matchup period!
-   * @property {number} awayTeamId The away team's id. Can be used to load a cached Team.
    * @property {BoxscorePlayer[]} awayRoster The away team's roster, containing player info and
    *                                         stats.
-   * @property {number} awayWinProbability ESPN's live probability the away team wins, from 0 to 1.
-   *   NOTE: This field is only populated in the boxscore for the current matchup period!
    */
 
   /**
    * @type {BoxscoreMap}
    */
   static responseMap = {
-    matchupPeriodId: 'matchupPeriodId',
-    winner: 'winner',
-    playoffTierType: 'playoffTierType',
+    ...Matchup.responseMap,
 
-    homeScore: {
-      key: 'home',
-      manualParse: (responseData) => (
-        get(responseData, 'totalPointsLive') || get(responseData, 'totalPoints')
-      )
-    },
     homeProjectedScore: 'home.totalProjectedPointsLive',
-    homeWinProbability: 'home.winProbability',
-    homeTeamId: 'home.teamId',
     homeRoster: {
       key: 'home.rosterForCurrentScoringPeriod.entries',
       isArray: true,
@@ -67,15 +49,7 @@ class Boxscore extends BaseObject {
       )
     },
 
-    awayScore: {
-      key: 'away',
-      manualParse: (responseData) => (
-        get(responseData, 'totalPointsLive') || get(responseData, 'totalPoints')
-      )
-    },
     awayProjectedScore: 'away.totalProjectedPointsLive',
-    awayWinProbability: 'away.winProbability',
-    awayTeamId: 'away.teamId',
     awayRoster: {
       key: 'away.rosterForCurrentScoringPeriod.entries',
       isArray: true,

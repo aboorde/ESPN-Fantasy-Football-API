@@ -1379,15 +1379,97 @@ describe('Client', () => {
             await client.getRecentActivity({ seasonId });
 
             const route = `${routeBase(seasonId, client.leagueId)}` +
-              '?view=mTeam&view=mRoster&view=mMatchup&view=mSettings&view=mStandings';
+              '?view=mTeam&view=mRoster&view=mStandings';
             expect(http.get.mock.calls[1][0]).toBe(route);
           });
 
-          test('requests the player card view third', async () => {
+          test('requests the player card view third for players it could not resolve', async () => {
+            http.get.mockReset();
+            mockResponses({
+              topics: [{
+                date: 1600000000000,
+                messages: [{ messageTypeId: 178, to: 1, targetId: 555 }]
+              }],
+              teams: [{ id: 1, roster: { entries: [] } }],
+              players: []
+            });
+
             await client.getRecentActivity({ seasonId });
 
             const route = `${routeBase(seasonId, client.leagueId)}?view=kona_playercard`;
             expect(http.get.mock.calls[2][0]).toBe(route);
+            expect(filterOf(2).players.filterIds.value).toEqual([555]);
+          });
+
+          describe('when every player resolved off a roster', () => {
+            test('skips the player card request entirely', async () => {
+              // It would ask ESPN to match an empty id list: a whole round trip for a result that
+              // is empty by construction.
+              http.get.mockReset();
+              mockResponses({
+                topics: [{
+                  date: 1600000000000,
+                  messages: [{ messageTypeId: 178, to: 1, targetId: 555 }]
+                }],
+                teams: [{
+                  id: 1,
+                  roster: { entries: [{ playerId: 555, playerPoolEntry: { player: {} } }] }
+                }],
+                players: []
+              });
+
+              await client.getRecentActivity({ seasonId });
+
+              expect(http.get).toHaveBeenCalledTimes(2);
+            });
+          });
+
+          describe('when some players resolved off a roster and others did not', () => {
+            test('backfills only the unresolved ones and leaves the rest alone', async () => {
+              const rosterEntry = { playerId: 555, playerPoolEntry: { player: { fullName: 'A' } } };
+              const cardPlayer = { id: 777, player: { fullName: 'B' } };
+
+              http.get.mockReset();
+              mockResponses({
+                topics: [{
+                  date: 1600000000000,
+                  messages: [
+                    { messageTypeId: 178, to: 1, targetId: 555 },
+                    { messageTypeId: 178, to: 1, targetId: 777 }
+                  ]
+                }],
+                teams: [{ id: 1, roster: { entries: [rosterEntry] } }],
+                players: [cardPlayer]
+              });
+
+              const activity = await client.getRecentActivity({ seasonId });
+
+              expect(activity[0][0].player).toBe(rosterEntry);
+              expect(activity[0][1].player).toBe(cardPlayer);
+              // Only the unresolved id is asked for.
+              expect(filterOf(2).players.filterIds.value).toEqual([777]);
+            });
+          });
+
+          describe('when the same player is targeted more than once', () => {
+            test('asks for the id once', async () => {
+              http.get.mockReset();
+              mockResponses({
+                topics: [{
+                  date: 1600000000000,
+                  messages: [
+                    { messageTypeId: 178, to: 1, targetId: 555 },
+                    { messageTypeId: 179, to: 1, targetId: 555 }
+                  ]
+                }],
+                teams: [{ id: 1, roster: { entries: [] } }],
+                players: []
+              });
+
+              await client.getRecentActivity({ seasonId });
+
+              expect(filterOf(2).players.filterIds.value).toEqual([555]);
+            });
           });
 
           describe('when the targeted player is on the acting team roster', () => {
@@ -1407,7 +1489,7 @@ describe('Client', () => {
               const activity = await client.getRecentActivity({ seasonId });
 
               expect(activity[0][0].player).toBe(rosterEntry);
-              expect(filterOf(2).players.filterIds.value).toEqual([]);
+              expect(http.get).toHaveBeenCalledTimes(2);
             });
           });
 

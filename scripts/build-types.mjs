@@ -16,6 +16,24 @@
  *
  * Output is committed alongside the bundles and checked by the drift gate in `npm run ci`, so a
  * declaration that no longer matches src/ fails the build the same way a stale bundle does.
+ *
+ * KNOWN LIMITATION: the emitted declarations do not typecheck standalone -- `tsc --strict
+ * node.d.ts` without `skipLibCheck` reports around 23 errors. They are invisible to consumers,
+ * because `skipLibCheck` has been the tsc default since 5.0 and every consumer here sets it, and
+ * they do not affect instance types, which is all a consumer reads. Two causes, both structural:
+ *
+ *   - TS2417, static-side incompatibility. `@type {XMap}` deliberately describes `responseMap` as
+ *     the attributes it produces rather than the `{key, manualParse}` objects it holds. That is
+ *     the whole mechanism this file depends on. A subclass documenting only its own additions is
+ *     then not assignable to its parent's static. Fixing it means every subclass map restating its
+ *     parent's, which is the duplication the class hierarchy exists to avoid.
+ *   - TS2304, unresolved names. The jsdoc references `PlayerStats` and the union typedefs in
+ *     constants.js (`DRAFT_TYPE`, `INJURY_STATUSES`, ...) by bare name. tsc drops a module-scope
+ *     typedef nothing exported refers to, so those never reach `constants.d.ts`. Resolving them
+ *     needs the typedefs rehomed or the unions inlined at each use.
+ *
+ * Both are worth doing if the declarations ever need to stand on their own. Neither is a silent
+ * defect: this note is here so the next person knows the count is accounted for.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -36,15 +54,18 @@ const INSTANCE_TYPE_OVERRIDES = {
   PlayerStats: '{ [scoringItem: string]: number }'
 };
 
-const run = (args) => execFileSync('npx', ['tsc', ...args], { stdio: 'inherit' });
-
-/** @returns {string[]} Every emitted declaration file, deepest first. */
+/**
+ * @param   {string} dir The directory to walk.
+ * @returns {string[]} Every emitted declaration file beneath it.
+ */
 function declarationFiles(dir) {
-  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) return declarationFiles(full);
-    return entry.name.endsWith('.d.ts') ? [full] : [];
-  });
+  // Sorted, because this list orders the generated `node.d.ts` and that file is committed and
+  // checked by `npm run verify:artifacts`. Directory read order is not guaranteed stable across
+  // filesystems, and an unstable one would fail the drift gate on a machine that changed nothing.
+  return fs.readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.d.ts'))
+    .map((entry) => path.join(entry.parentPath, entry.name))
+    .sort();
 }
 
 /**
@@ -59,16 +80,15 @@ function projectInstanceTypes(file) {
   const projected = [];
   let addition = '';
 
-  for (const match of source.matchAll(/declare class (\w+)[^{]*\{/g)) {
-    const name = match[1];
+  // The body is captured here rather than rescanned per class, so the responseMap test below is
+  // scoped to the class that owns it by construction.
+  for (const [, name, body] of source.matchAll(/declare class (\w+)[^{]*\{([\s\S]*?)\n\}/g)) {
     const override = INSTANCE_TYPE_OVERRIDES[name];
 
     // Only project an inline object type. `static responseMap: Record<...>` on the base classes is
     // the mechanism's own type, not a model's attributes, and projecting it would put an index
     // signature on every BaseObject -- which would make any typo assignable.
-    const hasInlineMap = new RegExp(`declare class ${name}\\b[\\s\\S]*?static responseMap: \\{`)
-      .test(source);
-    if (!override && !hasInlineMap) continue;
+    if (!override && !/static responseMap: \{/.test(body)) continue;
 
     const shape = override ?? `typeof ${name}.responseMap`;
     addition += `\ntype ${name}Attributes = ${shape};\n`
@@ -89,19 +109,21 @@ function projectInstanceTypes(file) {
 fs.rmSync(OUT_DIR, { recursive: true, force: true });
 fs.rmSync(ENTRY, { force: true });
 
-run([
+execFileSync('npx', [
+  'tsc',
   '--allowJs', '--declaration', '--emitDeclarationOnly', '--skipLibCheck',
   '--target', 'es2022', '--module', 'esnext', '--moduleResolution', 'bundler',
   '--outDir', OUT_DIR, 'src/index.js'
-]);
+], { stdio: 'inherit' });
 
-const projected = declarationFiles(OUT_DIR).flatMap(projectInstanceTypes);
+const emitted = declarationFiles(OUT_DIR);
+const projected = emitted.flatMap(projectInstanceTypes);
 
 // Module-scope typedefs -- ActivityAction, and anything added later -- are emitted as exported
 // types in the file that declares them, but `types/index` only re-exports what src/index.js
 // exports, which is classes. Without these lines a consumer can see the shape in a return type but
 // cannot name it, so `import type { ActivityAction }` fails.
-const namedTypes = declarationFiles(OUT_DIR).flatMap((file) => {
+const namedTypes = emitted.flatMap((file) => {
   const from = `./${file.replace(/\.d\.ts$/, '')}`;
   return [...fs.readFileSync(file, 'utf8').matchAll(/^export type (\w+)/gm)]
     .map((match) => `export type { ${match[1]} } from '${from}';`);
@@ -119,6 +141,6 @@ declare const _default: typeof api;
 export default _default;
 `);
 
-console.log(`types: ${declarationFiles(OUT_DIR).length} declarations, `
+console.log(`types: ${emitted.length} declarations, `
   + `${projected.length} instance projections (${projected.join(', ')}), `
   + `${namedTypes.length} named type re-exports`);

@@ -7,18 +7,12 @@ import values from 'lodash/values';
 
 import BaseObject from '../base-classes/base-object/base-object';
 
+import { toDate } from '../utils';
+
 import {
   scoringIdToItem,
   slotCategoryIdToPositionMap
 } from '../constants';
-
-/**
- * ESPN sends epoch milliseconds, and omits the key entirely when unset.
- *
- * @param   {number} value The epoch milliseconds to convert.
- * @returns {Date|undefined} The date, or `undefined` when ESPN sent nothing.
- */
-const toDate = (value) => (value ? new Date(value) : undefined);
 
 /**
  * Wraps a settings parser so an absent block leaves the attribute unset instead of throwing.

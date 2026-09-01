@@ -1,7 +1,4 @@
-import {
-  flattenObject,
-  flattenObjectSansNumericKeys
-} from './utils';
+import { flattenObject, flattenObjectSansNumericKeys, toDate } from './utils';
 
 describe('flattenObject', () => {
   describe('when there is a nested object with numerical keys', () => {
@@ -89,6 +86,20 @@ describe('flattenObjectSansNumericKeys', () => {
 
       const result = flattenObjectSansNumericKeys(data);
       expect(result).toStrictEqual(data);
+    });
+  });
+
+  describe('toDate', () => {
+    test('converts ESPN epoch milliseconds to a Date', () => {
+      expect(toDate(1535476500000)).toEqual(new Date(1535476500000));
+    });
+
+    describe('when ESPN omitted the date', () => {
+      // `new Date(undefined)` is an Invalid Date, which survives every downstream presence check.
+      test('returns undefined rather than an Invalid Date', () => {
+        expect(toDate(undefined)).toBeUndefined();
+        expect(toDate(0)).toBeUndefined();
+      });
     });
   });
 });

@@ -426,6 +426,65 @@ module.exports = arrayFilter;
 
 /***/ },
 
+/***/ "./node_modules/lodash/_arrayIncludes.js"
+/*!***********************************************!*\
+  !*** ./node_modules/lodash/_arrayIncludes.js ***!
+  \***********************************************/
+(module, __unused_webpack_exports, __webpack_require__) {
+
+var baseIndexOf = __webpack_require__(/*! ./_baseIndexOf */ "./node_modules/lodash/_baseIndexOf.js");
+
+/**
+ * A specialized version of `_.includes` for arrays without support for
+ * specifying an index to search from.
+ *
+ * @private
+ * @param {Array} [array] The array to inspect.
+ * @param {*} target The value to search for.
+ * @returns {boolean} Returns `true` if `target` is found, else `false`.
+ */
+function arrayIncludes(array, value) {
+  var length = array == null ? 0 : array.length;
+  return !!length && baseIndexOf(array, value, 0) > -1;
+}
+
+module.exports = arrayIncludes;
+
+
+/***/ },
+
+/***/ "./node_modules/lodash/_arrayIncludesWith.js"
+/*!***************************************************!*\
+  !*** ./node_modules/lodash/_arrayIncludesWith.js ***!
+  \***************************************************/
+(module) {
+
+/**
+ * This function is like `arrayIncludes` except that it accepts a comparator.
+ *
+ * @private
+ * @param {Array} [array] The array to inspect.
+ * @param {*} target The value to search for.
+ * @param {Function} comparator The comparator invoked per element.
+ * @returns {boolean} Returns `true` if `target` is found, else `false`.
+ */
+function arrayIncludesWith(array, value, comparator) {
+  var index = -1,
+      length = array == null ? 0 : array.length;
+
+  while (++index < length) {
+    if (comparator(value, array[index])) {
+      return true;
+    }
+  }
+  return false;
+}
+
+module.exports = arrayIncludesWith;
+
+
+/***/ },
+
 /***/ "./node_modules/lodash/_arrayLikeKeys.js"
 /*!***********************************************!*\
   !*** ./node_modules/lodash/_arrayLikeKeys.js ***!
@@ -928,6 +987,54 @@ function baseFindIndex(array, predicate, fromIndex, fromRight) {
 }
 
 module.exports = baseFindIndex;
+
+
+/***/ },
+
+/***/ "./node_modules/lodash/_baseFlatten.js"
+/*!*********************************************!*\
+  !*** ./node_modules/lodash/_baseFlatten.js ***!
+  \*********************************************/
+(module, __unused_webpack_exports, __webpack_require__) {
+
+var arrayPush = __webpack_require__(/*! ./_arrayPush */ "./node_modules/lodash/_arrayPush.js"),
+    isFlattenable = __webpack_require__(/*! ./_isFlattenable */ "./node_modules/lodash/_isFlattenable.js");
+
+/**
+ * The base implementation of `_.flatten` with support for restricting flattening.
+ *
+ * @private
+ * @param {Array} array The array to flatten.
+ * @param {number} depth The maximum recursion depth.
+ * @param {boolean} [predicate=isFlattenable] The function invoked per iteration.
+ * @param {boolean} [isStrict] Restrict to values that pass `predicate` checks.
+ * @param {Array} [result=[]] The initial result value.
+ * @returns {Array} Returns the new flattened array.
+ */
+function baseFlatten(array, depth, predicate, isStrict, result) {
+  var index = -1,
+      length = array.length;
+
+  predicate || (predicate = isFlattenable);
+  result || (result = []);
+
+  while (++index < length) {
+    var value = array[index];
+    if (depth > 0 && predicate(value)) {
+      if (depth > 1) {
+        // Recursively flatten arrays (susceptible to call stack limits).
+        baseFlatten(value, depth - 1, predicate, isStrict, result);
+      } else {
+        arrayPush(result, value);
+      }
+    } else if (!isStrict) {
+      result[result.length] = value;
+    }
+  }
+  return result;
+}
+
+module.exports = baseFlatten;
 
 
 /***/ },
@@ -2312,6 +2419,88 @@ module.exports = baseUnary;
 
 /***/ },
 
+/***/ "./node_modules/lodash/_baseUniq.js"
+/*!******************************************!*\
+  !*** ./node_modules/lodash/_baseUniq.js ***!
+  \******************************************/
+(module, __unused_webpack_exports, __webpack_require__) {
+
+var SetCache = __webpack_require__(/*! ./_SetCache */ "./node_modules/lodash/_SetCache.js"),
+    arrayIncludes = __webpack_require__(/*! ./_arrayIncludes */ "./node_modules/lodash/_arrayIncludes.js"),
+    arrayIncludesWith = __webpack_require__(/*! ./_arrayIncludesWith */ "./node_modules/lodash/_arrayIncludesWith.js"),
+    cacheHas = __webpack_require__(/*! ./_cacheHas */ "./node_modules/lodash/_cacheHas.js"),
+    createSet = __webpack_require__(/*! ./_createSet */ "./node_modules/lodash/_createSet.js"),
+    setToArray = __webpack_require__(/*! ./_setToArray */ "./node_modules/lodash/_setToArray.js");
+
+/** Used as the size to enable large array optimizations. */
+var LARGE_ARRAY_SIZE = 200;
+
+/**
+ * The base implementation of `_.uniqBy` without support for iteratee shorthands.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {Function} [iteratee] The iteratee invoked per element.
+ * @param {Function} [comparator] The comparator invoked per element.
+ * @returns {Array} Returns the new duplicate free array.
+ */
+function baseUniq(array, iteratee, comparator) {
+  var index = -1,
+      includes = arrayIncludes,
+      length = array.length,
+      isCommon = true,
+      result = [],
+      seen = result;
+
+  if (comparator) {
+    isCommon = false;
+    includes = arrayIncludesWith;
+  }
+  else if (length >= LARGE_ARRAY_SIZE) {
+    var set = iteratee ? null : createSet(array);
+    if (set) {
+      return setToArray(set);
+    }
+    isCommon = false;
+    includes = cacheHas;
+    seen = new SetCache;
+  }
+  else {
+    seen = iteratee ? [] : result;
+  }
+  outer:
+  while (++index < length) {
+    var value = array[index],
+        computed = iteratee ? iteratee(value) : value;
+
+    value = (comparator || value !== 0) ? value : 0;
+    if (isCommon && computed === computed) {
+      var seenIndex = seen.length;
+      while (seenIndex--) {
+        if (seen[seenIndex] === computed) {
+          continue outer;
+        }
+      }
+      if (iteratee) {
+        seen.push(computed);
+      }
+      result.push(value);
+    }
+    else if (!includes(seen, computed, comparator)) {
+      if (seen !== result) {
+        seen.push(computed);
+      }
+      result.push(value);
+    }
+  }
+  return result;
+}
+
+module.exports = baseUniq;
+
+
+/***/ },
+
 /***/ "./node_modules/lodash/_baseValues.js"
 /*!********************************************!*\
   !*** ./node_modules/lodash/_baseValues.js ***!
@@ -2900,6 +3089,35 @@ function createRound(methodName) {
 }
 
 module.exports = createRound;
+
+
+/***/ },
+
+/***/ "./node_modules/lodash/_createSet.js"
+/*!*******************************************!*\
+  !*** ./node_modules/lodash/_createSet.js ***!
+  \*******************************************/
+(module, __unused_webpack_exports, __webpack_require__) {
+
+var Set = __webpack_require__(/*! ./_Set */ "./node_modules/lodash/_Set.js"),
+    noop = __webpack_require__(/*! ./noop */ "./node_modules/lodash/noop.js"),
+    setToArray = __webpack_require__(/*! ./_setToArray */ "./node_modules/lodash/_setToArray.js");
+
+/** Used as references for various `Number` constants. */
+var INFINITY = 1 / 0;
+
+/**
+ * Creates a set object of `values`.
+ *
+ * @private
+ * @param {Array} values The values to add to the set.
+ * @returns {Object} Returns the new set.
+ */
+var createSet = !(Set && (1 / setToArray(new Set([,-0]))[1]) == INFINITY) ? noop : function(values) {
+  return new Set(values);
+};
+
+module.exports = createSet;
 
 
 /***/ },
@@ -3840,6 +4058,36 @@ function initCloneObject(object) {
 }
 
 module.exports = initCloneObject;
+
+
+/***/ },
+
+/***/ "./node_modules/lodash/_isFlattenable.js"
+/*!***********************************************!*\
+  !*** ./node_modules/lodash/_isFlattenable.js ***!
+  \***********************************************/
+(module, __unused_webpack_exports, __webpack_require__) {
+
+var Symbol = __webpack_require__(/*! ./_Symbol */ "./node_modules/lodash/_Symbol.js"),
+    isArguments = __webpack_require__(/*! ./isArguments */ "./node_modules/lodash/isArguments.js"),
+    isArray = __webpack_require__(/*! ./isArray */ "./node_modules/lodash/isArray.js");
+
+/** Built-in value references. */
+var spreadableSymbol = Symbol ? Symbol.isConcatSpreadable : undefined;
+
+/**
+ * Checks if `value` is a flattenable `arguments` object or array.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is flattenable, else `false`.
+ */
+function isFlattenable(value) {
+  return isArray(value) || isArguments(value) ||
+    !!(spreadableSymbol && value && value[spreadableSymbol]);
+}
+
+module.exports = isFlattenable;
 
 
 /***/ },
@@ -5647,6 +5895,38 @@ module.exports = __webpack_require__(/*! ./head */ "./node_modules/lodash/head.j
 
 /***/ },
 
+/***/ "./node_modules/lodash/flatten.js"
+/*!****************************************!*\
+  !*** ./node_modules/lodash/flatten.js ***!
+  \****************************************/
+(module, __unused_webpack_exports, __webpack_require__) {
+
+var baseFlatten = __webpack_require__(/*! ./_baseFlatten */ "./node_modules/lodash/_baseFlatten.js");
+
+/**
+ * Flattens `array` a single level deep.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Array
+ * @param {Array} array The array to flatten.
+ * @returns {Array} Returns the new flattened array.
+ * @example
+ *
+ * _.flatten([1, [2, [3, [4]], 5]]);
+ * // => [1, 2, [3, [4]], 5]
+ */
+function flatten(array) {
+  var length = array == null ? 0 : array.length;
+  return length ? baseFlatten(array, 1) : [];
+}
+
+module.exports = flatten;
+
+
+/***/ },
+
 /***/ "./node_modules/lodash/forEach.js"
 /*!****************************************!*\
   !*** ./node_modules/lodash/forEach.js ***!
@@ -6971,6 +7251,33 @@ module.exports = merge;
 
 /***/ },
 
+/***/ "./node_modules/lodash/noop.js"
+/*!*************************************!*\
+  !*** ./node_modules/lodash/noop.js ***!
+  \*************************************/
+(module) {
+
+/**
+ * This method returns `undefined`.
+ *
+ * @static
+ * @memberOf _
+ * @since 2.3.0
+ * @category Util
+ * @example
+ *
+ * _.times(2, _.noop);
+ * // => [undefined, undefined]
+ */
+function noop() {
+  // No operation performed.
+}
+
+module.exports = noop;
+
+
+/***/ },
+
 /***/ "./node_modules/lodash/property.js"
 /*!*****************************************!*\
   !*** ./node_modules/lodash/property.js ***!
@@ -7633,6 +7940,41 @@ module.exports = trim;
 
 /***/ },
 
+/***/ "./node_modules/lodash/uniq.js"
+/*!*************************************!*\
+  !*** ./node_modules/lodash/uniq.js ***!
+  \*************************************/
+(module, __unused_webpack_exports, __webpack_require__) {
+
+var baseUniq = __webpack_require__(/*! ./_baseUniq */ "./node_modules/lodash/_baseUniq.js");
+
+/**
+ * Creates a duplicate-free version of an array, using
+ * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * for equality comparisons, in which only the first occurrence of each element
+ * is kept. The order of result values is determined by the order they occur
+ * in the array.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Array
+ * @param {Array} array The array to inspect.
+ * @returns {Array} Returns the new duplicate free array.
+ * @example
+ *
+ * _.uniq([2, 1, 2]);
+ * // => [2, 1]
+ */
+function uniq(array) {
+  return (array && array.length) ? baseUniq(array) : [];
+}
+
+module.exports = uniq;
+
+
+/***/ },
+
 /***/ "./node_modules/lodash/values.js"
 /*!***************************************!*\
   !*** ./node_modules/lodash/values.js ***!
@@ -8233,96 +8575,68 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var lodash_get__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! lodash/get */ "./node_modules/lodash/get.js");
-/* harmony import */ var lodash_get__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(lodash_get__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var lodash_map__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! lodash/map */ "./node_modules/lodash/map.js");
-/* harmony import */ var lodash_map__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(lodash_map__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var _base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../base-classes/base-object/base-object */ "./src/base-classes/base-object/base-object.js");
-/* harmony import */ var _boxscore_player_boxscore_player__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../boxscore-player/boxscore-player */ "./src/boxscore-player/boxscore-player.js");
-
-
+/* harmony import */ var lodash_map__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! lodash/map */ "./node_modules/lodash/map.js");
+/* harmony import */ var lodash_map__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(lodash_map__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _boxscore_player_boxscore_player__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../boxscore-player/boxscore-player */ "./src/boxscore-player/boxscore-player.js");
+/* harmony import */ var _matchup_matchup__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../matchup/matchup */ "./src/matchup/matchup.js");
 
 
 
 
 
 /**
- * Represents a boxscore for a week.
+ * Represents a boxscore for a week: a {@link Matchup} plus the rosters that produced its scores.
  *
- * @augments {BaseObject}
+ * Both are built from the same `schedule` entry, so the pairing, the result and the scores are
+ * inherited rather than restated. What a Boxscore adds is the part ESPN only sends for the scoring
+ * period you asked about: the two lineups and their projections.
+ *
+ * @augments {Matchup}
  */
-class Boxscore extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_2__["default"] {
+class Boxscore extends _matchup_matchup__WEBPACK_IMPORTED_MODULE_2__["default"] {
   static displayName = 'Boxscore';
 
   /**
    * @typedef {object} BoxscoreMap
    *
-   * @property {number} matchupPeriodId The matchup period this boxscore belongs to.
-   * @property {string} winner Which side won: `HOME`, `AWAY`, `TIE`, or `UNDECIDED` while the
-   *                           matchup is unplayed or in progress.
-   * @property {string} playoffTierType Which bracket the matchup belongs to. `NONE` for a regular
-   *                                    season game, otherwise a playoff or consolation tier.
+   * The attributes Boxscore adds. Everything on Matchup -- `id`, `matchupPeriodId`, `winner`,
+   * `playoffTierType`, both team ids, both scores and both win probabilities -- is inherited
+   * through the class hierarchy rather than restated here.
    *
-   * @property {number} homeScore The total points scored by the home team.
    * @property {number} homeProjectedScore The projected total points scored by the home team.
    *   NOTE: This field is only populated in the boxscore for the current matchup period!
-   * @property {number} homeTeamId The home team's id. Can be used to load a cached Team.
    * @property {BoxscorePlayer[]} homeRoster The home team's roster, containing player info and
    *                                         stats.
-   * @property {number} homeWinProbability ESPN's live probability the home team wins, from 0 to 1.
-   *   NOTE: This field is only populated in the boxscore for the current matchup period!
    *
-   * @property {number} awayScore The total points scored by the away team.
    * @property {number} awayProjectedScore The projected total points scored by the away team.
    *   NOTE: This field is only populated in the boxscore for the current matchup period!
-   * @property {number} awayTeamId The away team's id. Can be used to load a cached Team.
    * @property {BoxscorePlayer[]} awayRoster The away team's roster, containing player info and
    *                                         stats.
-   * @property {number} awayWinProbability ESPN's live probability the away team wins, from 0 to 1.
-   *   NOTE: This field is only populated in the boxscore for the current matchup period!
    */
 
   /**
    * @type {BoxscoreMap}
    */
   static responseMap = {
-    matchupPeriodId: 'matchupPeriodId',
-    winner: 'winner',
-    playoffTierType: 'playoffTierType',
+    ..._matchup_matchup__WEBPACK_IMPORTED_MODULE_2__["default"].responseMap,
 
-    homeScore: {
-      key: 'home',
-      manualParse: (responseData) => (
-        lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPointsLive') || lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPoints')
-      )
-    },
     homeProjectedScore: 'home.totalProjectedPointsLive',
-    homeWinProbability: 'home.winProbability',
-    homeTeamId: 'home.teamId',
     homeRoster: {
       key: 'home.rosterForCurrentScoringPeriod.entries',
       isArray: true,
-      manualParse: (responseData, data, rawData, constructorParams) => lodash_map__WEBPACK_IMPORTED_MODULE_1___default()(
+      manualParse: (responseData, data, rawData, constructorParams) => lodash_map__WEBPACK_IMPORTED_MODULE_0___default()(
         responseData,
-        (playerData) => _boxscore_player_boxscore_player__WEBPACK_IMPORTED_MODULE_3__["default"].buildFromServer(playerData, constructorParams)
+        (playerData) => _boxscore_player_boxscore_player__WEBPACK_IMPORTED_MODULE_1__["default"].buildFromServer(playerData, constructorParams)
       )
     },
 
-    awayScore: {
-      key: 'away',
-      manualParse: (responseData) => (
-        lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPointsLive') || lodash_get__WEBPACK_IMPORTED_MODULE_0___default()(responseData, 'totalPoints')
-      )
-    },
     awayProjectedScore: 'away.totalProjectedPointsLive',
-    awayWinProbability: 'away.winProbability',
-    awayTeamId: 'away.teamId',
     awayRoster: {
       key: 'away.rosterForCurrentScoringPeriod.entries',
       isArray: true,
-      manualParse: (responseData, data, rawData, constructorParams) => lodash_map__WEBPACK_IMPORTED_MODULE_1___default()(
+      manualParse: (responseData, data, rawData, constructorParams) => lodash_map__WEBPACK_IMPORTED_MODULE_0___default()(
         responseData,
-        (playerData) => _boxscore_player_boxscore_player__WEBPACK_IMPORTED_MODULE_3__["default"].buildFromServer(playerData, constructorParams)
+        (playerData) => _boxscore_player_boxscore_player__WEBPACK_IMPORTED_MODULE_1__["default"].buildFromServer(playerData, constructorParams)
       )
     }
   };
@@ -8348,18 +8662,18 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var lodash_filter__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(lodash_filter__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var lodash_find__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! lodash/find */ "./node_modules/lodash/find.js");
 /* harmony import */ var lodash_find__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(lodash_find__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var lodash_forEach__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! lodash/forEach */ "./node_modules/lodash/forEach.js");
-/* harmony import */ var lodash_forEach__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(lodash_forEach__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var lodash_flatten__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! lodash/flatten */ "./node_modules/lodash/flatten.js");
+/* harmony import */ var lodash_flatten__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(lodash_flatten__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var lodash_get__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! lodash/get */ "./node_modules/lodash/get.js");
 /* harmony import */ var lodash_get__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(lodash_get__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var lodash_keys__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! lodash/keys */ "./node_modules/lodash/keys.js");
-/* harmony import */ var lodash_keys__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(lodash_keys__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var lodash_isEmpty__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! lodash/isEmpty */ "./node_modules/lodash/isEmpty.js");
+/* harmony import */ var lodash_isEmpty__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(lodash_isEmpty__WEBPACK_IMPORTED_MODULE_4__);
 /* harmony import */ var lodash_map__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! lodash/map */ "./node_modules/lodash/map.js");
 /* harmony import */ var lodash_map__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(lodash_map__WEBPACK_IMPORTED_MODULE_5__);
 /* harmony import */ var lodash_merge__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! lodash/merge */ "./node_modules/lodash/merge.js");
 /* harmony import */ var lodash_merge__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(lodash_merge__WEBPACK_IMPORTED_MODULE_6__);
-/* harmony import */ var lodash_toSafeInteger__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! lodash/toSafeInteger */ "./node_modules/lodash/toSafeInteger.js");
-/* harmony import */ var lodash_toSafeInteger__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(lodash_toSafeInteger__WEBPACK_IMPORTED_MODULE_7__);
+/* harmony import */ var lodash_uniq__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! lodash/uniq */ "./node_modules/lodash/uniq.js");
+/* harmony import */ var lodash_uniq__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(lodash_uniq__WEBPACK_IMPORTED_MODULE_7__);
 /* harmony import */ var _boxscore_boxscore__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../boxscore/boxscore */ "./src/boxscore/boxscore.js");
 /* harmony import */ var _draft_player_draft_player__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../draft-player/draft-player */ "./src/draft-player/draft-player.js");
 /* harmony import */ var _free_agent_player_free_agent_player__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../free-agent-player/free-agent-player */ "./src/free-agent-player/free-agent-player.js");
@@ -8475,7 +8789,7 @@ const MESSAGE_IDS_BY_ACTIVITY_TYPE = {
   TRADED: [244]
 };
 
-const ALL_ACTIVITY_MESSAGE_IDS = lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(lodash_keys__WEBPACK_IMPORTED_MODULE_4___default()(ACTIVITY_TYPE_BY_MESSAGE_ID), (lodash_toSafeInteger__WEBPACK_IMPORTED_MODULE_7___default()));
+const ALL_ACTIVITY_MESSAGE_IDS = Object.keys(ACTIVITY_TYPE_BY_MESSAGE_ID).map(Number);
 
 /**
  * Provides functionality to make a variety of API calls to ESPN for a given fantasy football
@@ -8865,8 +9179,6 @@ class Client {
   getRecentActivity({ seasonId, msgType = '' }) {
     this.constructor._validateV3Params(seasonId, 'getRecentActivity');
 
-    const searchIds = [];
-    let activity = [];
     const msgTypes = lodash_get__WEBPACK_IMPORTED_MODULE_3___default()(MESSAGE_IDS_BY_ACTIVITY_TYPE, msgType, ALL_ACTIVITY_MESSAGE_IDS);
 
     const route = this.constructor._buildRoute({
@@ -8893,7 +9205,11 @@ class Client {
 
     const leagueRoute = this.constructor._buildRoute({
       base: `apis/v3/games/ffl/seasons/${seasonId}/segments/0/leagues/${this.leagueId}`,
-      params: '?view=mTeam&view=mRoster&view=mMatchup&view=mSettings&view=mStandings'
+      // mMatchup and mSettings contribute only top-level `schedule` and `settings`/`status`, none
+      // of which this method reads -- mMatchup alone is most of a 1.4 MB response, fetched and
+      // parsed on every call. mStandings stays: unlike those two it enriches `teams[]`, and each
+      // team is passed to callers untouched on ActivityAction#team.
+      params: '?view=mTeam&view=mRoster&view=mStandings'
     });
 
     const leagueConfig = this._buildRequestConfig({
@@ -8907,14 +9223,21 @@ class Client {
       _http__WEBPACK_IMPORTED_MODULE_16__["default"].get(route, config),
       _http__WEBPACK_IMPORTED_MODULE_16__["default"].get(leagueRoute, leagueConfig)
     ]).then(([communicationData, leagueData]) => {
-      activity = lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(communicationData.topics, (topic) => this._buildActivity(topic, leagueData));
-      lodash_forEach__WEBPACK_IMPORTED_MODULE_2___default()(activity, (action) => {
-        lodash_forEach__WEBPACK_IMPORTED_MODULE_2___default()(action, (msg) => {
-          if (!msg.player) {
-            searchIds.push(msg.targetId);
-          }
-        });
-      });
+      const activity = lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(
+        communicationData.topics,
+        (topic) => this._buildActivity(topic, leagueData)
+      );
+      // Only the players `_buildActivity` could not resolve off a roster need looking up, and a
+      // topic set can name the same player more than once.
+      const searchIds = lodash_uniq__WEBPACK_IMPORTED_MODULE_7___default()(
+        lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(lodash_filter__WEBPACK_IMPORTED_MODULE_0___default()(lodash_flatten__WEBPACK_IMPORTED_MODULE_2___default()(activity), (msg) => !msg.player), 'targetId')
+      );
+
+      // Every player resolved from a roster, so the player-card request would be a round trip
+      // asking ESPN to match an empty id list.
+      if (lodash_isEmpty__WEBPACK_IMPORTED_MODULE_4___default()(searchIds)) {
+        return activity;
+      }
 
       const playerRoute = this.constructor._buildRoute({
         base: `apis/v3/games/ffl/seasons/${seasonId}/segments/0/leagues/${this.leagueId}`,
@@ -8935,16 +9258,18 @@ class Client {
         }
       });
 
-      return _http__WEBPACK_IMPORTED_MODULE_16__["default"].get(playerRoute, playerConfig);
-    }).then((playerData) => lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(activity, (action) => lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(action, (msg) => {
-      if (!msg.player) {
-        return {
-          ...msg,
-          player: lodash_find__WEBPACK_IMPORTED_MODULE_1___default()(playerData.players, (player) => player.id === msg.targetId)
-        };
-      }
-      return msg;
-    })));
+      return _http__WEBPACK_IMPORTED_MODULE_16__["default"].get(playerRoute, playerConfig).then((playerData) => (
+        lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(activity, (action) => lodash_map__WEBPACK_IMPORTED_MODULE_5___default()(action, (msg) => {
+          if (!msg.player) {
+            return {
+              ...msg,
+              player: lodash_find__WEBPACK_IMPORTED_MODULE_1___default()(playerData.players, (player) => player.id === msg.targetId)
+            };
+          }
+          return msg;
+        }))
+      ));
+    });
   }
 
   /**
@@ -10247,7 +10572,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var lodash_values__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! lodash/values */ "./node_modules/lodash/values.js");
 /* harmony import */ var lodash_values__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(lodash_values__WEBPACK_IMPORTED_MODULE_5__);
 /* harmony import */ var _base_classes_base_object_base_object__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../base-classes/base-object/base-object */ "./src/base-classes/base-object/base-object.js");
-/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../constants */ "./src/constants.js");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../utils */ "./src/utils.js");
+/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../constants */ "./src/constants.js");
 
 
 
@@ -10259,13 +10585,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/**
- * ESPN sends epoch milliseconds, and omits the key entirely when unset.
- *
- * @param   {number} value The epoch milliseconds to convert.
- * @returns {Date|undefined} The date, or `undefined` when ESPN sent nothing.
- */
-const toDate = (value) => (value ? new Date(value) : undefined);
+
 
 /**
  * Wraps a settings parser so an absent block leaves the attribute unset instead of throwing.
@@ -10422,7 +10742,7 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
     draftSettings: {
       key: 'draftSettings',
       manualParse: whenPresent((responseData) => ({
-        date: toDate(responseData.date),
+        date: (0,_utils__WEBPACK_IMPORTED_MODULE_7__.toDate)(responseData.date),
         type: responseData.type,
         timePerPick: responseData.timePerSelection,
         canTradeDraftPicks: responseData.isTradingEnabled,
@@ -10438,11 +10758,11 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
       manualParse: whenPresent((responseData) => ({
         lineupPositionCount: lodash_mapKeys__WEBPACK_IMPORTED_MODULE_2___default()(
           responseData.lineupSlotCounts,
-          (count, position) => lodash_get__WEBPACK_IMPORTED_MODULE_1___default()(_constants__WEBPACK_IMPORTED_MODULE_7__.slotCategoryIdToPositionMap, position)
+          (count, position) => lodash_get__WEBPACK_IMPORTED_MODULE_1___default()(_constants__WEBPACK_IMPORTED_MODULE_8__.slotCategoryIdToPositionMap, position)
         ),
         positionLimits: lodash_mapKeys__WEBPACK_IMPORTED_MODULE_2___default()(
           responseData.positionLimits,
-          (count, position) => lodash_get__WEBPACK_IMPORTED_MODULE_1___default()(_constants__WEBPACK_IMPORTED_MODULE_7__.slotCategoryIdToPositionMap, position)
+          (count, position) => lodash_get__WEBPACK_IMPORTED_MODULE_1___default()(_constants__WEBPACK_IMPORTED_MODULE_8__.slotCategoryIdToPositionMap, position)
         ),
         locktime: responseData.rosterLocktimeType
       }))
@@ -10492,7 +10812,7 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
     tradeSettings: {
       key: 'tradeSettings',
       manualParse: whenPresent((responseData) => ({
-        deadlineDate: toDate(responseData.deadlineDate),
+        deadlineDate: (0,_utils__WEBPACK_IMPORTED_MODULE_7__.toDate)(responseData.deadlineDate),
         max: responseData.max,
         vetoVotesRequired: responseData.vetoVotesRequired,
         revisionHours: responseData.revisionHours
@@ -10518,7 +10838,7 @@ class League extends _base_classes_base_object_base_object__WEBPACK_IMPORTED_MOD
       manualParse: whenPresent((responseData) => lodash_reduce__WEBPACK_IMPORTED_MODULE_3___default()(
         responseData.scoringItems,
         (acc, { points, pointsOverrides, statId }) => {
-          const key = _constants__WEBPACK_IMPORTED_MODULE_7__.scoringIdToItem[statId];
+          const key = _constants__WEBPACK_IMPORTED_MODULE_8__.scoringIdToItem[statId];
 
           if (!key) {
             return acc;
@@ -10564,10 +10884,11 @@ __webpack_require__.r(__webpack_exports__);
 /**
  * Represents a single matchup on a league's season schedule.
  *
- * This is the lightweight counterpart to `Boxscore`: same source data, but no rosters. A
- * Boxscore answers "who scored what in week 4"; a Matchup answers "who plays whom, all season" --
+ * This is the base of the pair `Boxscore` completes: both are built from the same `schedule` entry,
+ * and Boxscore is a Matchup plus the two lineups. A Matchup answers "who plays whom, all season" --
  * including weeks that have not been played, where ESPN sends no rosters, no projections and no win
- * probabilities at all.
+ * probabilities at all -- so everything here tolerates their absence, and the roster-bearing half
+ * lives on the subclass that only ever sees a scored week.
  *
  * @augments {BaseObject}
  */
@@ -10862,6 +11183,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var lodash_toNumber__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(lodash_toNumber__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var _base_classes_base_cacheable_object_base_cacheable_object_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../base-classes/base-cacheable-object/base-cacheable-object.js */ "./src/base-classes/base-cacheable-object/base-cacheable-object.js");
 /* harmony import */ var _constants_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants.js */ "./src/constants.js");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../utils */ "./src/utils.js");
+
 
 
 
@@ -10981,7 +11304,7 @@ class Player extends _base_classes_base_cacheable_object_base_cacheable_object_j
 
     acquiredDate: {
       key: 'acquisitionDate',
-      manualParse: (responseData) => (responseData ? new Date(responseData) : undefined)
+      manualParse: _utils__WEBPACK_IMPORTED_MODULE_5__.toDate
     },
 
     availabilityStatus: 'status',
@@ -11231,7 +11554,8 @@ class Team extends _base_classes_base_cacheable_object_base_cacheable_object_js_
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   flattenObject: () => (/* binding */ flattenObject),
-/* harmony export */   flattenObjectSansNumericKeys: () => (/* binding */ flattenObjectSansNumericKeys)
+/* harmony export */   flattenObjectSansNumericKeys: () => (/* binding */ flattenObjectSansNumericKeys),
+/* harmony export */   toDate: () => (/* binding */ toDate)
 /* harmony export */ });
 /* harmony import */ var lodash_assignWith__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! lodash/assignWith */ "./node_modules/lodash/assignWith.js");
 /* harmony import */ var lodash_assignWith__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(lodash_assignWith__WEBPACK_IMPORTED_MODULE_0__);
@@ -11301,6 +11625,18 @@ const flattenObjectSansNumericKeys = (object) => {
 
   return flatObject;
 };
+
+/**
+ * Converts an ESPN timestamp to a Date, leaving an absent one absent.
+ *
+ * ESPN sends epoch milliseconds and omits the key entirely when there is no date. `new Date()` on
+ * that omission yields an Invalid Date rather than nothing, which then survives every downstream
+ * check that only tests for presence.
+ *
+ * @param   {number} value The epoch milliseconds to convert.
+ * @returns {Date|undefined} The date, or `undefined` when ESPN sent nothing.
+ */
+const toDate = (value) => (value ? new Date(value) : undefined);
 
 
 

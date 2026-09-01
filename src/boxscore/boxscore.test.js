@@ -2,6 +2,8 @@ import forEach from 'lodash/forEach';
 
 import BoxscorePlayer from '../boxscore-player/boxscore-player';
 
+import Matchup from '../matchup/matchup';
+
 import Boxscore from './boxscore';
 
 describe('Boxscore', () => {
@@ -116,52 +118,45 @@ describe('Boxscore', () => {
       });
     });
 
-    describe('the matchup result fields', () => {
-      // Measured 2026-09-01: `schedule[]` entries carry these alongside home and away, and the
-      // library dropped every one of them -- so a playoff game was indistinguishable from a
-      // regular season one and a result could only be inferred by comparing two floats.
-      const matchup = {
-        id: 1,
-        matchupPeriodId: 4,
-        playoffTierType: 'WINNERS_BRACKET',
-        winner: 'HOME',
-        home: { teamId: 3, totalPoints: 123, winProbability: 0.51 },
-        away: { teamId: 2, totalPoints: 324, winProbability: 0.49 }
-      };
-
-      forEach({
-        matchupPeriodId: 4,
-        playoffTierType: 'WINNERS_BRACKET',
-        winner: 'HOME',
-        homeWinProbability: 0.51,
-        awayWinProbability: 0.49
-      }, (expectedValue, attribute) => {
-        test(`${attribute} is populated`, () => {
-          expect(buildBoxscore(matchup)[attribute]).toBe(expectedValue);
+    describe('the attributes inherited from Matchup', () => {
+      // Boxscore extends Matchup, so the pairing, the result and the scores are mapped once. This
+      // asserts the inheritance holds rather than re-testing the mappings themselves, which
+      // matchup.test.js covers.
+      test('are populated on a Boxscore', () => {
+        const boxscore = buildBoxscore({
+          id: 1,
+          matchupPeriodId: 4,
+          playoffTierType: 'WINNERS_BRACKET',
+          winner: 'HOME',
+          home: { teamId: 3, totalPoints: 123, winProbability: 0.51 },
+          away: { teamId: 2, totalPoints: 324, winProbability: 0.49 }
         });
+
+        expect(boxscore).toBeInstanceOf(Matchup);
+        expect(boxscore.id).toBe(1);
+        expect(boxscore.matchupPeriodId).toBe(4);
+        expect(boxscore.playoffTierType).toBe('WINNERS_BRACKET');
+        expect(boxscore.winner).toBe('HOME');
+        expect(boxscore.homeScore).toBe(123);
+        expect(boxscore.homeWinProbability).toBe(0.51);
+        expect(boxscore.awayWinProbability).toBe(0.49);
       });
+    });
 
-      describe('when the matchup is a future week', () => {
-        // ESPN returns a sparse entry for later weeks: no rosters, no projections, no
-        // winProbability. Measured on a live preseason league, where the last scheduled matchup
-        // carried only teamId, totalPoints, adjustment, gamesPlayed and tiebreak.
-        test('the fields ESPN omits are undefined rather than throwing', () => {
-          const sparse = {
-            id: 98,
-            matchupPeriodId: 14,
-            playoffTierType: 'NONE',
-            winner: 'UNDECIDED',
-            home: { teamId: 6, totalPoints: 0 },
-            away: { teamId: 13, totalPoints: 0 }
-          };
-          const boxscore = buildBoxscore(sparse);
-
-          expect(boxscore.matchupPeriodId).toBe(14);
-          expect(boxscore.winner).toBe('UNDECIDED');
-          expect(boxscore.homeWinProbability).toBeUndefined();
-          expect(boxscore.homeProjectedScore).toBeUndefined();
-          expect(boxscore.homeRoster).toEqual([]);
+    describe('when ESPN sends a week with no rosters', () => {
+      // The sparse shape of a future week. Matchup tolerates it; Boxscore's own additions must too.
+      test('the roster attributes are empty rather than throwing', () => {
+        const boxscore = buildBoxscore({
+          id: 98,
+          matchupPeriodId: 14,
+          winner: 'UNDECIDED',
+          home: { teamId: 6, totalPoints: 0 },
+          away: { teamId: 13, totalPoints: 0 }
         });
+
+        expect(boxscore.homeProjectedScore).toBeUndefined();
+        expect(boxscore.homeRoster).toEqual([]);
+        expect(boxscore.awayRoster).toEqual([]);
       });
     });
   });

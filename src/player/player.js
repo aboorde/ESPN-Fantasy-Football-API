@@ -9,6 +9,7 @@ import {
   nflTeamIdToNFLTeamAbbreviation,
   slotCategoryIdToPositionMap
 } from '../constants.js';
+import { toDate } from '../utils';
 
 /**
  * Represents an NFL player. This model is not directly associated with any fantasy team.
@@ -121,7 +122,7 @@ class Player extends BaseCacheableObject {
 
     acquiredDate: {
       key: 'acquisitionDate',
-      manualParse: (responseData) => (responseData ? new Date(responseData) : undefined)
+      manualParse: toDate
     },
 
     availabilityStatus: 'status',

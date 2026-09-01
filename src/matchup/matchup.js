@@ -5,10 +5,11 @@ import BaseObject from '../base-classes/base-object/base-object';
 /**
  * Represents a single matchup on a league's season schedule.
  *
- * This is the lightweight counterpart to `Boxscore`: same source data, but no rosters. A
- * Boxscore answers "who scored what in week 4"; a Matchup answers "who plays whom, all season" --
+ * This is the base of the pair `Boxscore` completes: both are built from the same `schedule` entry,
+ * and Boxscore is a Matchup plus the two lineups. A Matchup answers "who plays whom, all season" --
  * including weeks that have not been played, where ESPN sends no rosters, no projections and no win
- * probabilities at all.
+ * probabilities at all -- so everything here tolerates their absence, and the roster-bearing half
+ * lives on the subclass that only ever sees a scored week.
  *
  * @augments {BaseObject}
  */
