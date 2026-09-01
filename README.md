@@ -36,10 +36,14 @@ no airbnb), Jest 30, jsdoc 4 and cspell 10. Two consequences are worth knowing:
   chaining and would run on far older Node — that is just not a configuration this repository
   tests. CI lints and tests on 22 and 24 and builds on 24; `.nvmrc` pins 24 to match, because
   the committed bundles are byte-compared against a fresh build.
-* **`web.js` is no longer ES5.** Upstream compiled to ES5 by accident of Babel 7's default
+* **The bundles are no longer ES5.** Upstream compiled to ES5 by accident of Babel 7's default
   targets. This repository declares an explicit `browserslist` (`defaults, not op_mini all`),
   so the bundles use modern syntax and drop support for pre-2017 browsers. Node consumers are
   unaffected.
+* **One universal bundle replaced the web/node pair.** axios shipped separate browser and NodeJS
+  adapters, and that was the only reason two builds existed; without it they differed by 154
+  bytes. `output.globalObject` is now `this`, so a single UMD bundle loads in either environment.
+  `web.js` and `web-dev.js` are gone and `main` points at `node.js`.
 * **Requests use the platform's native `fetch`.** axios was removed; it accounted for 63% of the
   Node bundle's module bytes, and every feature this project used of it has a native equivalent.
   Three things change for consumers. A non-2xx response now rejects with an exported `HttpError`
@@ -75,12 +79,12 @@ npm install --save git+https://github.com/aboorde/ESPN-Fantasy-Football-API.git#
 
 (Installing `espn-fantasy-football-api` from npm gets you upstream, without `getRecentActivity`.)
 
-There are four files exported in the package:
+There are two files exported in the package:
 
-* `web.js` - Production file built for web environments (**main/default file**).
-* `node.js` - Production file built for NodeJS environments.
-* `web-dev.js` - Same as web, but not minified/obfused to make debugging/developing easier.
-* `node-dev.js` - Same as node, but not minified/obfused to make debugging/developing easier.
+* `node.js` - Production build (**main/default file**). Despite the name it is universal: the UMD
+  wrapper binds to `this`, so the same file loads under NodeJS, in a browser, and via AMD. The
+  name is kept so existing `espn-fantasy-football-api/node.js` imports keep resolving.
+* `node-dev.js` - The same build, unminified, to make debugging/developing easier.
 
 ## Important Notes
 
@@ -116,16 +120,14 @@ Private leagues currently only work with the NodeJS version of this project, due
 
 ```javascript
 // ES6
-import { ... } from 'espn-fantasy-football-api'; // web
-import { ... } from 'espn-fantasy-football-api/node'; // node
-import { ... } from 'espn-fantasy-football-api/web-dev'; // web development build
-import { ... } from 'espn-fantasy-football-api/node-dev'; // node development build
+import { ... } from 'espn-fantasy-football-api'; // production build
+import { ... } from 'espn-fantasy-football-api/node'; // the same build, named explicitly
+import { ... } from 'espn-fantasy-football-api/node-dev'; // unminified development build
 
 // ES5
-const { ... } = require('espn-fantasy-football-api'); // web
-const { ... } = require('espn-fantasy-football-api/node'); // node
-const { ... } = require('espn-fantasy-football-api/web-dev'); // web development build
-const { ... } = require('espn-fantasy-football-api/node-dev'); // node development build
+const { ... } = require('espn-fantasy-football-api'); // production build
+const { ... } = require('espn-fantasy-football-api/node'); // the same build, named explicitly
+const { ... } = require('espn-fantasy-football-api/node-dev'); // unminified development build
 ```
 
 ### How to Get Data

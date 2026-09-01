@@ -2,12 +2,10 @@
   "name": "espn-fantasy-football-api",
   "version": "2.0.1-wpfl.3",
   "description": "A Javascript API to connect to ESPN's fantasy football API",
-  "main": "web.js",
+  "main": "node.js",
   "files": [
-    "web.js",
     "node.js",
     "node.js.LICENSE.txt",
-    "web-dev.js",
     "node-dev.js"
   ],
   "author": {
@@ -24,7 +22,7 @@
     "build": "npm run clean:dist && webpack",
     "build:docs": "npm run clean:docs && jsdoc -c .jsdoc.json",
     "clean": "npm run clean:dist && npm run clean:docs",
-    "clean:dist": "rm -rf web.js web.js.map node.js node.js.map web-dev.js web-dev.js.map node-dev.js node-dev.js.map",
+    "clean:dist": "rm -rf node.js node.js.map node-dev.js",
     "clean:docs": "rm -rf docs",
     "ci": "npm run clean && npm run lint && npm run test && npm run build && npm run build:docs",
     "lint": "npm run lint:js && npm run lint:spelling",

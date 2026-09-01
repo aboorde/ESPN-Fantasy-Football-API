@@ -44,10 +44,36 @@ const JSDOC_RULES = [
   'valid-types'
 ];
 
+const STYLISTIC = stylistic.configs.customize({
+  arrowParens: true,
+  braceStyle: '1tbs',
+  commaDangle: 'never',
+  indent: 2,
+  jsx: false,
+  quotes: 'single',
+  semi: true
+});
+
+// Shared by source and by the root-level config files, so the two cannot drift apart.
+const STYLE_RULES = {
+  '@stylistic/max-len': ['error', 100, 2, {
+    ignoreComments: false,
+    ignoreRegExpLiterals: true,
+    ignoreStrings: true,
+    ignoreTemplateLiterals: true,
+    ignoreUrls: true
+  }],
+  '@stylistic/no-multiple-empty-lines': ['error', { max: 1, maxBOF: 0, maxEOF: 0 }],
+  '@stylistic/operator-linebreak': ['error', 'after'],
+  '@stylistic/quote-props': ['error', 'as-needed', {
+    keywords: false,
+    numbers: false,
+    unnecessary: true
+  }]
+};
+
 export default defineConfig([
   globalIgnores([
-    'web.js',
-    'web-dev.js',
     'node.js',
     'node-dev.js',
     '**/*.map',
@@ -58,18 +84,7 @@ export default defineConfig([
   {
     files: ['src/**/*.js', 'integration-tests/**/*.js'],
 
-    extends: [
-      js.configs.recommended,
-      stylistic.configs.customize({
-        arrowParens: true,
-        braceStyle: '1tbs',
-        commaDangle: 'never',
-        indent: 2,
-        jsx: false,
-        quotes: 'single',
-        semi: true
-      })
-    ],
+    extends: [js.configs.recommended, STYLISTIC],
 
     plugins: { jsdoc },
 
@@ -83,20 +98,7 @@ export default defineConfig([
       ...Object.fromEntries(JSDOC_RULES.map((rule) => [`jsdoc/${rule}`, 'error'])),
       'jsdoc/no-undefined-types': ['error', { definedTypes: JSDOC_DEFINED_TYPES }],
 
-      '@stylistic/max-len': ['error', 100, 2, {
-        ignoreComments: false,
-        ignoreRegExpLiterals: true,
-        ignoreStrings: true,
-        ignoreTemplateLiterals: true,
-        ignoreUrls: true
-      }],
-      '@stylistic/no-multiple-empty-lines': ['error', { max: 1, maxBOF: 0, maxEOF: 0 }],
-      '@stylistic/operator-linebreak': ['error', 'after'],
-      '@stylistic/quote-props': ['error', 'as-needed', {
-        keywords: false,
-        numbers: false,
-        unnecessary: true
-      }],
+      ...STYLE_RULES,
 
       'no-else-return': ['error', { allowElseIf: true }],
       'no-underscore-dangle': 'off'
@@ -109,5 +111,30 @@ export default defineConfig([
     languageOptions: {
       globals: { ...globals.jest }
     }
+  },
+
+  // Root-level tooling config. These carry no jsdoc, so the jsdoc rule set is deliberately not
+  // applied; `recommended` is what catches the dead imports these files accumulate unnoticed.
+  // Matched by suffix rather than by `*.js` so the committed bundles can never be swept in.
+  {
+    files: ['*.config.js'],
+    extends: [js.configs.recommended, STYLISTIC],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'commonjs',
+      globals: { ...globals.node }
+    },
+    rules: { ...STYLE_RULES }
+  },
+
+  {
+    files: ['*.config.mjs'],
+    extends: [js.configs.recommended, STYLISTIC],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: { ...globals.node }
+    },
+    rules: { ...STYLE_RULES }
   }
 ]);
