@@ -13,6 +13,7 @@ const JSDOC_DEFINED_TYPES = [
   'INJURY_STATUSES',
   'LINEUP_LOCK_TIMES',
   'PLAYER_AVAILABILITY_STATUSES',
+  'PlayerMap',
   'PlayerStats',
   'ScoringItems'
 ];
@@ -107,9 +108,6 @@ export default defineConfig([
     extends: [jest.configs['flat/recommended']],
     languageOptions: {
       globals: { ...globals.jest }
-    },
-    rules: {
-      'jest/no-alias-methods': 'off'
     }
   }
 ]);

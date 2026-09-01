@@ -10,8 +10,6 @@ import {
   slotCategoryIdToPositionMap
 } from '../constants.js';
 
-/* global INJURY_STATUSES, PLAYER_AVAILABILITY_STATUSES */
-
 /**
  * Represents an NFL player. This model is not directly associated with any fantasy team.
  *

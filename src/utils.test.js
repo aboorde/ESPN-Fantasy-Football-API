@@ -9,13 +9,13 @@ describe('flattenObject', () => {
       const data = {
         a: {
           b: {
-            '1': 2
+            1: 2
           }
         }
       };
 
       const result = flattenObject(data);
-      expect(result).toStrictEqual({ '1': 2 });
+      expect(result).toStrictEqual({ 1: 2 });
     });
   });
 
@@ -46,14 +46,13 @@ describe('flattenObject', () => {
   });
 });
 
-
 describe('flattenObjectSansNumericKeys', () => {
   describe('when there is a nested object with numerical keys', () => {
     test('flattens the object up to the object with numerical keys', () => {
       const data = {
         a: {
           b: {
-            '1': 2
+            1: 2
           }
         }
       };
@@ -61,7 +60,7 @@ describe('flattenObjectSansNumericKeys', () => {
       const result = flattenObjectSansNumericKeys(data);
       expect(result).toStrictEqual({
         b: {
-          '1': 2
+          1: 2
         }
       });
     });

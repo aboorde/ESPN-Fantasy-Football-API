@@ -2,8 +2,6 @@ import Player from '../player/player';
 
 import { parsePlayerStats } from '../player-stats/player-stats';
 
-/* global PlayerStats */
-
 /**
  * Represents a player and their raw stats.
  *
@@ -12,7 +10,6 @@ import { parsePlayerStats } from '../player-stats/player-stats';
 class FreeAgentPlayer extends Player {
   static displayName = 'FreeAgentPlayer';
 
-  /* eslint-disable jsdoc/no-undefined-types */
   /**
    * @typedef {PlayerMap} FreeAgentPlayerMap
    *
@@ -21,7 +18,6 @@ class FreeAgentPlayer extends Player {
    * @property {PlayerStats} projectedRawStats The PlayerStats model with the raw statistics
    *                                           projected by the player over the season.
    */
-  /* eslint-enable jsdoc/no-undefined-types */
 
   /**
    * @type {FreeAgentPlayerMap}

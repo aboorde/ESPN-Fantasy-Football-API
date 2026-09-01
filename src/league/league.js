@@ -12,8 +12,6 @@ import {
   slotCategoryIdToPositionMap
 } from '../constants';
 
-/* global DRAFT_TYPE, LINEUP_LOCK_TIMES */
-
 /**
  * Represents basic information about an ESPN fantasy football league.
  *

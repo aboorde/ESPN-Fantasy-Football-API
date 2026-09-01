@@ -482,7 +482,7 @@ class Client {
     const { date } = topic;
 
     return map(topic.messages, (message) => {
-      let team = '';
+      let team;
       let action = 'UNKNOWN';
       let player = null;
       let bidAmount = 0;

@@ -5,8 +5,6 @@ import { parsePlayerStats } from '../player-stats/player-stats';
 
 import { slotCategoryIdToPositionMap } from '../constants';
 
-/* global PlayerStats */
-
 /**
  * Represents a player and their stats on a boxscore.
  *
@@ -15,7 +13,6 @@ import { slotCategoryIdToPositionMap } from '../constants';
 class BoxscorePlayer extends Player {
   static displayName = 'BoxscorePlayer';
 
-  /* eslint-disable jsdoc/no-undefined-types */
   /**
    * @typedef {PlayerMap} BoxscorePlayerMap
    *
@@ -27,7 +24,6 @@ class BoxscorePlayer extends Player {
    * @property {PlayerStats} rawStats The PlayerStats model with the raw statistics registered by
    *                                  the player.
    */
-  /* eslint-enable jsdoc/no-undefined-types */
 
   /**
    * @type {BoxscorePlayerMap}

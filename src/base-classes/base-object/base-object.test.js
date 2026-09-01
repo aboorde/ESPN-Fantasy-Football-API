@@ -97,7 +97,7 @@ describe('BaseObject', () => {
         const options = { someValue: 'yeahhhhhhhhhhh' };
 
         const returnedInstance = new TestBaseObject(options);
-        expect(TestBaseObject._populateObject).toBeCalledWith({
+        expect(TestBaseObject._populateObject).toHaveBeenCalledWith({
           data: options,
           instance: returnedInstance,
           isDataFromServer: false
@@ -116,8 +116,8 @@ describe('BaseObject', () => {
       test('does not call _populateObject', () => {
         jest.spyOn(BaseObject, '_populateObject');
 
-        new TestBaseObject(); // eslint-disable-line no-new
-        expect(TestBaseObject._populateObject).not.toBeCalled();
+        new TestBaseObject();
+        expect(TestBaseObject._populateObject).not.toHaveBeenCalled();
       });
     });
   });
@@ -154,7 +154,7 @@ describe('BaseObject', () => {
 
       describe('when a instance is not passed', () => {
         test('throws error', () => {
-          expect(() => TestBaseObject._populateObject({ data })).toThrowError(
+          expect(() => TestBaseObject._populateObject({ data })).toThrow(
             `${TestBaseObject.displayName}: _populateObject: Did not receive instance to populate`
           );
         });
@@ -234,7 +234,7 @@ describe('BaseObject', () => {
           describe('when a value in the static responseMap is a plain object', () => {
             describe('when the object does not define key', () => {
               test('throws error', () => {
-                expect(() => callPopulate(KeyErrorTestBaseObject)).toThrowError(
+                expect(() => callPopulate(KeyErrorTestBaseObject)).toThrow(
                   `${KeyErrorTestBaseObject.displayName}: _populateObject: Invalid responseMap ` +
                   'object. Object must define key. See docs for typedef of ResponseMapValueObject.'
                 );
@@ -259,11 +259,12 @@ describe('BaseObject', () => {
                   TestBaseObject.responseMap.someManualObject.manualParse.mockImplementation(() => {
                     expect(
                       TestBaseObject.responseMap.someDeferredObject.manualParse
-                    ).not.toBeCalled();
+                    ).not.toHaveBeenCalled();
                   });
 
                   callPopulate();
-                  expect(TestBaseObject.responseMap.someDeferredObject.manualParse).toBeCalled();
+                  expect(TestBaseObject.responseMap.someDeferredObject.manualParse)
+                    .toHaveBeenCalled();
                 });
               });
 
@@ -295,9 +296,10 @@ describe('BaseObject', () => {
 
                 test('calls the manualParse function', () => {
                   callPopulate();
-                  expect(TestBaseObject.responseMap.someManualObject.manualParse).toBeCalledWith(
-                    data.manual, data, data, constructorParams, instance
-                  );
+                  expect(TestBaseObject.responseMap.someManualObject.manualParse)
+                    .toHaveBeenCalledWith(
+                      data.manual, data, data, constructorParams, instance
+                    );
                 });
 
                 testMapsData({ value: undefined, valueString: 'undefined' });
@@ -428,10 +430,10 @@ describe('BaseObject', () => {
                   callPopulate();
                   expect(
                     TestBaseObject.responseMap.someManualAndBaseObject.manualParse
-                  ).toBeCalledWith(
+                  ).toHaveBeenCalledWith(
                     data.both, data, data, constructorParams, instance
                   );
-                  expect(MappingTestBaseObject.buildFromServer).not.toBeCalledWith(data.both);
+                  expect(MappingTestBaseObject.buildFromServer).not.toHaveBeenCalledWith(data.both);
 
                   MappingTestBaseObject.buildFromServer.mockRestore();
                 });
@@ -439,7 +441,7 @@ describe('BaseObject', () => {
 
               describe('when the object does not define BaseObject or manualParse', () => {
                 test('throws error', () => {
-                  expect(() => callPopulate(ObjectErrorTestBaseObject)).toThrowError(
+                  expect(() => callPopulate(ObjectErrorTestBaseObject)).toThrow(
                     `${ObjectErrorTestBaseObject.displayName}: _populateObject: Invalid ` +
                     'responseMap object. Object must define `BaseObject` or `manualParse`. See ' +
                     'docs for typedef of ResponseMapValueObject.'
@@ -453,7 +455,7 @@ describe('BaseObject', () => {
             test('throws error', () => {
               expect(
                 () => callPopulate(MapObjectErrorBaseObject)
-              ).toThrowError(
+              ).toThrow(
                 `${MapObjectErrorBaseObject.displayName}: _populateObject: Did not recognize ` +
                 'responseMap value type for key invalid'
               );
@@ -610,7 +612,7 @@ describe('BaseObject', () => {
           };
 
           TestBaseObject.buildFromServer(data, constructorParams);
-          expect(TestBaseObject._populateObject).toBeCalledWith({
+          expect(TestBaseObject._populateObject).toHaveBeenCalledWith({
             data: flattenObject(data),
             rawData: data,
             constructorParams,
@@ -643,7 +645,7 @@ describe('BaseObject', () => {
           };
 
           TestBaseObject.buildFromServer(data, constructorParams);
-          expect(TestBaseObject._populateObject).toBeCalledWith({
+          expect(TestBaseObject._populateObject).toHaveBeenCalledWith({
             data,
             rawData: data,
             constructorParams,

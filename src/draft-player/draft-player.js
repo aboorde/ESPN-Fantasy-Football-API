@@ -29,7 +29,6 @@ class DraftPlayer extends Player {
     return undefined;
   }
 
-  /* eslint-disable jsdoc/no-undefined-types */
   /**
    * @typedef {PlayerMap} DraftPlayerMap
    *
@@ -48,7 +47,6 @@ class DraftPlayer extends Player {
    * @property {number} nominatingTeamId FOR AUCTION DRAFTS ONLY: The teamId of the fantasy team
    *   that nominatied the player. Use `Client#getTeamAtWeek` to access fantasy team data.
    */
-  /* eslint-enable jsdoc/no-undefined-types */
 
   /**
    * @type {DraftPlayerMap}

@@ -39,15 +39,15 @@ export const slotCategoryIdToPositionMap = {
  */
 export const nflTeamIdToNFLTeam = {
   [-1]: 'Bye',
-  1 : 'Atlanta Falcons',
-  2 : 'Buffalo Bills',
-  3 : 'Chicago Bears',
-  4 : 'Cincinnati Bengals',
-  5 : 'Cleveland Browns',
-  6 : 'Dallas Cowboys',
-  7 : 'Denver Broncos',
-  8 : 'Detroit Lions',
-  9 : 'Green Bay Packers',
+  1: 'Atlanta Falcons',
+  2: 'Buffalo Bills',
+  3: 'Chicago Bears',
+  4: 'Cincinnati Bengals',
+  5: 'Cleveland Browns',
+  6: 'Dallas Cowboys',
+  7: 'Denver Broncos',
+  8: 'Detroit Lions',
+  9: 'Green Bay Packers',
   10: 'Tennessee Titans',
   11: 'Indianapolis Colts',
   12: 'Kansas City Chiefs',
@@ -79,15 +79,15 @@ export const nflTeamIdToNFLTeam = {
  */
 export const nflTeamIdToNFLTeamAbbreviation = {
   [-1]: 'Bye',
-  1 : 'ATL',
-  2 : 'BUF',
-  3 : 'CHI',
-  4 : 'CIN',
-  5 : 'CLE',
-  6 : 'DAL',
-  7 : 'DEN',
-  8 : 'DET',
-  9 : 'GB',
+  1: 'ATL',
+  2: 'BUF',
+  3: 'CHI',
+  4: 'CIN',
+  5: 'CLE',
+  6: 'DAL',
+  7: 'DEN',
+  8: 'DET',
+  9: 'GB',
   10: 'TEN',
   11: 'IND',
   12: 'KC',
@@ -417,7 +417,7 @@ export const nflTeamIdToNFLTeamAbbreviation = {
  * @property {number} teamWin Scored when the NFL player's team wins their NFL game.
  * @property {number} teamLoss Scored when the NFL player's team loses their NFL game.
  * @property {number} teamTie Scored when the NFL player's team ties their NFL game.
- * @property {number} teamPointsScored Fantasy points awarded based on the total point sscored by
+ * @property {number} teamPointsScored Fantasy points awarded based on the total points scored by
  *                                     a player's team in their NFL game.
  *
  * @property {number} teamWinMargin25Plus Scored when a player's NFL team wins their NFL games by
@@ -514,8 +514,8 @@ export const scoringItemToId = {
   receivingYards: '42',
   receivingTouchdowns: '43',
   receiving2PtConversions: '44',
-  receivingTouchdowns40Plus: '45',
-  receivingTouchdowns50Plus: '46',
+  // 45 and 46 were a second, unreachable pair of receivingTouchdowns{40,50}Plus entries. The
+  // later '56'/'57' definitions below always won, so removing these changes no lookup.
 
   receivingYardsPer5Yards: '47',
   receivingYardsPer10Yards: '48',

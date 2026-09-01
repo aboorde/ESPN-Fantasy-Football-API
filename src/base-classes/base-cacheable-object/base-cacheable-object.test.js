@@ -27,7 +27,9 @@ describe('BaseCacheableObject', () => {
 
         TestBaseCacheableObject._populateObject({ data, instance, rawData, isDataFromServer });
 
-        expect(BaseObject._populateObject).toBeCalledWith({ data, instance, rawData, isDataFromServer });
+        expect(BaseObject._populateObject).toHaveBeenCalledWith({
+          data, instance, rawData, isDataFromServer
+        });
 
         BaseObject._populateObject.mockRestore();
       });
@@ -211,29 +213,29 @@ describe('BaseCacheableObject', () => {
   });
 
   describe('instance methods', () => {
-    let baseCachableObject;
+    let baseCacheableObject;
 
     beforeEach(() => {
-      baseCachableObject = new TestBaseCacheableObject();
+      baseCacheableObject = new TestBaseCacheableObject();
     });
 
     afterEach(() => {
-      baseCachableObject = null;
+      baseCacheableObject = null;
     });
 
     describe('getIDParams', () => {
       test('calls static getIDParams with the instance', () => {
         jest.spyOn(TestBaseCacheableObject, 'getIDParams');
 
-        baseCachableObject.getIDParams();
-        expect(TestBaseCacheableObject.getIDParams).toBeCalledWith(baseCachableObject);
+        baseCacheableObject.getIDParams();
+        expect(TestBaseCacheableObject.getIDParams).toHaveBeenCalledWith(baseCacheableObject);
       });
 
       test('returns the result of static getIDParams', () => {
         const idParams = {};
         jest.spyOn(TestBaseCacheableObject, 'getIDParams').mockReturnValue(idParams);
 
-        expect(baseCachableObject.getIDParams()).toBe(idParams);
+        expect(baseCacheableObject.getIDParams()).toBe(idParams);
       });
     });
 
@@ -241,15 +243,15 @@ describe('BaseCacheableObject', () => {
       test('calls static getCacheId with the instance', () => {
         jest.spyOn(TestBaseCacheableObject, 'getCacheId');
 
-        baseCachableObject.getCacheId();
-        expect(TestBaseCacheableObject.getCacheId).toBeCalledWith(baseCachableObject);
+        baseCacheableObject.getCacheId();
+        expect(TestBaseCacheableObject.getCacheId).toHaveBeenCalledWith(baseCacheableObject);
       });
 
       test('returns the result of static getCacheId', () => {
         const cacheId = 'some cache id';
         jest.spyOn(TestBaseCacheableObject, 'getCacheId').mockReturnValue(cacheId);
 
-        expect(baseCachableObject.getCacheId()).toBe(cacheId);
+        expect(baseCacheableObject.getCacheId()).toBe(cacheId);
       });
     });
   });

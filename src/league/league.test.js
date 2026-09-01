@@ -51,7 +51,7 @@ describe('League', () => {
           }, {
             points: 4, statId: 1
           }, {
-            points: 6, pointsOverrides: { '16': 9 }, statId: 2 // eslint-disable-line quote-props
+            points: 6, pointsOverrides: { 16: 9 }, statId: 2
           }, {
             points: 75, statId: 999
           }]

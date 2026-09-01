@@ -5,8 +5,6 @@ import get from 'lodash/get';
 import BaseObject from '../base-classes/base-object/base-object';
 import { scoringItemToId } from '../constants';
 
-/* global ScoringItems */
-
 /**
  * Represents statistical values for a player's fantasy performance. The values may be real
  * statistical values (yards, attempts, etc) or fantasy point values.
