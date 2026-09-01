@@ -19,10 +19,23 @@ pinned to a commit:
 npm install --save git+https://github.com/aboorde/ESPN-Fantasy-Football-API.git#<commit-sha>
 ```
 
-`package.json` carries a `-wpfl` prerelease suffix (e.g. `2.0.1-wpfl.1`) so that an installed copy is
+`package.json` carries a `-wpfl` prerelease suffix (e.g. `2.0.1-wpfl.2`) so that an installed copy is
 distinguishable from the published `espn-fantasy-football-api` at the same upstream version.
 
 When re-syncing with upstream, run `npm run build` and commit the regenerated bundles. CI enforces it.
+
+### Toolchain
+
+The build and test tooling has been modernized past upstream: Babel 8, ESLint 10 (flat config,
+no airbnb), Jest 30, jsdoc 4 and cspell 10. Two consequences are worth knowing:
+
+* **Building requires Node >= 22.18** (Babel 8 and cspell 10 both demand it). Running the
+  library does not — `engines.node` stays at `>=18` because the shipped bundles are what
+  consumers execute. CI builds on Node 22 and 24.
+* **`web.js` is no longer ES5.** Upstream compiled to ES5 by accident of Babel 7's default
+  targets. This repository declares an explicit `browserslist` (`defaults, not op_mini all`),
+  so the bundles use modern syntax and drop support for pre-2017 browsers. Node consumers are
+  unaffected.
 
 ## Features
 
@@ -34,7 +47,12 @@ When re-syncing with upstream, run `npm run build` and commit the regenerated bu
 
 ## Documentation Reference
 
-Hosted documentation available at http://espn-fantasy-football-api.s3-website.us-east-2.amazonaws.com/.
+Generate the API docs locally with `npm run build:docs`, or `npm run serve:docs` to
+build and serve them on port 8080. Output lands in `docs/` and is not committed.
+
+(Upstream publishes hosted docs for its own releases at
+http://espn-fantasy-football-api.s3-website.us-east-2.amazonaws.com/. That bucket is
+mkreiser's and does not reflect this repository, so `getRecentActivity` is absent from it.)
 
 ## Installation
 
@@ -311,9 +329,9 @@ This is my first time writing OSS and picking a license. Feel free to reach out 
 | clean            | Runs all clean scripts.                                      |
 | clean:dist       | Removes the dist folder.                                     |
 | clean:docs       | Removes the docs folder.                                     |
-| ci               | Runs continuous integration tasks. Currently runs lint, unit and integration tests, and build. |
+| ci               | Runs continuous integration tasks: clean, lint, unit tests, build, and build:docs. Does not run the integration tests. |
 | lint             | Runs all lint tasks                                          |
-| lint:js          | Ensures code style is correct.                               |
+| lint:js          | Ensures code style is correct. File set comes from `eslint.config.mjs`. |
 | lint:spelling    | Ensures spelling is correct.                                 |
 | serve:docs       | Builds and serves docs. Defaults to port 8080.               |
 | test             | Starts a jest test runner with access to all unit tests. Pass `--watch` to keep jest alive and watching for changes. Pass a string as a file inclusion pattern. |
