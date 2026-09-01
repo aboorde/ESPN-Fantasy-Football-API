@@ -1,4 +1,4 @@
-import { filter, find, isEmpty, map, uniq } from '../internal/collections.js';
+import { each, filter, find, isEmpty, map, uniq } from '../internal/collections.js';
 import { getPath, mergeConfig } from '../internal/objects.js';
 
 import Boxscore from '../boxscore/boxscore';
@@ -10,7 +10,7 @@ import NFLGame from '../nfl-game/nfl-game';
 import Team from '../team/team';
 
 import { flattenObjectSansNumericKeys } from '../utils';
-import createHttp from './http';
+import createHttp, { ESPN_HOST, LEAGUE_HISTORY_BASE_URL } from './http';
 
 /**
  * The kind of transaction an action records.
@@ -238,14 +238,9 @@ class Client {
       params: `?view=mMatchup&view=mMatchupScore&scoringPeriodId=${scoringPeriodId}`
     });
 
-    return this._http.get(route, this._buildRequestConfig()).then((data) => {
-      const schedule = getPath(data, 'schedule');
-      const matchups = filter(schedule, { matchupPeriodId });
-
-      return map(matchups, (matchup) => (
-        Boxscore.buildFromServer(matchup, { leagueId: this.leagueId, seasonId, scoringPeriodId })
-      ));
-    });
+    return this._http.get(route, this._buildRequestConfig()).then((data) => (
+      this._parseBoxscoreResponse(data, seasonId, matchupPeriodId, scoringPeriodId)
+    ));
   }
 
   /**
@@ -318,20 +313,22 @@ class Client {
           })
         }
       }))
-    ]).then(([draftData, playerData]) => (
-      map(draftData.draftDetail.picks, (draftPick) => {
-        const playerInfo = find(
-          playerData.players,
-          (player) => player.player.id === draftPick.playerId
-        );
+    ]).then(([draftData, playerData]) => {
+      // Indexed once rather than scanned per pick. The player list is capped at 3000 and a full
+      // draft is ~192 picks, so the nested scan this replaces ran the comparison half a million
+      // times to answer 192 questions.
+      const playerById = new Map();
+      each(playerData.players, (player) => playerById.set(getPath(player, 'player.id'), player));
 
+      return map(draftData.draftDetail.picks, (draftPick) => {
         const data = {
           ...draftPick,
-          ...flattenObjectSansNumericKeys(playerInfo)
+          ...flattenObjectSansNumericKeys(playerById.get(draftPick.playerId))
         };
 
         return DraftPlayer.buildFromServer(data, { seasonId, scoringPeriodId });
-      })));
+      });
+    });
   }
 
   /**
@@ -364,16 +361,12 @@ class Client {
     });
 
     const requestConfig = this._buildRequestConfig({
-      baseURL: 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/leagueHistory/'
+      baseURL: LEAGUE_HISTORY_BASE_URL
     });
-    return this._http.get(route, requestConfig).then((data) => {
-      const schedule = getPath(data[0], 'schedule'); // Data is an array instead of object
-      const matchups = filter(schedule, { matchupPeriodId });
-
-      return map(matchups, (matchup) => (
-        Boxscore.buildFromServer(matchup, { leagueId: this.leagueId, seasonId, scoringPeriodId })
-      ));
-    });
+    return this._http.get(route, requestConfig).then((data) => (
+      // Historical routes answer with an array rather than an object.
+      this._parseBoxscoreResponse(data[0], seasonId, matchupPeriodId, scoringPeriodId)
+    ));
   }
 
   /**
@@ -472,12 +465,33 @@ class Client {
     });
 
     const requestConfig = this._buildRequestConfig({
-      baseURL: 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/leagueHistory/'
+      baseURL: LEAGUE_HISTORY_BASE_URL
     });
 
     return this._http.get(route, requestConfig).then((data) => (
       // Data returns an array for historical teams (??)
       this._parseTeamResponse(data[0], seasonId, scoringPeriodId)
+    ));
+  }
+
+  /**
+   * Builds the boxscores for one matchup period out of a response carrying a `schedule`.
+   *
+   * Shared by the current-season and historical routes, which differ only in that the historical
+   * one wraps its payload in an array.
+   *
+   * @param   {object} responseData The response's league object.
+   * @param   {number} seasonId The season the boxscores belong to.
+   * @param   {number} matchupPeriodId The matchup period to keep.
+   * @param   {number} scoringPeriodId The scoring period the boxscores belong to.
+   * @returns {Boxscore[]} The matching boxscores.
+   * @private
+   */
+  _parseBoxscoreResponse(responseData, seasonId, matchupPeriodId, scoringPeriodId) {
+    const matchups = filter(getPath(responseData, 'schedule'), { matchupPeriodId });
+
+    return map(matchups, (matchup) => (
+      Boxscore.buildFromServer(matchup, { leagueId: this.leagueId, seasonId, scoringPeriodId })
     ));
   }
 
@@ -576,7 +590,7 @@ class Client {
     });
 
     const config = this._buildRequestConfig({
-      baseURL: 'https://lm-api-reads.fantasy.espn.com/',
+      baseURL: ESPN_HOST,
       headers: {
         'x-fantasy-filter': JSON.stringify({
           topics: {
@@ -602,7 +616,7 @@ class Client {
     });
 
     const leagueConfig = this._buildRequestConfig({
-      baseURL: 'https://lm-api-reads.fantasy.espn.com/'
+      baseURL: ESPN_HOST
     });
 
     // The league fetch does not depend on the communication fetch -- only the player-card fetch
@@ -634,7 +648,7 @@ class Client {
       });
 
       const playerConfig = this._buildRequestConfig({
-        baseURL: 'https://lm-api-reads.fantasy.espn.com/',
+        baseURL: ESPN_HOST,
         headers: {
           'x-fantasy-filter': JSON.stringify({
             players: {

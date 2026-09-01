@@ -28,9 +28,12 @@ import { flattenObjectSansNumericKeys } from '../../utils.js';
  *                                 than its own key.
  * @property {Function} manualParse A function to manually apply logic to the response. This
  *                                  function must return its result to be attached to the
- *                                  populated BaseObject. The arguments to this function are:
- *                                  (data at the key), (the whole response), (the instance being
- *                                  populated).
+ *                                  populated BaseObject. It is called with five arguments, in
+ *                                  order: `(responseData, data, rawData, constructorParams,
+ *                                  instance)` -- the value at `key`, the object that value was
+ *                                  read from (flattened, when the class sets `flattenResponse`),
+ *                                  the unflattened response, the params passed to the instance's
+ *                                  constructor, and the instance being populated.
  * @example
  * static responseMap = {
  *   teamId: 'teamId',
@@ -45,9 +48,8 @@ import { flattenObjectSansNumericKeys } from '../../utils.js';
  *   },
  *   manualTeams: {
  *     key: 'manual_teams_on_response',
- *     BaseObject: Team,
- *     manualParse: (responseData, response, constructorParams, instance) => (
- *       Team.buildFromServer(responseData)
+ *     manualParse: (responseData, data, rawData, constructorParams, instance) => (
+ *       Team.buildFromServer(responseData, constructorParams)
  *     )
  *   }
  * };

@@ -131,7 +131,8 @@ class Team extends BaseObject {
 
     roster: {
       key: 'roster.entries',
-      isArray: true,
+      // No `isArray` here: it is read only by the `BaseObject` branch, and `manualParse` returns
+      // before that. The unwrap to `playerPoolEntry` is why this cannot use the declarative form.
       manualParse: (responseData, data, rawData, constructorParams) => map(
         responseData,
         (playerData) => Player.buildFromServer(playerData.playerPoolEntry, constructorParams)

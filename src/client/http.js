@@ -1,9 +1,22 @@
 /**
+ * The ESPN host every route below is built from. Named once so a caller assembling its own
+ * `baseURL` does not retype it.
+ * @type {string}
+ */
+const ESPN_HOST = 'https://lm-api-reads.fantasy.espn.com/';
+
+/**
  * The host and path prefix every ESPN fantasy v3 route resolves against. Requests that live on
  * another host override it per-call via `config.baseURL`.
  * @type {string}
  */
-const DEFAULT_BASE_URL = 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/';
+const DEFAULT_BASE_URL = `${ESPN_HOST}apis/v3/games/ffl/seasons/`;
+
+/**
+ * The prefix for the `leagueHistory` routes, which serve seasons before 2018.
+ * @type {string}
+ */
+const LEAGUE_HISTORY_BASE_URL = `${ESPN_HOST}apis/v3/games/ffl/leagueHistory/`;
 
 /**
  * Headers sent on every request. Per-request headers merge over these.
@@ -373,4 +386,6 @@ const createHttp = ({
 };
 
 export default createHttp;
-export { DEFAULT_BASE_URL, HttpError };
+export {
+  DEFAULT_BASE_URL, ESPN_HOST, HttpError, LEAGUE_HISTORY_BASE_URL
+};

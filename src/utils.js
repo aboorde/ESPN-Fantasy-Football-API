@@ -18,12 +18,20 @@ const warnOnOverwrite = (flatObject, key, value) => {
   }
 };
 
-const flattenObject = (object) => {
+/**
+ * Flattens nested objects onto a single level.
+ *
+ * @param   {object} [object] The object to flatten.
+ * @param   {Function} shouldRecurse Given a value, whether to flatten into it rather than assign
+ *                                   it as-is.
+ * @returns {object} The flattened object.
+ */
+const flatten = (object, shouldRecurse) => {
   const flatObject = {};
 
   each(object, (value, key) => {
-    if (isPlainObject(value)) {
-      Object.assign(flatObject, flattenObject(value));
+    if (shouldRecurse(value)) {
+      Object.assign(flatObject, flatten(value, shouldRecurse));
     } else {
       warnOnOverwrite(flatObject, key, value);
       setPath(flatObject, key, value);
@@ -33,20 +41,27 @@ const flattenObject = (object) => {
   return flatObject;
 };
 
-const flattenObjectSansNumericKeys = (object) => {
-  const flatObject = {};
+/**
+ * Flattens every nested plain object onto one level.
+ *
+ * @param   {object} [object] The object to flatten.
+ * @returns {object} The flattened object.
+ */
+const flattenObject = (object) => flatten(object, isPlainObject);
 
-  each(object, (value, key) => {
-    if (isPlainObject(value) && !Object.keys(value).some((k) => !Number.isNaN(Number(k)))) {
-      Object.assign(flatObject, flattenObjectSansNumericKeys(value));
-    } else {
-      warnOnOverwrite(flatObject, key, value);
-      setPath(flatObject, key, value);
-    }
-  });
-
-  return flatObject;
-};
+/**
+ * Flattens nested plain objects, but keeps any object ESPN keys by number intact.
+ *
+ * A numerically-keyed object is a collection -- a stats block keyed by `statId`, a
+ * `pointsOverrides` keyed by position -- not a record with named fields. Flattening one would
+ * scatter its entries into the parent and let two of them collide on the same id.
+ *
+ * @param   {object} [object] The object to flatten.
+ * @returns {object} The flattened object.
+ */
+const flattenObjectSansNumericKeys = (object) => flatten(object, (value) => (
+  isPlainObject(value) && Object.keys(value).every((key) => Number.isNaN(Number(key)))
+));
 
 /**
  * Converts an ESPN timestamp to a Date, leaving an absent one absent.

@@ -1,5 +1,3 @@
-import { map } from '../internal/collections.js';
-
 import BoxscorePlayer from '../boxscore-player/boxscore-player';
 import Matchup from '../matchup/matchup';
 
@@ -40,27 +38,22 @@ class Boxscore extends Matchup {
     ...Matchup.responseMap,
 
     homeProjectedScore: 'home.totalProjectedPointsLive',
+    // The declarative branch already does exactly this: build one BoxscorePlayer per entry, passing
+    // the constructorParams down. It also yields `[]` for the unplayed week that has no roster key
+    // at all, which is what callers iterate -- so neither `parseAbsent` nor a hand-rolled `map` is
+    // needed here. `parseAbsent` was only ever required *because* this opted into `manualParse`
+    // and thereby into the absent-key guard.
     homeRoster: {
       key: 'home.rosterForCurrentScoringPeriod.entries',
-      isArray: true,
-      // An unplayed week has no roster key at all, and `[]` is what callers iterate. Without this
-      // the absent-key guard would leave the attribute unset instead.
-      parseAbsent: true,
-      manualParse: (responseData, data, rawData, constructorParams) => map(
-        responseData,
-        (playerData) => BoxscorePlayer.buildFromServer(playerData, constructorParams)
-      )
+      BaseObject: BoxscorePlayer,
+      isArray: true
     },
 
     awayProjectedScore: 'away.totalProjectedPointsLive',
     awayRoster: {
       key: 'away.rosterForCurrentScoringPeriod.entries',
-      isArray: true,
-      parseAbsent: true,
-      manualParse: (responseData, data, rawData, constructorParams) => map(
-        responseData,
-        (playerData) => BoxscorePlayer.buildFromServer(playerData, constructorParams)
-      )
+      BaseObject: BoxscorePlayer,
+      isArray: true
     }
   };
 }
