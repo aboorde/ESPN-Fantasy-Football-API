@@ -99,25 +99,14 @@ const activityPlayerName = (player) => (
 );
 
 /**
- * Maps ESPN's numeric `messageTypeId` onto the readable label `getRecentActivity` reports.
- *
- * ESPN uses three separate ids for a drop depending on how it happened.
- */
-const ACTIVITY_TYPE_BY_MESSAGE_ID = {
-  178: 'FA ADDED',
-  179: 'DROPPED',
-  180: 'WAIVER ADDED',
-  181: 'DROPPED',
-  239: 'DROPPED',
-  244: 'TRADED'
-};
-
-/**
  * The labels `getRecentActivity` reports, as a frozen object.
  *
  * Unlike the ESPN enums in `constants.js`, this union is closed and safe to treat as exhaustive:
  * these are values this client produces, not values ESPN sends. `UNKNOWN` covers every message
- * type not in the map above.
+ * type not in the id map below.
+ *
+ * This is the single source for those labels -- the id map and `_buildActivity` both read them
+ * from here, so a rename cannot leave the exported enum claiming a value the client never emits.
  *
  * @type {Readonly<Record<string, ActivityActionType>>}
  */
@@ -128,6 +117,20 @@ const ACTIVITY_ACTION = Object.freeze({
   TRADED: 'TRADED',
   UNKNOWN: 'UNKNOWN'
 });
+
+/**
+ * Maps ESPN's numeric `messageTypeId` onto the readable label `getRecentActivity` reports.
+ *
+ * ESPN uses three separate ids for a drop depending on how it happened.
+ */
+const ACTIVITY_TYPE_BY_MESSAGE_ID = {
+  178: ACTIVITY_ACTION.FA_ADDED,
+  179: ACTIVITY_ACTION.DROPPED,
+  180: ACTIVITY_ACTION.WAIVER_ADDED,
+  181: ACTIVITY_ACTION.DROPPED,
+  239: ACTIVITY_ACTION.DROPPED,
+  244: ACTIVITY_ACTION.TRADED
+};
 
 /**
  * Maps a caller's `msgType` onto every `messageTypeId` it covers.
@@ -672,7 +675,7 @@ class Client {
 
     return map(topic.messages, (message) => {
       let team;
-      let action = 'UNKNOWN';
+      let action = ACTIVITY_ACTION.UNKNOWN;
       let player = null;
       let bidAmount = 0;
       const msgId = message.messageTypeId;
@@ -688,7 +691,7 @@ class Client {
       if (ACTIVITY_TYPE_BY_MESSAGE_ID[msgId]) {
         action = ACTIVITY_TYPE_BY_MESSAGE_ID[msgId];
       }
-      if (action === 'WAIVER ADDED') {
+      if (action === ACTIVITY_ACTION.WAIVER_ADDED) {
         bidAmount = message.from || 0;
       }
       if (team) {

@@ -24,6 +24,15 @@ const segmentsOf = (path) => (Array.isArray(path) ? path : String(path).split('.
  * @returns {*} The value at the path, or `defaultValue`.
  */
 const getPath = (object, path, defaultValue) => {
+  // Almost every path in a responseMap is a single key with no dot. Splitting those allocates an
+  // array per lookup, and the parse path runs this once per attribute per entity -- over a million
+  // times for one `getFreeAgents`. lodash short-circuited the same case in `_.get`; the rewrite
+  // that replaced it did not, and that omission was most of the parse cost.
+  if (typeof path === 'string' && !path.includes('.')) {
+    const value = object === undefined || object === null ? undefined : object[path];
+    return value === undefined ? defaultValue : value;
+  }
+
   let current = object;
 
   for (const segment of segmentsOf(path)) {
@@ -44,6 +53,13 @@ const getPath = (object, path, defaultValue) => {
  * @param {*} value The value to write.
  */
 const setPath = (object, path, value) => {
+  // Same single-key fast path as `getPath`, and it also skips the throwaway array `segments.slice`
+  // allocates below.
+  if (typeof path === 'string' && !path.includes('.')) {
+    object[path] = value;
+    return;
+  }
+
   const segments = segmentsOf(path);
   let current = object;
 

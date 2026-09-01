@@ -160,19 +160,6 @@ class HttpError extends Error {
  * @param   {object} [options] Options.
  * @param   {Function} [options.fetch] The fetch implementation to use. Defaults to the platform's,
  *                                    resolved per request rather than captured here.
- * @returns {{get: Function}} An HTTP client bound to that fetch.
- */
-/**
- * Builds the HTTP client a `Client` makes its requests through.
- *
- * `fetch` is a parameter rather than a global reference so that tests -- and anything else wanting
- * to observe or stand in for the network -- can supply their own. It is what lets a recorded ESPN
- * payload be replayed through the whole parse stack, and what lets a test assert the *resolved*
- * URL rather than the route fragment that goes into it.
- *
- * @param   {object} [options] Options.
- * @param   {Function} [options.fetch] The fetch implementation to use. Defaults to the platform's,
- *                                    resolved per request rather than captured here.
  * @param   {number} [options.timeout] Per-attempt timeout in milliseconds. `0` disables it.
  * @param   {number} [options.retries] How many times to retry a failed request.
  * @param   {number} [options.retryDelay] Base backoff in milliseconds, doubled per attempt.

@@ -57,29 +57,31 @@ const isEmpty = (value) => {
 };
 
 /**
- * The entries of an array or object, as `[key, value]` pairs. `undefined` yields none.
- *
- * @param   {Array|object} [collection] The collection to walk.
- * @returns {Array} Its `[key, value]` pairs.
- */
-const entriesOf = (collection) => {
-  if (collection === undefined || collection === null) {
-    return [];
-  }
-
-  return Array.isArray(collection) ?
-      collection.map((value, index) => [index, value]) :
-      Object.entries(collection);
-};
-
-/**
  * Calls `iteratee(value, key)` for each entry. Tolerates an absent collection.
+ *
+ * Written as an index walk rather than over `Object.entries` because this is the parse path: every
+ * attribute of every model goes through here, and building a `[key, value]` pair per entry
+ * allocated two arrays per attribute for nothing.
  *
  * @param {Array|object} [collection] The collection to walk.
  * @param {Function} iteratee Called with `(value, key)`.
  */
 const each = (collection, iteratee) => {
-  entriesOf(collection).forEach(([key, value]) => iteratee(value, key));
+  if (collection === undefined || collection === null) {
+    return;
+  }
+
+  if (Array.isArray(collection)) {
+    for (let i = 0; i < collection.length; i += 1) {
+      iteratee(collection[i], i);
+    }
+    return;
+  }
+
+  const keys = Object.keys(collection);
+  for (let i = 0; i < keys.length; i += 1) {
+    iteratee(collection[keys[i]], keys[i]);
+  }
 };
 
 /**
@@ -92,9 +94,15 @@ const each = (collection, iteratee) => {
  * @param   {Function} iteratee Called with `(value, key)`.
  * @returns {Array} The mapped values.
  */
-const map = (collection, iteratee) => entriesOf(collection).map(([key, value]) => (
-  iteratee(value, key)
-));
+const map = (collection, iteratee) => {
+  const result = [];
+
+  each(collection, (value, key) => {
+    result.push(iteratee(value, key));
+  });
+
+  return result;
+};
 
 /**
  * Filters an array or an object's values. An absent collection filters to `[]`.
@@ -103,22 +111,59 @@ const map = (collection, iteratee) => entriesOf(collection).map(([key, value]) =
  * @param   {Function|object} predicate A function, or an object of properties to match.
  * @returns {Array} The matching values.
  */
-const filter = (collection, predicate) => (
-  map(collection, (value) => value).filter(toPredicate(predicate))
-);
+const filter = (collection, predicate) => {
+  const test = toPredicate(predicate);
+  const result = [];
+
+  each(collection, (value, key) => {
+    if (test(value, key)) {
+      result.push(value);
+    }
+  });
+
+  return result;
+};
 
 /**
  * Finds the first matching value, or `undefined`. An absent collection finds nothing rather than
  * throwing -- a response with no `members` key, or a team whose `primaryOwner` has left the league,
  * would otherwise take the whole call down.
  *
+ * This walks the collection itself rather than going through `each`, because it is the one
+ * collection function that stops early. `getDraftInfo` runs it once per pick against 3000 players;
+ * copying the collection first, as building on `map` did, made the match at index 0 cost as much as
+ * the miss at the end.
+ *
  * @param   {Array|object} [collection] The collection to search.
  * @param   {Function|object} predicate A function, or an object of properties to match.
  * @returns {*} The first match, or `undefined`.
  */
-const find = (collection, predicate) => (
-  map(collection, (value) => value).find(toPredicate(predicate))
-);
+const find = (collection, predicate) => {
+  if (collection === undefined || collection === null) {
+    return undefined;
+  }
+
+  const test = toPredicate(predicate);
+
+  if (Array.isArray(collection)) {
+    for (let i = 0; i < collection.length; i += 1) {
+      if (test(collection[i], i)) {
+        return collection[i];
+      }
+    }
+    return undefined;
+  }
+
+  const keys = Object.keys(collection);
+  for (let i = 0; i < keys.length; i += 1) {
+    const value = collection[keys[i]];
+    if (test(value, keys[i])) {
+      return value;
+    }
+  }
+
+  return undefined;
+};
 
 /**
  * Turns a matches-shorthand into a predicate function: `{a: 1}` becomes a test for `a === 1`.
@@ -145,9 +190,15 @@ function toPredicate(predicate) {
  * @param   {Function} iteratee Called with `(value, key)`, returning the new key.
  * @returns {object} The rekeyed object.
  */
-const mapKeys = (object, iteratee) => Object.fromEntries(
-  entriesOf(object).map(([key, value]) => [iteratee(value, key), value])
-);
+const mapKeys = (object, iteratee) => {
+  const result = {};
+
+  each(object, (value, key) => {
+    result[iteratee(value, key)] = value;
+  });
+
+  return result;
+};
 
 /**
  * The unique values of an array, in first-seen order.
@@ -159,7 +210,6 @@ const uniq = (array) => [...new Set(array ?? [])];
 
 export {
   each,
-  entriesOf,
   filter,
   find,
   isEmpty,

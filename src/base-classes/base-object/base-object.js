@@ -1,4 +1,4 @@
-import { each, isEmpty, isPlainObject, map } from '../../internal/collections.js';
+import { isEmpty, isPlainObject, map } from '../../internal/collections.js';
 import { getPath, setPath } from '../../internal/objects.js';
 
 import { flattenObjectSansNumericKeys } from '../../utils.js';
@@ -180,6 +180,29 @@ class BaseObject {
   }
 
   /**
+   * This class's `responseMap` as `[key, value]` pairs, computed once per class.
+   *
+   * `responseMap` is fixed at class definition, but `_populateObject` runs once per entity: a
+   * single `getFreeAgents` builds 8000 `PlayerStats`, whose map has 162 keys. Re-enumerating it
+   * every time was a fifth of parse cost for a result that cannot change.
+   *
+   * Stored as an *own* property so a subclass computes its own pairs rather than inheriting the
+   * ones its parent cached -- `BoxscorePlayer` spreads `Player.responseMap` and adds to it.
+   *
+   * @private
+   * @returns {Array<[string, (string|ResponseMapValueObject)]>} The map's entries.
+   */
+  static _responseMapEntries() {
+    if (!Object.prototype.hasOwnProperty.call(this, '_cachedResponseMapEntries')) {
+      Object.defineProperty(this, '_cachedResponseMapEntries', {
+        value: Object.entries(this.responseMap)
+      });
+    }
+
+    return this._cachedResponseMapEntries;
+  }
+
+  /**
    * Returns the passed instance of the BaseObject populated with the passed data, mapping the
    * attributes defined in the value of responseMap to the matching key.
    * @private
@@ -203,11 +226,13 @@ class BaseObject {
       return instance;
     }
 
-    each(this.responseMap, (value, key) => {
+    const entries = this._responseMapEntries();
+    for (let i = 0; i < entries.length; i += 1) {
+      const [key, value] = entries[i];
       this._processResponseMapItem({
         data, rawData, constructorParams, instance, isDataFromServer, key, value
       });
-    });
+    }
 
     return instance;
   }

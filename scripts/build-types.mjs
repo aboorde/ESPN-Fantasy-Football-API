@@ -14,8 +14,9 @@
  * Subclass attributes come through the class hierarchy: BoxscorePlayer's map documents only what
  * BoxscorePlayer adds, and `declare class BoxscorePlayer extends Player` supplies the rest.
  *
- * Output is committed alongside the bundles and checked by the drift gate in `npm run ci`, so a
- * declaration that no longer matches src/ fails the build the same way a stale bundle does.
+ * Output is generated, not committed: `node.d.ts` and `types/` are gitignored and rebuilt by the
+ * `prepare` script at install time, so a consumer's declarations always match the src/ they were
+ * built from.
  *
  * KNOWN LIMITATION: the emitted declarations do not typecheck standalone -- `tsc --strict
  * node.d.ts` without `skipLibCheck` reports 9 errors, all TS2417. They are invisible to consumers,
@@ -67,9 +68,9 @@ const INSTANCE_TYPE_OVERRIDES = {
  * @returns {string[]} Every emitted declaration file beneath it.
  */
 function declarationFiles(dir) {
-  // Sorted, because this list orders the generated `node.d.ts` and that file is committed and
-  // checked by `npm run verify:artifacts`. Directory read order is not guaranteed stable across
-  // filesystems, and an unstable one would fail the drift gate on a machine that changed nothing.
+  // Sorted, because this list orders the generated `node.d.ts`. Directory read order is not
+  // guaranteed stable across filesystems, and an unstable one would make two installs of the same
+  // commit emit byte-different declarations for no reason.
   return fs.readdirSync(dir, { recursive: true, withFileTypes: true })
     .filter((entry) => entry.isFile() && entry.name.endsWith('.d.ts'))
     .map((entry) => path.join(entry.parentPath, entry.name))

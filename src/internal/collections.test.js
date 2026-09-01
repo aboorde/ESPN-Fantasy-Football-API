@@ -1,5 +1,5 @@
 import {
-  each, entriesOf, filter, find, isEmpty, isPlainObject, map, mapKeys, uniq
+  each, filter, find, isEmpty, isPlainObject, map, mapKeys, uniq
 } from './collections.js';
 
 // These exist because the code that calls them depends on the absent-input behavior, not just the
@@ -35,20 +35,6 @@ describe('internal/collections', () => {
       ['a populated string', 'a', false]
     ])('%s -> %s', (_label, value, expected) => {
       expect(isEmpty(value)).toBe(expected);
-    });
-  });
-
-  describe('entriesOf', () => {
-    test('pairs an array with its indices', () => {
-      expect(entriesOf(['a', 'b'])).toEqual([[0, 'a'], [1, 'b']]);
-    });
-
-    test('returns an object as entries', () => {
-      expect(entriesOf({ a: 1 })).toEqual([['a', 1]]);
-    });
-
-    test.each([['undefined', undefined], ['null', null]])('%s yields none', (_label, value) => {
-      expect(entriesOf(value)).toEqual([]);
     });
   });
 
@@ -125,11 +111,28 @@ describe('internal/collections', () => {
       expect(find([{ id: 1 }], { id: 2 })).toBeUndefined();
     });
 
+    // `find` walks objects on a separate path from arrays, because it is the one collection
+    // function that stops early and so cannot share `each`.
+    test('searches an object\'s values', () => {
+      expect(find({ a: { id: 1 }, b: { id: 2 } }, { id: 2 })).toEqual({ id: 2 });
+    });
+
+    test('passes the key to the predicate when searching an object', () => {
+      expect(find({ a: 1, b: 2 }, (value, key) => key === 'b')).toBe(2);
+    });
+
+    test('returns undefined when no value in an object matches', () => {
+      expect(find({ a: { id: 1 } }, { id: 2 })).toBeUndefined();
+    });
+
     // Client#_parseTeamResponse searches `members`, which a league whose managers have all left
     // does not have.
-    test('finds nothing in an absent collection rather than throwing', () => {
-      expect(find(undefined, { id: 1 })).toBeUndefined();
-    });
+    test.each([['undefined', undefined], ['null', null]])(
+      'finds nothing in an absent (%s) collection rather than throwing',
+      (_label, value) => {
+        expect(find(value, { id: 1 })).toBeUndefined();
+      }
+    );
   });
 
   describe('mapKeys', () => {
