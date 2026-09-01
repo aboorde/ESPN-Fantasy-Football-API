@@ -1,4 +1,3 @@
-import axios from 'axios';
 import filter from 'lodash/filter';
 import find from 'lodash/find';
 import forEach from 'lodash/forEach';
@@ -14,8 +13,7 @@ import NFLGame from '../nfl-game/nfl-game';
 import Team from '../team/team';
 
 import { flattenObjectSansNumericKeys } from '../utils';
-
-axios.defaults.baseURL = 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/';
+import http from './http';
 
 /**
  * Provides functionality to make a variety of API calls to ESPN for a given fantasy football
@@ -96,11 +94,11 @@ class Client {
       params: `?view=mMatchup&view=mMatchupScore&scoringPeriodId=${scoringPeriodId}`
     });
 
-    return axios.get(route, this._buildAxiosConfig()).then((response) => {
-      const schedule = get(response.data, 'schedule');
-      const data = filter(schedule, { matchupPeriodId });
+    return http.get(route, this._buildRequestConfig()).then((data) => {
+      const schedule = get(data, 'schedule');
+      const matchups = filter(schedule, { matchupPeriodId });
 
-      return map(data, (matchup) => (
+      return map(matchups, (matchup) => (
         Boxscore.buildFromServer(matchup, { leagueId: this.leagueId, seasonId, scoringPeriodId })
       ));
     });
@@ -129,8 +127,8 @@ class Client {
     });
 
     return Promise.all([
-      axios.get(draftRoute, this._buildAxiosConfig()),
-      axios.get(playerRoute, this._buildAxiosConfig({
+      http.get(draftRoute, this._buildRequestConfig()),
+      http.get(playerRoute, this._buildRequestConfig({
         headers: {
           'x-fantasy-filter': JSON.stringify({
             players: {
@@ -143,10 +141,10 @@ class Client {
           })
         }
       }))
-    ]).then(([draftResponse, playerResponse]) => (
-      map(draftResponse.data.draftDetail.picks, (draftPick) => {
+    ]).then(([draftData, playerData]) => (
+      map(draftData.draftDetail.picks, (draftPick) => {
         const playerInfo = find(
-          playerResponse.data.players,
+          playerData.players,
           (player) => player.player.id === draftPick.playerId
         );
 
@@ -188,14 +186,14 @@ class Client {
         '&view=mMatchupScore&view=mScoreboard&view=mSettings&view=mTopPerformers&view=mTeam'
     });
 
-    const axiosConfig = this._buildAxiosConfig({
+    const requestConfig = this._buildRequestConfig({
       baseURL: 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/leagueHistory/'
     });
-    return axios.get(route, axiosConfig).then((response) => {
-      const schedule = get(response.data[0], 'schedule'); // Data is an array instead of object
-      const data = filter(schedule, { matchupPeriodId });
+    return http.get(route, requestConfig).then((data) => {
+      const schedule = get(data[0], 'schedule'); // Data is an array instead of object
+      const matchups = filter(schedule, { matchupPeriodId });
 
-      return map(data, (matchup) => (
+      return map(matchups, (matchup) => (
         Boxscore.buildFromServer(matchup, { leagueId: this.leagueId, seasonId, scoringPeriodId })
       ));
     });
@@ -219,7 +217,7 @@ class Client {
       params: `?scoringPeriodId=${scoringPeriodId}&view=kona_player_info`
     });
 
-    const config = this._buildAxiosConfig({
+    const config = this._buildRequestConfig({
       headers: {
         'x-fantasy-filter': JSON.stringify({
           players: {
@@ -236,9 +234,9 @@ class Client {
       }
     });
 
-    return axios.get(route, config).then((response) => {
-      const data = get(response.data, 'players');
-      return map(data, (player) => (
+    return http.get(route, config).then((data) => {
+      const players = get(data, 'players');
+      return map(players, (player) => (
         FreeAgentPlayer.buildFromServer(player, {
           leagueId: this.leagueId,
           seasonId,
@@ -264,8 +262,8 @@ class Client {
       params: `?scoringPeriodId=${scoringPeriodId}&view=mRoster&view=mTeam`
     });
 
-    return axios.get(route, this._buildAxiosConfig()).then((response) => (
-      this._parseTeamResponse(response.data, seasonId, scoringPeriodId)
+    return http.get(route, this._buildRequestConfig()).then((data) => (
+      this._parseTeamResponse(data, seasonId, scoringPeriodId)
     ));
   }
 
@@ -294,13 +292,13 @@ class Client {
         '&view=mMatchupScore&view=mScoreboard&view=mSettings&view=mTopPerformers&view=mTeam&view=mRoster'
     });
 
-    const axiosConfig = this._buildAxiosConfig({
+    const requestConfig = this._buildRequestConfig({
       baseURL: 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/leagueHistory/'
     });
 
-    return axios.get(route, axiosConfig).then((response) => (
+    return http.get(route, requestConfig).then((data) => (
       // Data returns an array for historical teams (??)
-      this._parseTeamResponse(response.data[0], seasonId, scoringPeriodId)
+      this._parseTeamResponse(data[0], seasonId, scoringPeriodId)
     ));
   }
 
@@ -333,11 +331,11 @@ class Client {
       params: `?dates=${startDate}-${endDate}&pbpOnly=true` // cspell:disable-line pbp
     });
 
-    const axiosConfig = this._buildAxiosConfig({ baseURL: 'https://site.api.espn.com/' });
+    const requestConfig = this._buildRequestConfig({ baseURL: 'https://site.api.espn.com/' });
 
-    return axios.get(route, axiosConfig).then((response) => {
-      const data = get(response.data, 'events');
-      return map(data, (game) => NFLGame.buildFromServer(game));
+    return http.get(route, requestConfig).then((data) => {
+      const events = get(data, 'events');
+      return map(events, (game) => NFLGame.buildFromServer(game));
     });
   }
 
@@ -356,16 +354,16 @@ class Client {
       params: '?view=mSettings'
     });
 
-    return axios.get(route, this._buildAxiosConfig()).then((response) => {
-      const settingsData = get(response.data, 'settings');
-      const statusData = get(response.data, 'status');
-      const data = {
+    return http.get(route, this._buildRequestConfig()).then((data) => {
+      const settingsData = get(data, 'settings');
+      const statusData = get(data, 'status');
+      const leagueData = {
         currentMatchupPeriodId: statusData.currentMatchupPeriod,
         currentScoringPeriodId: statusData.latestScoringPeriod,
         ...settingsData
       };
 
-      return League.buildFromServer(data, { leagueId: this.leagueId, seasonId });
+      return League.buildFromServer(leagueData, { leagueId: this.leagueId, seasonId });
     });
   }
 
@@ -397,7 +395,7 @@ class Client {
       params: '?view=kona_league_communication'
     });
 
-    const config = this._buildAxiosConfig({
+    const config = this._buildRequestConfig({
       baseURL: 'https://lm-api-reads.fantasy.espn.com/',
       headers: {
         'x-fantasy-filter': JSON.stringify({
@@ -419,15 +417,15 @@ class Client {
       params: '?view=mTeam&view=mRoster&view=mMatchup&view=mSettings&view=mStandings'
     });
 
-    const leagueConfig = this._buildAxiosConfig({
+    const leagueConfig = this._buildRequestConfig({
       baseURL: 'https://lm-api-reads.fantasy.espn.com/'
     });
 
-    return axios.get(route, config).then((response) => {
-      topics = response.data.topics;
-      return axios.get(leagueRoute, leagueConfig);
-    }).then((res) => {
-      activity = map(topics, (topic) => this._buildActivity(topic, res.data));
+    return http.get(route, config).then((communicationData) => {
+      topics = communicationData.topics;
+      return http.get(leagueRoute, leagueConfig);
+    }).then((leagueData) => {
+      activity = map(topics, (topic) => this._buildActivity(topic, leagueData));
       forEach(activity, (action) => {
         forEach(action, (msg) => {
           if (!msg.player) {
@@ -441,7 +439,7 @@ class Client {
         params: '?view=kona_playercard'
       });
 
-      const playerConfig = this._buildAxiosConfig({
+      const playerConfig = this._buildRequestConfig({
         baseURL: 'https://lm-api-reads.fantasy.espn.com/',
         headers: {
           'x-fantasy-filter': JSON.stringify({
@@ -455,12 +453,12 @@ class Client {
         }
       });
 
-      return axios.get(playerRoute, playerConfig);
-    }).then((resp) => map(activity, (action) => map(action, (msg) => {
+      return http.get(playerRoute, playerConfig);
+    }).then((playerData) => map(activity, (action) => map(action, (msg) => {
       if (!msg.player) {
         return {
           ...msg,
-          player: find(resp.data.players, (player) => player.id === msg.targetId)
+          player: find(playerData.players, (player) => player.id === msg.targetId)
         };
       }
       return msg;
@@ -519,16 +517,16 @@ class Client {
   }
 
   /**
-   * Correctly builds an axios config with cookies, if set on the instance
+   * Correctly builds a request config with cookies, if set on the instance
    *
-   * @param   {object} config An axios config.
-   * @returns {object} An axios config with cookies added if set on instance
+   * @param   {object} config A request config.
+   * @returns {object} A request config with cookies added if set on instance
    * @private
    */
-  _buildAxiosConfig(config) {
+  _buildRequestConfig(config) {
     if ((this.espnS2 && this.SWID)) {
       const headers = { Cookie: `espn_s2=${this.espnS2}; SWID=${this.SWID};` };
-      return merge({}, config, { headers, withCredentials: true });
+      return merge({}, config, { headers, credentials: 'include' });
     }
 
     return config;

@@ -40,6 +40,15 @@ no airbnb), Jest 30, jsdoc 4 and cspell 10. Two consequences are worth knowing:
   targets. This repository declares an explicit `browserslist` (`defaults, not op_mini all`),
   so the bundles use modern syntax and drop support for pre-2017 browsers. Node consumers are
   unaffected.
+* **Requests use the platform's native `fetch`.** axios was removed; it accounted for 63% of the
+  Node bundle's module bytes, and every feature this project used of it has a native equivalent.
+  Three things change for consumers. A non-2xx response now rejects with an exported `HttpError`
+  carrying `status`, `statusText`, `data` and `url` rather than an `AxiosError` — note it
+  deliberately omits request headers, which hold your cookies. A 2xx response whose body is not
+  JSON now throws instead of resolving to a raw string, which previously surfaced an ESPN
+  maintenance page as an empty result array. And native `fetch` does not read `HTTP_PROXY` /
+  `HTTPS_PROXY` automatically the way axios did; on Node 24+, run with `--use-env-proxy` (or set
+  `NODE_USE_ENV_PROXY=1`) if you need proxy support.
 
 ## Features
 
@@ -301,8 +310,6 @@ Psychic.runForWeek({ seasonId: 2019, matchupPeriodId: 4, scoringPeriodId: 4 }).t
 ```
 
 ## Built With
-
-[axios](https://github.com/axios/axios) - Promise based HTTP client.
 
 [babel](https://github.com/babel/babel) + [webpack](https://github.com/webpack/webpack) - Compiles and bundles ES6 and next-gen Javascript to browser-compatible Javascript.
 

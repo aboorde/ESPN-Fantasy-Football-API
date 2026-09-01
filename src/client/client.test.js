@@ -1,4 +1,3 @@
-import axios from 'axios';
 import forEach from 'lodash/forEach';
 import get from 'lodash/get';
 import merge from 'lodash/merge';
@@ -12,13 +11,13 @@ import Player from '../player/player';
 import Team from '../team/team';
 
 import Client from './client';
+import http from './http';
 
 // A response stand-in for the assertions that only care how a request was built, not how its
 // response is parsed. It never settles, so the client assembles and returns its promise chain
-// without any response handler running. `q()` filled this role before: a promise that resolves to
-// an empty body makes the response parsing throw, and these tests discard the promise they
-// trigger, so nothing observes the rejection. Q swallowed those silently; Node treats them as
-// fatal.
+// without any response handler running. A promise resolving to an empty body would instead make
+// the response handler throw, and these tests discard the promise they trigger, so nothing would
+// observe the rejection -- which Node treats as fatal.
 const UNSETTLED_RESPONSE = new Promise(() => {});
 
 describe('Client', () => {
@@ -91,10 +90,10 @@ describe('Client', () => {
   });
 
   describe('instance methods', () => {
-    describe('_buildAxiosConfig', () => {
+    describe('_buildRequestConfig', () => {
       describe('when espnS2 is set on the instance', () => {
         describe('when SWID is set on the instance', () => {
-          test('returns an axiosConfig with Cookie merged onto headers', () => {
+          test('returns a requestConfig with Cookie merged onto headers', () => {
             const espnS2 = 'some_espn_s2';
             const SWID = 'some_swid';
             const passedConfig = {
@@ -103,16 +102,16 @@ describe('Client', () => {
             };
 
             const cookieHeaders = { Cookie: `espn_s2=${espnS2}; SWID=${SWID};` };
-            const cookieConfig = { headers: cookieHeaders, withCredentials: true };
+            const cookieConfig = { headers: cookieHeaders, credentials: 'include' };
 
             const client = new Client({ espnS2, SWID });
-            const axiosConfig = client._buildAxiosConfig(passedConfig);
-            expect(axiosConfig).toEqual(merge({}, passedConfig, cookieConfig));
+            const requestConfig = client._buildRequestConfig(passedConfig);
+            expect(requestConfig).toEqual(merge({}, passedConfig, cookieConfig));
           });
         });
 
         describe('when SWID is not set on the instance', () => {
-          test('returns the passed axiosConfig', () => {
+          test('returns the passed requestConfig', () => {
             const espnS2 = 'some_espn_s2';
             const passedConfig = {
               headers: { something: 'with a value' },
@@ -120,15 +119,15 @@ describe('Client', () => {
             };
 
             const client = new Client({ espnS2 });
-            const axiosConfig = client._buildAxiosConfig(passedConfig);
-            expect(axiosConfig).toEqual(passedConfig);
+            const requestConfig = client._buildRequestConfig(passedConfig);
+            expect(requestConfig).toEqual(passedConfig);
           });
         });
       });
 
       describe('when espnS2 is not set on the instance', () => {
         describe('when SWID is set on the instance', () => {
-          test('returns the passed axiosConfig', () => {
+          test('returns the passed requestConfig', () => {
             const SWID = 'some_swid';
             const passedConfig = {
               headers: { something: 'with a value' },
@@ -136,21 +135,21 @@ describe('Client', () => {
             };
 
             const client = new Client({ SWID });
-            const axiosConfig = client._buildAxiosConfig(passedConfig);
-            expect(axiosConfig).toEqual(passedConfig);
+            const requestConfig = client._buildRequestConfig(passedConfig);
+            expect(requestConfig).toEqual(passedConfig);
           });
         });
 
         describe('when SWID is not set on the instance', () => {
-          test('returns the passed axiosConfig', () => {
+          test('returns the passed requestConfig', () => {
             const passedConfig = {
               headers: { something: 'with a value' },
               baseRoute: 'some/base/route'
             };
 
             const client = new Client();
-            const axiosConfig = client._buildAxiosConfig(passedConfig);
-            expect(axiosConfig).toEqual(passedConfig);
+            const requestConfig = client._buildRequestConfig(passedConfig);
+            expect(requestConfig).toEqual(passedConfig);
           });
         });
       });
@@ -224,7 +223,7 @@ describe('Client', () => {
 
         client = new Client({ leagueId });
 
-        jest.spyOn(axios, 'get').mockImplementation();
+        jest.spyOn(http, 'get').mockImplementation();
       });
 
       describe('when the seasonId is prior to 2018', () => {
@@ -239,7 +238,7 @@ describe('Client', () => {
 
       describe('when the seasonId is 2018 or after', () => {
         test('does not throw an error', () => {
-          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+          http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getBoxscoreForWeek({
             seasonId: 2018,
@@ -248,23 +247,23 @@ describe('Client', () => {
           })).not.toThrow();
         });
 
-        test('calls axios.get with the correct params', () => {
+        test('calls http.get with the correct params', () => {
           const routeBase = `${seasonId}/segments/0/leagues/${leagueId}`;
           const routeParams = `?view=mMatchup&view=mMatchupScore&scoringPeriodId=${scoringPeriodId}`;
           const route = `${routeBase}${routeParams}`;
 
           const config = {};
-          jest.spyOn(client, '_buildAxiosConfig').mockReturnValue(config);
-          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+          jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
+          http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getBoxscoreForWeek({ seasonId, matchupPeriodId, scoringPeriodId });
-          expect(axios.get).toHaveBeenCalledWith(route, config);
+          expect(http.get).toHaveBeenCalledWith(route, config);
         });
 
         describe('before the promise resolves', () => {
           test('does not invoke callback', () => {
             jest.spyOn(Boxscore, 'buildFromServer').mockImplementation();
-            axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+            http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
             client.getBoxscoreForWeek({ seasonId, matchupPeriodId, scoringPeriodId });
             expect(Boxscore.buildFromServer).not.toHaveBeenCalled();
@@ -274,25 +273,23 @@ describe('Client', () => {
         describe('after the promise resolves', () => {
           test('maps response data into Boxscores', async () => {
             const response = {
-              data: {
-                schedule: [{
-                  matchupPeriodId,
-                  home: { teamId: 2 },
-                  away: { teamId: 3 }
-                }, {
-                  matchupPeriodId,
-                  home: { teamId: 5 },
-                  away: { teamId: 6 }
-                }, {
-                  matchupPeriodId: matchupPeriodId + 1,
-                  home: { teamId: 6 },
-                  away: { teamId: 2 }
-                }]
-              }
+              schedule: [{
+                matchupPeriodId,
+                home: { teamId: 2 },
+                away: { teamId: 3 }
+              }, {
+                matchupPeriodId,
+                home: { teamId: 5 },
+                away: { teamId: 6 }
+              }, {
+                matchupPeriodId: matchupPeriodId + 1,
+                home: { teamId: 6 },
+                away: { teamId: 2 }
+              }]
             };
 
             const promise = Promise.resolve(response);
-            axios.get.mockReturnValue(promise);
+            http.get.mockReturnValue(promise);
 
             const boxscores = await client.getBoxscoreForWeek({
               seasonId, matchupPeriodId, scoringPeriodId
@@ -302,8 +299,8 @@ describe('Client', () => {
             expect(boxscores.length).toBe(2);
             forEach(boxscores, (boxscore, index) => {
               expect(boxscore).toBeInstanceOf(Boxscore);
-              expect(boxscore.homeTeamId).toBe(response.data.schedule[index].home.teamId);
-              expect(boxscore.awayTeamId).toBe(response.data.schedule[index].away.teamId);
+              expect(boxscore.homeTeamId).toBe(response.schedule[index].home.teamId);
+              expect(boxscore.awayTeamId).toBe(response.schedule[index].away.teamId);
             });
           });
         });
@@ -323,7 +320,7 @@ describe('Client', () => {
 
         client = new Client({ leagueId });
 
-        jest.spyOn(axios, 'get').mockImplementation();
+        jest.spyOn(http, 'get').mockImplementation();
       });
 
       describe('when the seasonId is prior to 2018', () => {
@@ -337,13 +334,11 @@ describe('Client', () => {
 
       describe('when the seasonId is 2018 or after', () => {
         test('does not throw an error', () => {
-          axios.get.mockReturnValue(Promise.resolve({
-            data: {
-              draftDetail: {
-                picks: []
-              },
-              players: []
-            }
+          http.get.mockReturnValue(Promise.resolve({
+            draftDetail: {
+              picks: []
+            },
+            players: []
           }));
 
           expect(() => client.getDraftInfo({
@@ -352,7 +347,7 @@ describe('Client', () => {
           })).not.toThrow();
         });
 
-        test('calls axios.get with the correct params', () => {
+        test('calls http.get with the correct params', () => {
           const draftRouteBase = `${seasonId}/segments/0/leagues/${leagueId}`;
           const draftRouteParams = `?view=mDraftDetail&view=mMatchup&view=mMatchupScore&scoringPeriodId=${scoringPeriodId}`;
           const draftRoute = `${draftRouteBase}${draftRouteParams}`;
@@ -362,23 +357,21 @@ describe('Client', () => {
           const playerRoute = `${playerRouteBase}${playerRouteParams}`;
 
           const config = {};
-          jest.spyOn(client, '_buildAxiosConfig').mockReturnValue(config);
-          axios.get.mockReturnValue(Promise.resolve({
-            data: {
-              draftDetail: {
-                picks: []
-              },
-              players: []
-            }
+          jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
+          http.get.mockReturnValue(Promise.resolve({
+            draftDetail: {
+              picks: []
+            },
+            players: []
           }));
 
           client.getDraftInfo({ seasonId, scoringPeriodId });
-          expect(axios.get).toHaveBeenCalledWith(draftRoute, config);
-          expect(axios.get).toHaveBeenCalledWith(playerRoute, config);
+          expect(http.get).toHaveBeenCalledWith(draftRoute, config);
+          expect(http.get).toHaveBeenCalledWith(playerRoute, config);
         });
 
         describe('when scoringPeriodId is not passed', () => {
-          test('calls axios.get with the correct params', () => {
+          test('calls http.get with the correct params', () => {
             const draftRouteBase = `${seasonId}/segments/0/leagues/${leagueId}`;
             const draftRouteParams = '?view=mDraftDetail&view=mMatchup&view=mMatchupScore&scoringPeriodId=0';
             const draftRoute = `${draftRouteBase}${draftRouteParams}`;
@@ -388,49 +381,45 @@ describe('Client', () => {
             const playerRoute = `${playerRouteBase}${playerRouteParams}`;
 
             const config = {};
-            jest.spyOn(client, '_buildAxiosConfig').mockReturnValue(config);
-            axios.get.mockReturnValue(Promise.resolve({
-              data: {
-                draftDetail: {
-                  picks: []
-                },
-                players: []
-              }
+            jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
+            http.get.mockReturnValue(Promise.resolve({
+              draftDetail: {
+                picks: []
+              },
+              players: []
             }));
 
             client.getDraftInfo({ seasonId });
-            expect(axios.get).toHaveBeenCalledWith(draftRoute, config);
-            expect(axios.get).toHaveBeenCalledWith(playerRoute, config);
+            expect(http.get).toHaveBeenCalledWith(draftRoute, config);
+            expect(http.get).toHaveBeenCalledWith(playerRoute, config);
           });
         });
 
         describe('after the promise resolves', () => {
           test('maps response data into Boxscores', async () => {
             const response = {
-              data: {
-                draftDetail: {
-                  picks: [{
-                    overallPickNumber: 1,
-                    playerId: 2
-                  }, {
-                    overallPickNumber: 2,
-                    playerId: 3
-                  }]
-                },
-                players: [{
-                  player: {
-                    id: 2
-                  }
+              draftDetail: {
+                picks: [{
+                  overallPickNumber: 1,
+                  playerId: 2
                 }, {
-                  player: {
-                    id: 3
-                  }
+                  overallPickNumber: 2,
+                  playerId: 3
                 }]
-              }
+              },
+              players: [{
+                player: {
+                  id: 2
+                }
+              }, {
+                player: {
+                  id: 3
+                }
+              }]
             };
 
             const promise = Promise.resolve(response);
-            axios.get.mockReturnValue(promise);
+            http.get.mockReturnValue(promise);
 
             const draftPlayers = await client.getDraftInfo({ seasonId, scoringPeriodId });
 
@@ -459,7 +448,7 @@ describe('Client', () => {
 
         client = new Client({ leagueId });
 
-        jest.spyOn(axios, 'get').mockImplementation();
+        jest.spyOn(http, 'get').mockImplementation();
       });
 
       describe('when the seasonId is prior to 2018', () => {
@@ -471,24 +460,24 @@ describe('Client', () => {
           })).toThrow();
         });
 
-        test('calls axios.get with the correct params', () => {
+        test('calls http.get with the correct params', () => {
           const routeBase = `${leagueId}`;
           const routeParams = `?scoringPeriodId=${scoringPeriodId}&seasonId=${seasonId}` +
             '&view=mMatchupScore&view=mScoreboard&view=mSettings&view=mTopPerformers&view=mTeam';
           const route = `${routeBase}${routeParams}`;
 
           const config = {};
-          jest.spyOn(client, '_buildAxiosConfig').mockReturnValue(config);
-          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+          jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
+          http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getHistoricalScoreboardForWeek({ seasonId, matchupPeriodId, scoringPeriodId });
-          expect(axios.get).toHaveBeenCalledWith(route, config);
+          expect(http.get).toHaveBeenCalledWith(route, config);
         });
 
         describe('before the promise resolves', () => {
           test('does not invoke callback', () => {
             jest.spyOn(Boxscore, 'buildFromServer').mockImplementation();
-            axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+            http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
             client.getHistoricalScoreboardForWeek({ seasonId, matchupPeriodId, scoringPeriodId });
             expect(Boxscore.buildFromServer).not.toHaveBeenCalled();
@@ -497,26 +486,24 @@ describe('Client', () => {
 
         describe('after the promise resolves', () => {
           test('maps response data into Boxscores', async () => {
-            const response = {
-              data: [{
-                schedule: [{
-                  matchupPeriodId,
-                  home: { teamId: 2 },
-                  away: { teamId: 3 }
-                }, {
-                  matchupPeriodId,
-                  home: { teamId: 5 },
-                  away: { teamId: 6 }
-                }, {
-                  matchupPeriodId: matchupPeriodId + 1,
-                  home: { teamId: 6 },
-                  away: { teamId: 2 }
-                }]
+            const response = [{
+              schedule: [{
+                matchupPeriodId,
+                home: { teamId: 2 },
+                away: { teamId: 3 }
+              }, {
+                matchupPeriodId,
+                home: { teamId: 5 },
+                away: { teamId: 6 }
+              }, {
+                matchupPeriodId: matchupPeriodId + 1,
+                home: { teamId: 6 },
+                away: { teamId: 2 }
               }]
-            };
+            }];
 
             const promise = Promise.resolve(response);
-            axios.get.mockReturnValue(promise);
+            http.get.mockReturnValue(promise);
 
             const boxscores = await client.getHistoricalScoreboardForWeek({
               seasonId, matchupPeriodId, scoringPeriodId
@@ -526,8 +513,8 @@ describe('Client', () => {
             expect(boxscores.length).toBe(2);
             forEach(boxscores, (boxscore, index) => {
               expect(boxscore).toBeInstanceOf(Boxscore);
-              expect(boxscore.homeTeamId).toBe(response.data[0].schedule[index].home.teamId);
-              expect(boxscore.awayTeamId).toBe(response.data[0].schedule[index].away.teamId);
+              expect(boxscore.homeTeamId).toBe(response[0].schedule[index].home.teamId);
+              expect(boxscore.awayTeamId).toBe(response[0].schedule[index].away.teamId);
             });
           });
         });
@@ -535,7 +522,7 @@ describe('Client', () => {
 
       describe('when the seasonId is 2018 or after', () => {
         test('throws an error', () => {
-          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+          http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getHistoricalScoreboardForWeek({
             seasonId: 2018,
@@ -559,7 +546,7 @@ describe('Client', () => {
 
         client = new Client({ leagueId });
 
-        jest.spyOn(axios, 'get').mockImplementation();
+        jest.spyOn(http, 'get').mockImplementation();
       });
 
       describe('when the seasonId is prior to 2018', () => {
@@ -573,7 +560,7 @@ describe('Client', () => {
 
       describe('when the seasonId is 2018 or after', () => {
         test('does not throw an error', () => {
-          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+          http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getFreeAgents({
             seasonId: 2018,
@@ -581,12 +568,12 @@ describe('Client', () => {
           })).not.toThrow();
         });
 
-        test('calls _buildAxiosConfig with additional headers', () => {
-          jest.spyOn(client, '_buildAxiosConfig').mockImplementation();
-          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+        test('calls _buildRequestConfig with additional headers', () => {
+          jest.spyOn(client, '_buildRequestConfig').mockImplementation();
+          http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getFreeAgents({ seasonId, scoringPeriodId });
-          expect(client._buildAxiosConfig).toHaveBeenCalledWith({
+          expect(client._buildRequestConfig).toHaveBeenCalledWith({
             headers: {
               'x-fantasy-filter': JSON.stringify({
                 players: {
@@ -604,23 +591,23 @@ describe('Client', () => {
           });
         });
 
-        test('calls axios.get with the correct params', () => {
+        test('calls http.get with the correct params', () => {
           const routeBase = `${seasonId}/segments/0/leagues/${leagueId}`;
           const routeParams = `?scoringPeriodId=${scoringPeriodId}&view=kona_player_info`;
           const route = `${routeBase}${routeParams}`;
 
           const config = {};
-          jest.spyOn(client, '_buildAxiosConfig').mockReturnValue(config);
-          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+          jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
+          http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getFreeAgents({ seasonId, scoringPeriodId });
-          expect(axios.get).toHaveBeenCalledWith(route, config);
+          expect(http.get).toHaveBeenCalledWith(route, config);
         });
 
         describe('before the promise resolves', () => {
           test('does not invoke callback', () => {
             jest.spyOn(FreeAgentPlayer, 'buildFromServer').mockImplementation();
-            axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+            http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
             client.getFreeAgents({ seasonId, scoringPeriodId });
             expect(FreeAgentPlayer.buildFromServer).not.toHaveBeenCalled();
@@ -630,43 +617,41 @@ describe('Client', () => {
         describe('after the promise resolves', () => {
           test('maps response data into FreeAgentPlayers', async () => {
             const response = {
-              data: {
-                players: [{
-                  player: {
-                    firstName: 'Test',
-                    lastName: 'McTestFace',
+              players: [{
+                player: {
+                  firstName: 'Test',
+                  lastName: 'McTestFace',
+                  stats: [{
+                    seasonId,
+                    statSourceId: 1,
+                    statSplitTypeId: 0,
                     stats: [{
-                      seasonId,
-                      statSourceId: 1,
-                      statSplitTypeId: 0,
-                      stats: [{
-                        23: 2341,
-                        24: 234,
-                        25: 123
-                      }]
+                      23: 2341,
+                      24: 234,
+                      25: 123
                     }]
-                  }
-                }, {
-                  player: {
-                    firstName: 'Stable',
-                    lastName: 'Genius',
+                  }]
+                }
+              }, {
+                player: {
+                  firstName: 'Stable',
+                  lastName: 'Genius',
+                  stats: [{
+                    seasonId,
+                    statSourceId: 1,
+                    statSplitTypeId: 0,
                     stats: [{
-                      seasonId,
-                      statSourceId: 1,
-                      statSplitTypeId: 0,
-                      stats: [{
-                        23: 32,
-                        24: 23124,
-                        25: 0
-                      }]
+                      23: 32,
+                      24: 23124,
+                      25: 0
                     }]
-                  }
-                }]
-              }
+                  }]
+                }
+              }]
             };
 
             const promise = Promise.resolve(response);
-            axios.get.mockReturnValue(promise);
+            http.get.mockReturnValue(promise);
 
             const freeAgents = await client.getFreeAgents({ seasonId, scoringPeriodId });
 
@@ -675,9 +660,9 @@ describe('Client', () => {
             forEach(freeAgents, (freeAgent, index) => {
               expect(freeAgent).toBeInstanceOf(FreeAgentPlayer);
               expect(freeAgent.firstName).toBe(
-                response.data.players[index].player.firstName
+                response.players[index].player.firstName
               );
-              expect(freeAgent.lastName).toBe(response.data.players[index].player.lastName);
+              expect(freeAgent.lastName).toBe(response.players[index].player.lastName);
             });
           });
         });
@@ -697,12 +682,12 @@ describe('Client', () => {
 
         client = new Client({ leagueId });
 
-        jest.spyOn(axios, 'get').mockImplementation();
+        jest.spyOn(http, 'get').mockImplementation();
       });
 
       describe('when the seasonId is prior to 2018', () => {
         test('throws an error', () => {
-          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+          http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getTeamsAtWeek({
             seasonId: 2017,
@@ -713,7 +698,7 @@ describe('Client', () => {
 
       describe('when the seasonId is 2018 or after', () => {
         test('does not throw an error', () => {
-          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+          http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getTeamsAtWeek({
             seasonId: 2018,
@@ -721,23 +706,23 @@ describe('Client', () => {
           })).not.toThrow();
         });
 
-        test('calls axios.get with the correct params', () => {
+        test('calls http.get with the correct params', () => {
           const routeBase = `${seasonId}/segments/0/leagues/${leagueId}`;
           const routeParams = `?scoringPeriodId=${scoringPeriodId}&view=mRoster&view=mTeam`;
           const route = `${routeBase}${routeParams}`;
 
           const config = {};
-          jest.spyOn(client, '_buildAxiosConfig').mockReturnValue(config);
-          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+          jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
+          http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getTeamsAtWeek({ seasonId, scoringPeriodId });
-          expect(axios.get).toHaveBeenCalledWith(route, config);
+          expect(http.get).toHaveBeenCalledWith(route, config);
         });
 
         describe('before the promise resolves', () => {
           test('does not invoke callback', () => {
             jest.spyOn(Team, 'buildFromServer').mockImplementation();
-            axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+            http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
             client.getTeamsAtWeek({ seasonId, scoringPeriodId });
             expect(Team.buildFromServer).not.toHaveBeenCalled();
@@ -747,83 +732,81 @@ describe('Client', () => {
         describe('after the promise resolves', () => {
           test('maps response data into Teams', async () => {
             const response = {
-              data: {
-                members: [{
-                  firstName: 'Owner',
-                  id: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4057}',
-                  lastName: 'Dude'
-                }, {
-                  firstName: 'Owner',
-                  id: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4058}',
-                  lastName: 'Dude'
-                }, {
-                  firstName: 'Owner',
-                  id: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4059}',
-                  lastName: 'Dude'
-                }],
-                teams: [{
-                  abbrev: 'SWAG',
-                  location: 'First ',
-                  nickname: 'Last',
-                  primaryOwner: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4058}',
-                  record: {
-                    overall: {
-                      wins: 3,
-                      losses: 11
-                    }
-                  },
-                  roster: {
-                    entries: [{
-                      playerPoolEntry: {
-                        firstName: 'Joe',
-                        lastName: 'Montana'
-                      }
-                    }]
+              members: [{
+                firstName: 'Owner',
+                id: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4057}',
+                lastName: 'Dude'
+              }, {
+                firstName: 'Owner',
+                id: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4058}',
+                lastName: 'Dude'
+              }, {
+                firstName: 'Owner',
+                id: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4059}',
+                lastName: 'Dude'
+              }],
+              teams: [{
+                abbrev: 'SWAG',
+                location: 'First ',
+                nickname: 'Last',
+                primaryOwner: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4058}',
+                record: {
+                  overall: {
+                    wins: 3,
+                    losses: 11
                   }
-                }, {
-                  abbrev: 'JS',
-                  location: 'First ',
-                  nickname: 'Last',
-                  primaryOwner: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4059}',
-                  record: {
-                    overall: {
-                      wins: 5,
-                      losses: 11
+                },
+                roster: {
+                  entries: [{
+                    playerPoolEntry: {
+                      firstName: 'Joe',
+                      lastName: 'Montana'
                     }
-                  },
-                  roster: {
-                    entries: [{
-                      playerPoolEntry: {
-                        firstName: 'Joe',
-                        lastName: 'Smith'
-                      }
-                    }]
+                  }]
+                }
+              }, {
+                abbrev: 'JS',
+                location: 'First ',
+                nickname: 'Last',
+                primaryOwner: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4059}',
+                record: {
+                  overall: {
+                    wins: 5,
+                    losses: 11
                   }
-                }, {
-                  abbrev: 'SWAG',
-                  location: 'First ',
-                  nickname: 'Last',
-                  primaryOwner: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4057}',
-                  record: {
-                    overall: {
-                      wins: 11,
-                      losses: 8
+                },
+                roster: {
+                  entries: [{
+                    playerPoolEntry: {
+                      firstName: 'Joe',
+                      lastName: 'Smith'
                     }
-                  },
-                  roster: {
-                    entries: [{
-                      playerPoolEntry: {
-                        firstName: 'Joe',
-                        lastName: 'Brown'
-                      }
-                    }]
+                  }]
+                }
+              }, {
+                abbrev: 'SWAG',
+                location: 'First ',
+                nickname: 'Last',
+                primaryOwner: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4057}',
+                record: {
+                  overall: {
+                    wins: 11,
+                    losses: 8
                   }
-                }]
-              }
+                },
+                roster: {
+                  entries: [{
+                    playerPoolEntry: {
+                      firstName: 'Joe',
+                      lastName: 'Brown'
+                    }
+                  }]
+                }
+              }]
             };
 
             const promise = Promise.resolve(response);
-            axios.get.mockReturnValue(promise);
+            http.get.mockReturnValue(promise);
 
             const teams = await client.getTeamsAtWeek({ seasonId, scoringPeriodId });
 
@@ -831,16 +814,16 @@ describe('Client', () => {
             expect(teams.length).toBe(3);
             forEach(teams, (team, index) => {
               expect(team).toBeInstanceOf(Team);
-              expect(team.abbreviation).toBe(response.data.teams[index].abbrev);
+              expect(team.abbreviation).toBe(response.teams[index].abbrev);
               expect(team.ownerName).toBe('Owner Dude');
 
-              expect(team.wins).toBe(response.data.teams[index].record.overall.wins);
-              expect(team.losses).toBe(response.data.teams[index].record.overall.losses);
+              expect(team.wins).toBe(response.teams[index].record.overall.wins);
+              expect(team.losses).toBe(response.teams[index].record.overall.losses);
 
               expect(team.roster).toEqual(expect.any(Array));
               expect(team.roster[0]).toBeInstanceOf(Player);
               expect(team.roster[0].firstName).toBe(
-                response.data.teams[index].roster.entries[0].playerPoolEntry.firstName
+                response.teams[index].roster.entries[0].playerPoolEntry.firstName
               );
             });
           });
@@ -861,12 +844,12 @@ describe('Client', () => {
 
         client = new Client({ leagueId });
 
-        jest.spyOn(axios, 'get').mockImplementation();
+        jest.spyOn(http, 'get').mockImplementation();
       });
 
       describe('when the seasonId is prior to 2018', () => {
         test('does not throw an error', () => {
-          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+          http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getHistoricalTeamsAtWeek({
             seasonId,
@@ -874,22 +857,22 @@ describe('Client', () => {
           })).not.toThrow();
         });
 
-        test('calls axios.get with the correct params', () => {
+        test('calls http.get with the correct params', () => {
           const routeBase = `${leagueId}`;
           const routeParams = `?scoringPeriodId=${scoringPeriodId}&seasonId=${seasonId}&view=mMatchupScore&view=mScoreboard&view=mSettings&view=mTopPerformers&view=mTeam&view=mRoster`;
           const route = `${routeBase}${routeParams}`;
           const config = {};
-          jest.spyOn(client, '_buildAxiosConfig').mockReturnValue(config);
-          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+          jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
+          http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getHistoricalTeamsAtWeek({ seasonId, scoringPeriodId });
-          expect(axios.get).toHaveBeenCalledWith(route, config);
+          expect(http.get).toHaveBeenCalledWith(route, config);
         });
 
         describe('before the promise resolves', () => {
           test('does not invoke callback', () => {
             jest.spyOn(Team, 'buildFromServer').mockImplementation();
-            axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+            http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
             client.getHistoricalTeamsAtWeek({ seasonId, scoringPeriodId });
             expect(Team.buildFromServer).not.toHaveBeenCalled();
@@ -898,84 +881,82 @@ describe('Client', () => {
 
         describe('after the promise resolves', () => {
           test('maps response data into Teams', async () => {
-            const response = {
-              data: [{
-                members: [{
-                  firstName: 'Owner',
-                  id: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4057}',
-                  lastName: 'Dude'
-                }, {
-                  firstName: 'Owner',
-                  id: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4058}',
-                  lastName: 'Dude'
-                }, {
-                  firstName: 'Owner',
-                  id: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4059}',
-                  lastName: 'Dude'
-                }],
-                teams: [{
-                  abbrev: 'SWAG',
-                  location: 'First ',
-                  nickname: 'Last',
-                  primaryOwner: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4058}',
-                  record: {
-                    overall: {
-                      wins: 3,
-                      losses: 11
-                    }
-                  },
-                  roster: {
-                    entries: [{
-                      playerPoolEntry: {
-                        firstName: 'Joe',
-                        lastName: 'Montana'
-                      }
-                    }]
+            const response = [{
+              members: [{
+                firstName: 'Owner',
+                id: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4057}',
+                lastName: 'Dude'
+              }, {
+                firstName: 'Owner',
+                id: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4058}',
+                lastName: 'Dude'
+              }, {
+                firstName: 'Owner',
+                id: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4059}',
+                lastName: 'Dude'
+              }],
+              teams: [{
+                abbrev: 'SWAG',
+                location: 'First ',
+                nickname: 'Last',
+                primaryOwner: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4058}',
+                record: {
+                  overall: {
+                    wins: 3,
+                    losses: 11
                   }
-                }, {
-                  abbrev: 'JS',
-                  location: 'First ',
-                  nickname: 'Last',
-                  primaryOwner: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4059}',
-                  record: {
-                    overall: {
-                      wins: 5,
-                      losses: 11
+                },
+                roster: {
+                  entries: [{
+                    playerPoolEntry: {
+                      firstName: 'Joe',
+                      lastName: 'Montana'
                     }
-                  },
-                  roster: {
-                    entries: [{
-                      playerPoolEntry: {
-                        firstName: 'Joe',
-                        lastName: 'Smith'
-                      }
-                    }]
+                  }]
+                }
+              }, {
+                abbrev: 'JS',
+                location: 'First ',
+                nickname: 'Last',
+                primaryOwner: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4059}',
+                record: {
+                  overall: {
+                    wins: 5,
+                    losses: 11
                   }
-                }, {
-                  abbrev: 'SWAG',
-                  location: 'First ',
-                  nickname: 'Last',
-                  primaryOwner: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4057}',
-                  record: {
-                    overall: {
-                      wins: 11,
-                      losses: 8
+                },
+                roster: {
+                  entries: [{
+                    playerPoolEntry: {
+                      firstName: 'Joe',
+                      lastName: 'Smith'
                     }
-                  },
-                  roster: {
-                    entries: [{
-                      playerPoolEntry: {
-                        firstName: 'Joe',
-                        lastName: 'Brown'
-                      }
-                    }]
+                  }]
+                }
+              }, {
+                abbrev: 'SWAG',
+                location: 'First ',
+                nickname: 'Last',
+                primaryOwner: '{BAD5167F-96F5-40FF-AFF0-4D2CC92F4057}',
+                record: {
+                  overall: {
+                    wins: 11,
+                    losses: 8
                   }
-                }]
+                },
+                roster: {
+                  entries: [{
+                    playerPoolEntry: {
+                      firstName: 'Joe',
+                      lastName: 'Brown'
+                    }
+                  }]
+                }
               }]
-            };
+            }];
 
             const promise = Promise.resolve(response);
-            axios.get.mockReturnValue(promise);
+            http.get.mockReturnValue(promise);
 
             const teams = await client.getHistoricalTeamsAtWeek({ seasonId, scoringPeriodId });
 
@@ -983,15 +964,15 @@ describe('Client', () => {
             expect(teams.length).toBe(3);
             forEach(teams, (team, index) => {
               expect(team).toBeInstanceOf(Team);
-              expect(team.abbreviation).toBe(response.data[0].teams[index].abbrev);
+              expect(team.abbreviation).toBe(response[0].teams[index].abbrev);
 
-              expect(team.wins).toBe(response.data[0].teams[index].record.overall.wins);
-              expect(team.losses).toBe(response.data[0].teams[index].record.overall.losses);
+              expect(team.wins).toBe(response[0].teams[index].record.overall.wins);
+              expect(team.losses).toBe(response[0].teams[index].record.overall.losses);
 
               expect(team.roster).toEqual(expect.any(Array));
               expect(team.roster[0]).toBeInstanceOf(Player);
               expect(team.roster[0].firstName).toBe(
-                response.data[0].teams[index].roster.entries[0].playerPoolEntry.firstName
+                response[0].teams[index].roster.entries[0].playerPoolEntry.firstName
               );
             });
           });
@@ -1019,12 +1000,12 @@ describe('Client', () => {
 
         client = new Client({ leagueId: 213213 });
 
-        jest.spyOn(axios, 'get').mockImplementation();
+        jest.spyOn(http, 'get').mockImplementation();
       });
 
       describe('when the seasonId is prior to 2018', () => {
         test('does not throw an error', () => {
-          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+          http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           expect(() => client.getNFLGamesForPeriod({
             startDate: '20171010'
@@ -1034,30 +1015,30 @@ describe('Client', () => {
 
       describe('when the seasonId is 2018 or after', () => {
         test('does not throw an error', () => {
-          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+          http.get.mockReturnValue(UNSETTLED_RESPONSE);
           expect(() => client.getNFLGamesForPeriod({
             startDate: '20181010'
           })).not.toThrow();
         });
       });
 
-      test('calls axios.get with the correct params', () => {
+      test('calls http.get with the correct params', () => {
         const routeBase = 'apis/fantasy/v2/games/ffl/games';
         const routeParams = `?dates=${startDate}-${endDate}&pbpOnly=true`; // cspell:disable-line pbp
         const route = `${routeBase}${routeParams}`;
 
         const config = {};
-        jest.spyOn(client, '_buildAxiosConfig').mockReturnValue(config);
-        axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+        jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
+        http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
         client.getNFLGamesForPeriod({ startDate, endDate });
-        expect(axios.get).toHaveBeenCalledWith(route, config);
+        expect(http.get).toHaveBeenCalledWith(route, config);
       });
 
       describe('before the promise resolves', () => {
         test('does not invoke callback', () => {
           jest.spyOn(NFLGame, 'buildFromServer').mockImplementation();
-          axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+          http.get.mockReturnValue(UNSETTLED_RESPONSE);
 
           client.getNFLGamesForPeriod({ startDate, endDate });
           expect(NFLGame.buildFromServer).not.toHaveBeenCalled();
@@ -1067,13 +1048,11 @@ describe('Client', () => {
       describe('after the promise resolves', () => {
         test('maps response data into Teams', async () => {
           const response = {
-            data: {
-              events: [{}, {}, {}]
-            }
+            events: [{}, {}, {}]
           };
 
           const promise = Promise.resolve(response);
-          axios.get.mockReturnValue(promise);
+          http.get.mockReturnValue(promise);
 
           const games = await client.getNFLGamesForPeriod({ startDate, endDate });
 
@@ -1095,11 +1074,10 @@ describe('Client', () => {
 
         client = new Client({ leagueId: 213213 });
 
-        jest.spyOn(axios, 'get').mockImplementation();
-        // This shape was missing the `data` wrapper a real axios response carries, so the
-        // response handler always threw. Q swallowed that; the tests relying on this mock only
-        // assert request construction, so they get a response that never settles instead.
-        axios.get.mockReturnValue(UNSETTLED_RESPONSE);
+        jest.spyOn(http, 'get').mockImplementation();
+        // The tests relying on this mock only assert request construction, so they get a
+        // response that never settles rather than one whose body the handler would reject.
+        http.get.mockReturnValue(UNSETTLED_RESPONSE);
       });
 
       describe('when the seasonId is prior to 2018', () => {
@@ -1113,16 +1091,16 @@ describe('Client', () => {
           expect(() => client.getLeagueInfo({ seasonId: 2018 })).not.toThrow();
         });
 
-        test('calls axios.get with the correct params', () => {
+        test('calls http.get with the correct params', () => {
           const routeBase = `${seasonId}/segments/0/leagues/${client.leagueId}`;
           const routeParams = '?view=mSettings';
           const route = `${routeBase}${routeParams}`;
 
           const config = {};
-          jest.spyOn(client, '_buildAxiosConfig').mockReturnValue(config);
+          jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
 
           client.getLeagueInfo({ seasonId });
-          expect(axios.get).toHaveBeenCalledWith(route, config);
+          expect(http.get).toHaveBeenCalledWith(route, config);
         });
 
         describe('before the promise resolves', () => {
@@ -1137,25 +1115,23 @@ describe('Client', () => {
         describe('after the promise resolves', () => {
           test('maps response data into Teams', async () => {
             const response = {
-              data: {
-                settings: {
-                  name: 'some league',
-                  draftSettings: {},
-                  rosterSettings: {},
-                  scheduleSettings: {},
-                  scoringSettings: {
-                    scoringItems: []
-                  }
-                },
-                status: {
-                  currentMatchupPeriod: 7,
-                  latestScoringPeriod: 7
+              settings: {
+                name: 'some league',
+                draftSettings: {},
+                rosterSettings: {},
+                scheduleSettings: {},
+                scoringSettings: {
+                  scoringItems: []
                 }
+              },
+              status: {
+                currentMatchupPeriod: 7,
+                latestScoringPeriod: 7
               }
             };
 
             const promise = Promise.resolve(response);
-            axios.get.mockReturnValue(promise);
+            http.get.mockReturnValue(promise);
 
             const league = await client.getLeagueInfo({ seasonId });
             expect(league).toBeInstanceOf(League);
@@ -1171,14 +1147,14 @@ describe('Client', () => {
       const routeBase = (id, leagueId) => `apis/v3/games/ffl/seasons/${id}/segments/0/leagues/${leagueId}`;
 
       const mockResponses = ({ topics = [], teams = [], players = [] }) => {
-        axios.get
-          .mockReturnValueOnce(Promise.resolve({ data: { topics } }))
-          .mockReturnValueOnce(Promise.resolve({ data: { teams } }))
-          .mockReturnValueOnce(Promise.resolve({ data: { players } }));
+        http.get
+          .mockReturnValueOnce(Promise.resolve({ topics }))
+          .mockReturnValueOnce(Promise.resolve({ teams }))
+          .mockReturnValueOnce(Promise.resolve({ players }));
       };
 
       const filterOf = (callIndex) => JSON.parse(
-        axios.get.mock.calls[callIndex][1].headers['x-fantasy-filter']
+        http.get.mock.calls[callIndex][1].headers['x-fantasy-filter']
       );
 
       beforeEach(() => {
@@ -1186,7 +1162,7 @@ describe('Client', () => {
 
         client = new Client({ leagueId: 213213 });
 
-        jest.spyOn(axios, 'get').mockImplementation();
+        jest.spyOn(http, 'get').mockImplementation();
         mockResponses({});
       });
 
@@ -1201,18 +1177,18 @@ describe('Client', () => {
           expect(() => client.getRecentActivity({ seasonId })).not.toThrow();
         });
 
-        test('calls axios.get with the communication route first', () => {
+        test('calls http.get with the communication route first', () => {
           client.getRecentActivity({ seasonId });
 
           const route = `${routeBase(seasonId, client.leagueId)}/communication` +
             '?view=kona_league_communication';
-          expect(axios.get.mock.calls[0][0]).toBe(route);
+          expect(http.get.mock.calls[0][0]).toBe(route);
         });
 
         test('requests the communication route from the lm-api-reads host', () => {
           client.getRecentActivity({ seasonId });
 
-          expect(axios.get.mock.calls[0][1].baseURL).toBe('https://lm-api-reads.fantasy.espn.com/');
+          expect(http.get.mock.calls[0][1].baseURL).toBe('https://lm-api-reads.fantasy.espn.com/');
         });
 
         describe('when msgType is not passed', () => {
@@ -1248,21 +1224,21 @@ describe('Client', () => {
 
             const route = `${routeBase(seasonId, client.leagueId)}` +
               '?view=mTeam&view=mRoster&view=mMatchup&view=mSettings&view=mStandings';
-            expect(axios.get.mock.calls[1][0]).toBe(route);
+            expect(http.get.mock.calls[1][0]).toBe(route);
           });
 
           test('requests the player card view third', async () => {
             await client.getRecentActivity({ seasonId });
 
             const route = `${routeBase(seasonId, client.leagueId)}?view=kona_playercard`;
-            expect(axios.get.mock.calls[2][0]).toBe(route);
+            expect(http.get.mock.calls[2][0]).toBe(route);
           });
 
           describe('when the targeted player is on the acting team roster', () => {
             test('uses the roster entry and does not look the player up', async () => {
               const rosterEntry = { playerId: 555, playerPoolEntry: { player: { fullName: 'A' } } };
 
-              axios.get.mockReset();
+              http.get.mockReset();
               mockResponses({
                 topics: [{
                   date: 1600000000000,
@@ -1283,7 +1259,7 @@ describe('Client', () => {
             test('backfills the player from the player card response', async () => {
               const cardPlayer = { id: 777, player: { fullName: 'B' } };
 
-              axios.get.mockReset();
+              http.get.mockReset();
               mockResponses({
                 topics: [{
                   date: 1600000000000,
@@ -1299,7 +1275,7 @@ describe('Client', () => {
             });
 
             test('requests only the unresolved player ids', async () => {
-              axios.get.mockReset();
+              http.get.mockReset();
               mockResponses({
                 topics: [{
                   date: 1600000000000,
@@ -1317,7 +1293,7 @@ describe('Client', () => {
 
           describe('when a topic holds several messages', () => {
             test('returns one action per message', async () => {
-              axios.get.mockReset();
+              http.get.mockReset();
               mockResponses({
                 topics: [{
                   date: 1600000000000,

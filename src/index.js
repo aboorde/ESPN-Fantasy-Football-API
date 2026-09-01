@@ -3,6 +3,7 @@ import BoxscorePlayer from './boxscore-player/boxscore-player';
 import Client from './client/client';
 import DraftPlayer from './draft-player/draft-player';
 import FreeAgentPlayer from './free-agent-player/free-agent-player';
+import { HttpError } from './client/http';
 import League from './league/league';
 import NFLGame from './nfl-game/nfl-game';
 import Player from './player/player';
@@ -15,6 +16,7 @@ export {
   Client,
   DraftPlayer,
   FreeAgentPlayer,
+  HttpError,
   League,
   NFLGame,
   Player,
