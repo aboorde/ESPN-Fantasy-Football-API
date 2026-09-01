@@ -13,6 +13,15 @@ import { flattenObjectSansNumericKeys } from '../utils';
 import createHttp from './http';
 
 /**
+ * The kind of transaction an action records.
+ *
+ * Closed, unlike the ESPN string enums in `constants.js`: these are values this client produces
+ * rather than values ESPN sends, so a consumer may treat a `switch` over them as exhaustive.
+ *
+ * @typedef {'FA ADDED'|'WAIVER ADDED'|'DROPPED'|'TRADED'|'UNKNOWN'} ActivityActionType
+ */
+
+/**
  * @typedef  {object} ActivityTeam
  *
  * The raw ESPN team object an action is attributed to, passed through untouched. Only the fields
@@ -59,9 +68,8 @@ import createHttp from './http';
  *
  * @property {ActivityTeam} [team] The team that made the move, resolved from the message's `from`,
  *                                 `for` or `to` id depending on the action.
- * @property {'FA ADDED'|'WAIVER ADDED'|'DROPPED'|'TRADED'|'UNKNOWN'} action The kind of
- *                          transaction. `UNKNOWN` when ESPN sends a message type this client does
- *                          not label.
+ * @property {ActivityActionType} action The kind of transaction. `UNKNOWN` when ESPN sends a
+ *                          message type this client does not label.
  * @property {ActivityPlayer|null} [player] The player the action targeted, in whichever of the two
  *                                          raw shapes ESPN supplied.
  * @property {string} [playerName] The targeted player's name, read out of whichever shape `player`
@@ -111,7 +119,7 @@ const ACTIVITY_TYPE_BY_MESSAGE_ID = {
  * these are values this client produces, not values ESPN sends. `UNKNOWN` covers every message
  * type not in the map above.
  *
- * @type {Readonly<Record<string, ActivityAction['action']>>}
+ * @type {Readonly<Record<string, ActivityActionType>>}
  */
 const ACTIVITY_ACTION = Object.freeze({
   FA_ADDED: 'FA ADDED',

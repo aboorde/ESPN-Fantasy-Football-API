@@ -60,7 +60,7 @@ const isEmpty = (value) => {
  * The entries of an array or object, as `[key, value]` pairs. `undefined` yields none.
  *
  * @param   {Array|object} [collection] The collection to walk.
- * @returns {Array<[string|number, *]>} Its entries.
+ * @returns {Array} Its `[key, value]` pairs.
  */
 const entriesOf = (collection) => {
   if (collection === undefined || collection === null) {

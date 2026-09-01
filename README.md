@@ -387,5 +387,5 @@ This is my first time writing OSS and picking a license. Feel free to reach out 
 | lint:spelling    | Ensures spelling is correct.                                 |
 | serve:docs       | Builds and serves docs. Defaults to port 8080.               |
 | test             | Starts a jest test runner with access to all unit tests. Pass `--watch` to keep jest alive and watching for changes. Pass a string as a file inclusion pattern. |
-| test:integration | Runs the integration tests against live ESPN. Needs credentials in a root `.env`. |
+| test:integration | Runs the integration tests against live ESPN. Needs credentials in a root `.env`. **Its snapshots are stale**: they were recorded before the position and scoring fixes and still contain the old, wrong values. Re-record with `-u` on the next credentialed run. |
 | prepare          | Runs `build`. npm invokes this on install, including when this repo is installed as a git dependency, which is why the bundles are not committed. |

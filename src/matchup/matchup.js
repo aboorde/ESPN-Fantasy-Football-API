@@ -3,6 +3,10 @@ import { getPath } from '../internal/objects.js';
 import BaseObject from '../base-classes/base-object/base-object';
 
 /**
+ * @typedef {import('../constants').WinningTeam} WinningTeam
+ */
+
+/**
  * Represents a single matchup on a league's season schedule.
  *
  * This is the base of the pair `Boxscore` completes: both are built from the same `schedule` entry,
@@ -21,7 +25,7 @@ class Matchup extends BaseObject {
    *
    * @property {number} id The matchup's id on the schedule.
    * @property {number} matchupPeriodId The matchup period the matchup is played in.
-   * @property {import('../constants').WinningTeam} winner Which side won. `UNDECIDED` while the
+   * @property {WinningTeam} winner Which side won. `UNDECIDED` while the
    *                           matchup is unplayed or in progress.
    * @property {string} playoffTierType Which bracket the matchup belongs to. `NONE` for a regular
    *                                    season game, otherwise a playoff or consolation tier.

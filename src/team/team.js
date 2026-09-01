@@ -6,6 +6,10 @@ import BaseObject from '../base-classes/base-object/base-object.js';
 import Player from '../player/player';
 
 /**
+ * @typedef {import('../constants').MatchupResult} MatchupResult
+ */
+
+/**
  * Represents a fantasy football team in a league.
  *
  * @augments {BaseObject}
@@ -59,7 +63,7 @@ class Team extends BaseObject {
    * @property {number} awayLosses The number of regular season match-ups the team has lost away.
    * @property {number} awayTies The number of regular season match-ups the team has tied away.
    *
-   * @property {import('../constants').MatchupResult} streakType Whether the team's current run of
+   * @property {MatchupResult} streakType Whether the team's current run of
    *                               results is a `WIN`, a `LOSS`, or `NONE` when none have been
    *                               played.
    * @property {number} streakLength How many consecutive results the `streakType` covers.

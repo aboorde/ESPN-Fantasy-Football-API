@@ -10,6 +10,10 @@ import { slotCategoryIdToPositionMap } from '../constants';
  */
 
 /**
+ * @typedef {import('../constants').PlayerAvailabilityStatus} PlayerAvailabilityStatus
+ */
+
+/**
  * Represents a player and their stats on a boxscore.
  *
  * @augments {Player}
@@ -23,7 +27,7 @@ class BoxscorePlayer extends Player {
    * The attributes BoxscorePlayer adds. Everything on Player is inherited through the class
    * hierarchy rather than restated here.
    *
-   * @property {import('../constants').PlayerAvailabilityStatus} availabilityStatus The fantasy
+   * @property {PlayerAvailabilityStatus} availabilityStatus The fantasy
    *                                                             roster status of the player.
    * @property {string} rosteredPosition The position the player is slotted at in the fantasy
    *                                     lineup.

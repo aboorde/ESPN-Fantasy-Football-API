@@ -7,17 +7,17 @@ Legend: `pending` / `in progress` / `done` / `revised` / `abandoned`
 | # | Step | Status | Commit |
 | --- | --- | --- | --- |
 | 0 | Plan + adversarial review of the plan | done | `b6cd355` |
-| 1 | Fix `defaultPosition`; split the position enums | done | `PENDING` |
-| 2 | De-tautologize self-referential assertions | done | `PENDING` |
-| 3 | Reshape `League#scoringSettings` | done | `PENDING` |
-| 4 | Delete `BaseCacheableObject` and the `defer` pass | done | `PENDING` |
-| 5a | Injectable transport (pure refactor) | done (revised) | `PENDING` |
-| 5b | Timeout, retry, per-Client cache | done | `PENDING` |
-| 6 | Drop lodash | done | `PENDING` |
-| 7 | Fixture layer | done | `PENDING` |
-| 8 | Types: open unions, exported constants | done (diagnosis corrected) | `PENDING` |
-| 9 | Distribution: `prepare`, drop committed artifacts | done | `PENDING` |
-| 10 | API surface: activity normalization, pagination | done | `PENDING` |
+| 1 | Fix `defaultPosition`; split the position enums | done | `e4b9685` |
+| 2 | De-tautologize self-referential assertions | done | `413de70` |
+| 3 | Reshape `League#scoringSettings` | done | `d38c101` |
+| 4 | Delete `BaseCacheableObject` and the `defer` pass | done | `97158ab` |
+| 5a | Injectable transport (pure refactor) | done (revised) | `a2190e3` |
+| 5b | Timeout, retry, per-Client cache | done | `85f8f6d` |
+| 6 | Drop lodash | done | `34c6ee9` |
+| 7 | Fixture layer | done | `3edb695` |
+| 8 | Types: open unions, exported constants | done (diagnosis corrected) | `7f0d208` |
+| 9 | Distribution: `prepare`, drop committed artifacts | done | `add64ec` |
+| 10 | API surface: activity normalization, pagination | done | `b62b2f4` |
 
 ---
 
@@ -300,3 +300,54 @@ would have let a wrong normalization pass. Corrected, and the assertion now read
 wrapper.
 
 509 tests green, coverage still 100%.
+
+---
+
+## Outcome
+
+All ten steps landed. 509 tests, 100% statements / branches / functions / lines.
+
+| | Before | After |
+| --- | --- | --- |
+| Tests | 380 | 509 |
+| Runtime dependencies | 1 (lodash) | 0 |
+| Production bundle | 61,428 bytes | ~30,000 bytes |
+| Declaration errors (`tsc --strict`) | 11x TS2304 + 4x TS2417 | 9x TS2417 |
+| Emitted named types | 5 | 18 |
+| Committed build artifacts | 6 paths, drifting | none; built by `prepare` |
+
+Verified by real installation, not by inspection: installing this branch as a git dependency builds
+the bundles and declarations from source, `Player#defaultPosition` for `defaultPositionId` 1 returns
+`QB`, `npm ls` shows no transitive dependencies, and a `--strict` TypeScript consumer file compiles
+against the emitted `node.d.ts`.
+
+### Step 8 follow-up - jsdoc cannot parse the new types
+
+Running the full `npm run ci` surfaced something step 8 missed: `build:docs` went from 2 errors to
+31. jsdoc 4's type parser rejects both `import('...')` expressions and `(string & {})`
+intersections, and it was dropping the type off every property annotated with one.
+
+Referencing each imported type through a module-scope alias confines the unparseable expression to
+one line per file and restores the property rendering. Two further errors were genuinely mine and
+are fixed: a tuple type in `internal/collections.js`, and an indexed access type in `client.js`
+which is better as a named `ActivityActionType` - now exported, so a consumer can name the union a
+`switch` is exhaustive over.
+
+**26 errors remain and are structural.** They are the open unions and the aliases themselves -
+the deliberate part of step 8. Where jsdoc's HTML output and the generated declarations disagree,
+the declarations win: they are what consumers consume, `tsc` checks them, and `docs/` is gitignored
+and unpublished. This is a standing tradeoff, not a defect, but it is worth deciding whether
+`build:docs` still earns its place now that `.d.ts` is the real API documentation.
+
+## Required follow-up (not on this branch)
+
+1. **The integration snapshots are stale.** They were recorded before the position and scoring
+   fixes and still contain the old values - `"defaultPosition": "RB/WR"` for a wide receiver, among
+   1,483 position entries. `npm run test:integration` will fail until they are re-recorded with
+   `-u` on a credentialed run. Those failures are the fixes showing up, not ESPN drift.
+2. **Repin `discord-bot`** to a commit on this branch. Its
+   `player?.playerPoolEntry?.player.fullName ?? ...` chain can then collapse to
+   `action.playerName` - worth doing, since that chain is unguarded at `.player.fullName` and can
+   throw inside a Discord command.
+3. **`activity.json` is hand-written.** Replace it with a recorded `kona_league_communication`
+   payload, scrubbed the same way, on the next credentialed run.

@@ -12,6 +12,14 @@ import {
 import { toDate } from '../utils';
 
 /**
+ * @typedef {import('../constants').InjuryStatus} InjuryStatus
+ */
+
+/**
+ * @typedef {import('../constants').PlayerAvailabilityStatus} PlayerAvailabilityStatus
+ */
+
+/**
  * Represents an NFL player. This model is not directly associated with any fantasy team.
  *
  * @augments {BaseObject}
@@ -58,11 +66,11 @@ class Player extends BaseObject {
    * @property {Date} acquiredDate The datetime the player was acquired by their current fantasy
    *                               team.
    *
-   * @property {import('../constants').PlayerAvailabilityStatus} availabilityStatus The fantasy
+   * @property {PlayerAvailabilityStatus} availabilityStatus The fantasy
    *                                                             roster status of the player.
    * @property {boolean} isDroppable Whether or not the player can be dropped from a team.
    * @property {boolean} isInjured Whether or not the player is injured.
-   * @property {import('../constants').InjuryStatus} injuryStatus The player's injury timeline.
+   * @property {InjuryStatus} injuryStatus The player's injury timeline.
    * @property {object} outlooksByWeek ESPN's written outlook for the player, keyed by scoring
    *                                   period.
    */
