@@ -154,12 +154,50 @@ describe('League', () => {
     });
 
     describe('scoringSettings', () => {
-      test('maps to object using constants', () => {
+      // The fixture covers all four cases at once: a plain item (statId 0), an item whose base is
+      // overridden for one position (statId 2, worth 6 to everyone and 9 to a D/ST), and a stat id
+      // the project has no name for (999).
+      test('splits base points from per-position overrides', () => {
         const league = League.buildFromServer(data);
         expect(league.scoringSettings).toStrictEqual({
-          passingAttempts: 1,
-          passingIncompletions: 9,
-          passingCompletions: 4
+          base: {
+            passingAttempts: 1,
+            passingCompletions: 4,
+            passingIncompletions: 6,
+            statId999: 75
+          },
+          overrides: {
+            'D/ST': { passingIncompletions: 9 }
+          }
+        });
+      });
+
+      test('keeps the base value of an overridden stat', () => {
+        const league = League.buildFromServer(data);
+
+        // The old shape reported only the override, so a stat worth 6 to every position and 9 to a
+        // D/ST came back as a flat 9 and the 6 was unrecoverable.
+        expect(league.scoringSettings.base.passingIncompletions).toBe(6);
+        expect(league.scoringSettings.overrides['D/ST'].passingIncompletions).toBe(9);
+      });
+
+      test('keeps a stat id it has no name for', () => {
+        const league = League.buildFromServer(data);
+        expect(league.scoringSettings.base.statId999).toBe(75);
+      });
+
+      describe('when a position override uses an id the project cannot name', () => {
+        test('keys it by the raw position id rather than dropping it', () => {
+          const league = League.buildFromServer({
+            ...data,
+            scoringSettings: {
+              scoringItems: [{ points: 3, pointsOverrides: { 11: 7 }, statId: 0 }]
+            }
+          });
+
+          expect(league.scoringSettings.overrides).toStrictEqual({
+            positionId11: { passingAttempts: 7 }
+          });
         });
       });
     });
@@ -215,7 +253,16 @@ describe('League', () => {
         scoringSettings: {
           matchupTieRule: 'NONE',
           playoffMatchupTieRule: 'NONE',
-          scoringItems: [],
+          // Four real items from the same league, chosen for what they exercise. 53 is a plain
+          // rule; 89 is D/ST-only (base 0, override 5); 206 is worth 2 to every position *except*
+          // D/ST, which is the case the old flat shape reported as a bare 0; 63 has no name in
+          // this project's map and used to be discarded outright.
+          scoringItems: [
+            { statId: 53, points: 0.5 },
+            { statId: 89, points: 0, pointsOverrides: { 16: 5 } },
+            { statId: 206, points: 2, pointsOverrides: { 16: 0 } },
+            { statId: 63, points: 6 }
+          ],
           scoringType: 'H2H_POINTS'
         },
         tradeSettings: {
@@ -280,6 +327,27 @@ describe('League', () => {
       test('maps tradeSettings.deadlineDate as a JS Date instance', () => {
         const league = League.buildFromServer(measured);
         expect(league.tradeSettings.deadlineDate).toEqual(new Date(1799265600000));
+      });
+
+      test('reports a stat worth 2 to every position but 0 to a D/ST as both', () => {
+        const league = League.buildFromServer(measured);
+
+        expect(league.scoringSettings.base.statId206).toBe(2);
+        expect(league.scoringSettings.overrides['D/ST'].statId206).toBe(0);
+      });
+
+      test('keeps a scoring rule whose stat id this project cannot name', () => {
+        const league = League.buildFromServer(measured);
+        expect(league.scoringSettings.base.statId63).toBe(6);
+      });
+
+      test('resolves a D/ST override through the defaultPositionId enum', () => {
+        const league = League.buildFromServer(measured);
+
+        // 16 is D/ST in both position enums, but `defensive0PointsAllowed` proves the override was
+        // filed under a position rather than collapsed onto the base value.
+        expect(league.scoringSettings.base.defensive0PointsAllowed).toBe(0);
+        expect(league.scoringSettings.overrides['D/ST'].defensive0PointsAllowed).toBe(5);
       });
 
       test('derives numberOfPlayoffMatchups from status.finalScoringPeriod', () => {

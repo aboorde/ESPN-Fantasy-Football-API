@@ -9,7 +9,7 @@ Legend: `pending` / `in progress` / `done` / `revised` / `abandoned`
 | 0 | Plan + adversarial review of the plan | done | `b6cd355` |
 | 1 | Fix `defaultPosition`; split the position enums | done | `PENDING` |
 | 2 | De-tautologize self-referential assertions | done | `PENDING` |
-| 3 | Reshape `League#scoringSettings` | pending | |
+| 3 | Reshape `League#scoringSettings` | done | `PENDING` |
 | 4 | Delete `BaseCacheableObject` and the `defer` pass | pending | |
 | 5a | Injectable transport (pure refactor) | pending | |
 | 5b | Timeout, retry, per-Client cache | pending | |
@@ -83,3 +83,28 @@ Under the old assertion that change was invisible.
 
 387 tests green, coverage still 100%. Four now-unused lodash imports dropped from test files, which
 is a down payment on step 6.
+
+### Step 3 - reshape `League#scoringSettings`
+
+**done.** `scoringSettings` is now `{ base, overrides }` instead of a flat name-to-number map.
+
+Two losses fixed:
+
+* **Overrides no longer collapse.** `acc[key] = first(values(pointsOverrides))` threw away both
+  which position an override applied to and the base value it replaced. Overrides are now filed
+  under the position, resolved through `defaultPositionIdToPosition` -- *not* the slot map, which
+  is what step 1 was about. Confirmed to be the right enum by `draft-2026`'s
+  `test_scoring.py:41`, which sources these keys from `defaultPositionId` and validates the result
+  reproduces ESPN's own `appliedTotal` for >98% of 300+ projections.
+* **Nothing is dropped.** An unnamed stat id becomes `statId<N>`; an unnamed position id becomes
+  `positionId<N>`. Measured against a real 14-team league, the old `if (!key) return acc` was
+  discarding 4 of 45 scoring rules, one worth 6 points.
+
+The existing synthetic fixture already contained the bug in miniature -- statId 2 with
+`points: 6, pointsOverrides: {16: 9}` reported a flat `9` -- so it now asserts both halves.
+
+The `measured` block's `scoringItems: []` was replaced with four real items chosen for what each
+exercises: a plain rule (53), a D/ST-only rule (89, base 0 override 5), the case the old shape got
+outright wrong (206, worth 2 to every position *except* D/ST), and an unnamed id (63, worth 6).
+
+393 tests green, coverage still 100%.

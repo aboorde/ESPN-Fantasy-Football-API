@@ -1,15 +1,15 @@
-import first from 'lodash/first';
+import forEach from 'lodash/forEach';
 import get from 'lodash/get';
 import mapKeys from 'lodash/mapKeys';
 import reduce from 'lodash/reduce';
 import toSafeInteger from 'lodash/toSafeInteger';
-import values from 'lodash/values';
 
 import BaseObject from '../base-classes/base-object/base-object';
 
 import { toDate } from '../utils';
 
 import {
+  defaultPositionIdToPosition,
   scoringIdToItem,
   slotCategoryIdToPositionMap
 } from '../constants';
@@ -99,6 +99,22 @@ class League extends BaseObject {
    */
 
   /**
+   * @typedef {object} ScoringSettings
+   *
+   * A league's scoring rules, in the two parts ESPN actually sends them in.
+   *
+   * Keys are the readable scoring item names from `constants.js`. A stat id the project has no
+   * name for appears as `statId<N>` rather than being dropped -- the name map is incomplete and
+   * ESPN keeps adding ids, so an unreadable rule beats a missing one.
+   *
+   * @property {Record<string, number>} base What each stat is worth for every position.
+   * @property {Record<string, Record<string, number>>} overrides What a stat is worth for one
+   *   position specifically, keyed by position and then by scoring item. A position appears here
+   *   only for the stats it overrides; everything else for that position comes from `base`. In
+   *   practice ESPN uses this for D/ST. An unrecognized position id appears as `positionId<N>`.
+   */
+
+  /**
    * @typedef {object} LeagueMap
    *
    * @property {string} name The name of the league.
@@ -125,7 +141,7 @@ class League extends BaseObject {
    * @property {AcquisitionSettings} acquisitionSettings The waiver and FAAB settings of the league.
    * @property {TradeSettings} tradeSettings The trade settings of the league.
    * @property {FinanceSettings} financeSettings The dues and fees of the league.
-   * @property {object} scoringSettings The scoring settings of the league.
+   * @property {ScoringSettings} scoringSettings The scoring settings of the league.
    */
 
   /**
@@ -249,22 +265,38 @@ class League extends BaseObject {
       key: 'scoringSettings',
       manualParse: (responseData) => reduce(
         responseData.scoringItems,
-        (acc, { points, pointsOverrides, statId }) => {
-          const key = scoringIdToItem[statId];
+        ({ base, overrides }, { points, pointsOverrides, statId }) => {
+          // An unrecognized stat id becomes `statId<N>` rather than being dropped. The previous
+          // `if (!key) return acc` discarded them silently: measured against a real 14-team
+          // league, that lost 4 of its 45 scoring rules, one of them worth 6 points a go. The map
+          // is incomplete and ESPN keeps adding ids, so degrading to a less readable key beats
+          // losing the rule.
+          const key = scoringIdToItem[statId] || `statId${statId}`;
 
-          if (!key) {
-            return acc;
-          }
+          base[key] = points;
 
-          if (pointsOverrides) {
-            acc[key] = first(values(pointsOverrides));
-          } else {
-            acc[key] = points;
-          }
+          // `pointsOverrides` is `{positionId: points}` -- what this stat is worth *for that
+          // position only*, with `points` still applying to every other one. Collapsing it to a
+          // single number, as this did with `first(values(pointsOverrides))`, threw away both
+          // which position it applied to and the base value. A real league has items like
+          // `points: 2, pointsOverrides: {16: 0}`: worth 2 to everyone except a D/ST, which the
+          // old shape reported as a flat 0.
+          //
+          // NOTE: these keys are in the `defaultPositionId` enum, not `lineupSlotId`. See the note
+          // on `defaultPositionIdToPosition`.
+          forEach(pointsOverrides, (overridePoints, positionId) => {
+            const position = get(defaultPositionIdToPosition, positionId) ||
+              `positionId${positionId}`;
 
-          return acc;
+            if (!overrides[position]) {
+              overrides[position] = {};
+            }
+            overrides[position][key] = overridePoints;
+          });
+
+          return { base, overrides };
         },
-        {}
+        { base: {}, overrides: {} }
       )
     }
   };
