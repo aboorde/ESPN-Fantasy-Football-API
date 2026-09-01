@@ -80,8 +80,10 @@ jobs:
       # straight from git. Fail if they drift from src/.
       - name: Verify committed bundles are up to date
         run: |
-          if ! git diff --quiet -- web.js node.js node.js.LICENSE.txt web-dev.js node-dev.js; then
+          if ! git diff --quiet -- web.js node.js web-dev.js node-dev.js node.js.LICENSE.txt \
+               web.js.map node.js.map web-dev.js.map node-dev.js.map; then
             echo "::error::Committed bundles are stale. Run 'npm run build' and commit the result."
-            git diff --stat -- web.js node.js node.js.LICENSE.txt web-dev.js node-dev.js
+            git diff --stat -- web.js node.js web-dev.js node-dev.js node.js.LICENSE.txt \
+              web.js.map node.js.map web-dev.js.map node-dev.js.map
             exit 1
           fi
