@@ -1,16 +1,7 @@
 const common = {
   entry: './src/index.js',
-  module: {
-    rules: [
-      {
-        test: /\.js$/,
-        exclude: /node_modules/,
-        loader: 'babel-loader'
-      }
-    ]
-  },
-  // Reads the `browserslist` field in package.json, so webpack's emitted runtime targets exactly
-  // the environments Babel already compiles for rather than webpack's own separate defaults.
+  // Reads the `browserslist` field in package.json, so webpack's emitted runtime targets the
+  // environments this package supports rather than webpack's own separate defaults.
   target: 'browserslist'
 };
 

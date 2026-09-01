@@ -24,19 +24,28 @@ When re-syncing with upstream, run `npm run build` and commit the regenerated bu
 
 ### Toolchain
 
-The build and test tooling has been modernized past upstream: Babel 8, ESLint 10 (flat config,
-no airbnb), Jest 30, jsdoc 4 and cspell 10. Two consequences are worth knowing:
+The build and test tooling has been modernized past upstream: ESLint 10 (flat config, no
+airbnb), Jest 30, jsdoc 4 and cspell 10. Several consequences are worth knowing:
 
-* **Node 22.18+ is required.** Babel 8 and cspell 10 set that floor, and `engines.node` matches
-  it rather than claiming something lower: Node 18 and 20 both reached end-of-life (April 2025
-  and April 2026), so a lower floor would be advertising support that nothing verifies. The
-  bundles themselves use nothing newer than optional chaining and would run on far older Node —
-  that is just not a configuration this repository tests. `.nvmrc` pins 24, because
-  the committed bundles are byte-compared against a fresh build by `npm run ci`.
-* **The bundles are no longer ES5.** Upstream compiled to ES5 by accident of Babel 7's default
-  targets. This repository declares an explicit `browserslist` (`defaults, not op_mini all`),
-  so the bundles use modern syntax and drop support for pre-2017 browsers. Node consumers are
-  unaffected.
+* **Node 22.18+ is required.** cspell 10 sets that floor, and `engines.node` matches it rather
+  than claiming something lower: Node 18 and 20 both reached end-of-life (April 2025 and April
+  2026), so a lower floor would be advertising support that nothing verifies. The bundles
+  themselves use nothing newer than optional chaining and would run on far older Node — that is
+  just not a configuration this repository tests. `.nvmrc` pins 24, because the committed
+  bundles are byte-compared against a fresh build by `npm run ci`.
+* **The bundles are no longer ES5, and are no longer transpiled at all.** Upstream compiled to
+  ES5 by accident of Babel 7's default targets. This repository declares an explicit
+  `browserslist` (`defaults, not op_mini all`), which resolves to Chrome 109 and newer —
+  everything this package uses, including static class fields and optional chaining, is native
+  there. Measured: `@babel/preset-env` transformed nothing, and removing babel-loader left
+  `node.js` byte-for-byte identical. So webpack now consumes `src/` directly and Babel is not
+  part of the build. Node consumers are unaffected.
+* **Babel is a test-only dependency.** `babel-jest` rewrites `src/`'s ESM to CommonJS so Jest can
+  load it, and `babel.config.js` carries the single plugin that does it. `@babel/core` is pinned
+  to 7 to match the copy Jest itself depends on: Jest 30 requires `@babel/core@^7` outright, and
+  a Babel 8 at the root collided with the `@babel/plugin-syntax-*` packages Jest pulls in, which
+  are frozen at 7 because Babel 8 deleted them. That collision produced roughly two hundred
+  `npm warn ERESOLVE` lines on every install.
 * **One universal bundle replaced the web/node pair.** axios shipped separate browser and NodeJS
   adapters, and that was the only reason two builds existed; without it they differed by 154
   bytes. `output.globalObject` is now `this`, so a single UMD bundle loads in either environment.
