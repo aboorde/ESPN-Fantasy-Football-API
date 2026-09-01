@@ -9,6 +9,7 @@ import Boxscore from '../boxscore/boxscore';
 import DraftPlayer from '../draft-player/draft-player';
 import FreeAgentPlayer from '../free-agent-player/free-agent-player';
 import League from '../league/league';
+import Matchup from '../matchup/matchup';
 import NFLGame from '../nfl-game/nfl-game';
 import Team from '../team/team';
 
@@ -102,6 +103,39 @@ class Client {
         Boxscore.buildFromServer(matchup, { leagueId: this.leagueId, seasonId, scoringPeriodId })
       ));
     });
+  }
+
+  /**
+   * Returns every matchup on the league's schedule for a season, played or not.
+   *
+   * `getBoxscoreForWeek` fetches this same schedule and filters it down to a single matchup period,
+   * discarding the rest. This returns all of it, which is what answers "who do I play in week 12",
+   * strength of schedule, and the shape of the playoff bracket.
+   *
+   * NOTE: ESPN only puts playoff matchups on the schedule once it has generated them. Before then
+   * the schedule covers the regular season only, so the highest `matchupPeriodId` returned equals
+   * `League#scheduleSettings.numberOfRegularSeasonMatchups`.
+   *
+   * NOTE: The response carries roster data that Matchup does not map. Use `getBoxscoreForWeek` when
+   * lineups are what you are after.
+   *
+   * @param  {object} options Required options object.
+   * @param  {number} options.seasonId The season to grab the schedule from.
+   * @returns {Matchup[]} Every matchup in the season, in ESPN's schedule order.
+   */
+  getScheduleForSeason({ seasonId }) {
+    this.constructor._validateV3Params(seasonId, 'getScheduleForSeason');
+
+    const route = this.constructor._buildRoute({
+      base: `${seasonId}/segments/0/leagues/${this.leagueId}`,
+      params: '?view=mMatchup&view=mMatchupScore'
+    });
+
+    return http.get(route, this._buildRequestConfig()).then((data) => (
+      map(get(data, 'schedule'), (matchup) => (
+        Matchup.buildFromServer(matchup, { leagueId: this.leagueId, seasonId })
+      ))
+    ));
   }
 
   /**

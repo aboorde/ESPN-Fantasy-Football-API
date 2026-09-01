@@ -6,6 +6,7 @@ import Boxscore from '../boxscore/boxscore';
 import DraftPlayer from '../draft-player/draft-player';
 import FreeAgentPlayer from '../free-agent-player/free-agent-player';
 import League from '../league/league';
+import Matchup from '../matchup/matchup';
 import NFLGame from '../nfl-game/nfl-game';
 import Player from '../player/player';
 import Team from '../team/team';
@@ -301,6 +302,94 @@ describe('Client', () => {
               expect(boxscore).toBeInstanceOf(Boxscore);
               expect(boxscore.homeTeamId).toBe(response.schedule[index].home.teamId);
               expect(boxscore.awayTeamId).toBe(response.schedule[index].away.teamId);
+            });
+          });
+        });
+      });
+    });
+
+    describe('getScheduleForSeason', () => {
+      let client;
+      let leagueId;
+      let seasonId;
+
+      beforeEach(() => {
+        leagueId = 213213;
+        seasonId = 2018;
+
+        client = new Client({ leagueId });
+
+        jest.spyOn(http, 'get').mockImplementation();
+      });
+
+      describe('when the seasonId is prior to 2018', () => {
+        test('throws an error', () => {
+          expect(() => client.getScheduleForSeason({ seasonId: 2017 })).toThrow();
+        });
+      });
+
+      describe('when the seasonId is 2018 or after', () => {
+        test('does not throw an error', () => {
+          http.get.mockReturnValue(UNSETTLED_RESPONSE);
+
+          expect(() => client.getScheduleForSeason({ seasonId: 2018 })).not.toThrow();
+        });
+
+        test('calls http.get with the correct params', () => {
+          const routeBase = `${seasonId}/segments/0/leagues/${leagueId}`;
+          const routeParams = '?view=mMatchup&view=mMatchupScore';
+          const route = `${routeBase}${routeParams}`;
+
+          const config = {};
+          jest.spyOn(client, '_buildRequestConfig').mockReturnValue(config);
+          http.get.mockReturnValue(UNSETTLED_RESPONSE);
+
+          client.getScheduleForSeason({ seasonId });
+          expect(http.get).toHaveBeenCalledWith(route, config);
+        });
+
+        describe('before the promise resolves', () => {
+          test('does not invoke callback', () => {
+            jest.spyOn(Matchup, 'buildFromServer').mockImplementation();
+            http.get.mockReturnValue(UNSETTLED_RESPONSE);
+
+            client.getScheduleForSeason({ seasonId });
+            expect(Matchup.buildFromServer).not.toHaveBeenCalled();
+          });
+        });
+
+        describe('after the promise resolves', () => {
+          test('maps every matchup period, not just one', async () => {
+            const response = {
+              schedule: [{
+                id: 1, matchupPeriodId: 1, winner: 'HOME', playoffTierType: 'NONE',
+                home: { teamId: 2, totalPoints: 110 }, away: { teamId: 3, totalPoints: 99 }
+              }, {
+                id: 2, matchupPeriodId: 1, winner: 'AWAY', playoffTierType: 'NONE',
+                home: { teamId: 5, totalPoints: 88 }, away: { teamId: 6, totalPoints: 120 }
+              }, {
+                id: 3, matchupPeriodId: 2, winner: 'UNDECIDED', playoffTierType: 'NONE',
+                home: { teamId: 2, totalPoints: 0 }, away: { teamId: 5, totalPoints: 0 }
+              }]
+            };
+            http.get.mockReturnValue(Promise.resolve(response));
+
+            const schedule = await client.getScheduleForSeason({ seasonId });
+
+            // getBoxscoreForWeek filters this same array down to one period. This must not.
+            expect(schedule.length).toBe(3);
+            forEach(schedule, (matchup) => expect(matchup).toBeInstanceOf(Matchup));
+            expect(schedule[0].winner).toBe('HOME');
+            expect(schedule[2].matchupPeriodId).toBe(2);
+            expect(schedule[2].winner).toBe('UNDECIDED');
+          });
+
+          describe('when the league has no schedule yet', () => {
+            test('returns an empty array', async () => {
+              http.get.mockReturnValue(Promise.resolve({}));
+
+              const schedule = await client.getScheduleForSeason({ seasonId });
+              expect(schedule).toEqual([]);
             });
           });
         });
