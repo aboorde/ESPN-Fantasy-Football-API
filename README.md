@@ -6,6 +6,24 @@
 
 A Javascript API client for both web and NodeJS that connects to the updated v3 ESPN fantasy football API. Available as an npm package.
 
+## About this repository
+
+This repository tracks [`mkreiser/ESPN-Fantasy-Football-API`](https://github.com/mkreiser/ESPN-Fantasy-Football-API)
+`main` (currently v2.0.1) and adds one method on top of it: [`getRecentActivity`](#getting-recent-activity),
+which returns a league's recent transactions.
+
+It is not published to npm. The built bundles are committed so it can be installed straight from git,
+pinned to a commit:
+
+```
+npm install --save git+https://github.com/aboorde/ESPN-Fantasy-Football-API.git#<commit-sha>
+```
+
+`package.json` carries a `-wpfl` prerelease suffix (e.g. `2.0.1-wpfl.1`) so that an installed copy is
+distinguishable from the published `espn-fantasy-football-api` at the same upstream version.
+
+When re-syncing with upstream, run `npm run build` and commit the regenerated bundles. CI enforces it.
+
 ## Features
 
 * Supports pulling data from ESPN
@@ -21,8 +39,10 @@ Hosted documentation available at http://espn-fantasy-football-api.s3-website.us
 ## Installation
 
 ```
-npm install --save espn-fantasy-football-api
+npm install --save git+https://github.com/aboorde/ESPN-Fantasy-Football-API.git#<commit-sha>
 ```
+
+(Installing `espn-fantasy-football-api` from npm gets you upstream, without `getRecentActivity`.)
 
 There are four files exported in the package:
 
@@ -106,6 +126,42 @@ const client = new Client({
 const myClient = new Client({ leagueId: 12345 });
 myClient.setCookies({ espnS2: 'YOUR_ESPN_S2', SWID: 'YOUR_SWID' });
 ```
+
+#### Getting Recent Activity
+
+`getRecentActivity` returns the league's most recent transactions, newest first. It is specific to
+this repository and is not available in the upstream package.
+
+```javascript
+const activity = await myClient.getRecentActivity({ seasonId: 2024 });
+```
+
+The result is an array of activity topics, each holding one action per message in that topic:
+
+```javascript
+[
+  [
+    {
+      team,        // the Team's raw response data, or undefined if it could not be resolved
+      action,      // 'FA ADDED' | 'WAIVER ADDED' | 'DROPPED' | 'TRADED' | 'UNKNOWN'
+      player,      // the roster entry, or the player card when the player is no longer rostered
+      bidAmount,   // the winning bid on a 'WAIVER ADDED' action, otherwise 0
+      date,        // the topic's timestamp, in epoch milliseconds
+      targetId,    // the ESPN player id the message refers to
+      ids          // the raw { from, for, to } team ids off the message
+    }
+  ]
+]
+```
+
+Pass `msgType` to restrict the result to a single kind of transaction. It accepts `'FA'`, `'WAIVER'`
+or `'TRADED'`; anything else is ignored and every type is returned.
+
+```javascript
+const trades = await myClient.getRecentActivity({ seasonId: 2024, msgType: 'TRADED' });
+```
+
+This method requires `seasonId` to be 2018 or later, and needs cookies set for private leagues.
 
 ## Example Project Usage
 

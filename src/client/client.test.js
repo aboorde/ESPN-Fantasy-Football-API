@@ -1155,5 +1155,307 @@ describe('Client', () => {
         });
       });
     });
+
+    describe('getRecentActivity', () => {
+      let client;
+      let seasonId;
+
+      const routeBase = (id, leagueId) => `apis/v3/games/ffl/seasons/${id}/segments/0/leagues/${leagueId}`;
+
+      const mockResponses = ({ topics = [], teams = [], players = [] }) => {
+        axios.get
+          .mockReturnValueOnce(q({ data: { topics } }))
+          .mockReturnValueOnce(q({ data: { teams } }))
+          .mockReturnValueOnce(q({ data: { players } }));
+      };
+
+      const filterOf = (callIndex) => JSON.parse(
+        axios.get.mock.calls[callIndex][1].headers['x-fantasy-filter']
+      );
+
+      beforeEach(() => {
+        seasonId = 2018;
+
+        client = new Client({ leagueId: 213213 });
+
+        jest.spyOn(axios, 'get').mockImplementation();
+        mockResponses({});
+      });
+
+      describe('when the seasonId is prior to 2018', () => {
+        test('throws an error', () => {
+          expect(() => client.getRecentActivity({ seasonId: 2017 })).toThrow();
+        });
+      });
+
+      describe('when the seasonId is 2018 or after', () => {
+        test('does not throw an error', () => {
+          expect(() => client.getRecentActivity({ seasonId })).not.toThrow();
+        });
+
+        test('calls axios.get with the communication route first', () => {
+          client.getRecentActivity({ seasonId });
+
+          const route = `${routeBase(seasonId, client.leagueId)}/communication` +
+            '?view=kona_league_communication';
+          expect(axios.get.mock.calls[0][0]).toBe(route);
+        });
+
+        test('requests the communication route from the lm-api-reads host', () => {
+          client.getRecentActivity({ seasonId });
+
+          expect(axios.get.mock.calls[0][1].baseURL).toBe('https://lm-api-reads.fantasy.espn.com/');
+        });
+
+        describe('when msgType is not passed', () => {
+          test('filters on every transaction message type', () => {
+            client.getRecentActivity({ seasonId });
+
+            const { filterIncludeMessageTypeIds } = filterOf(0).topics;
+            expect(filterIncludeMessageTypeIds.value).toEqual([178, 180, 179, 239, 181, 244]);
+          });
+        });
+
+        describe('when msgType is a key on ACTIVITY_MAP', () => {
+          test('filters on only that message type', () => {
+            client.getRecentActivity({ seasonId, msgType: 'WAIVER' });
+
+            const { filterIncludeMessageTypeIds } = filterOf(0).topics;
+            expect(filterIncludeMessageTypeIds.value).toEqual([180]);
+          });
+        });
+
+        describe('when msgType is not a key on ACTIVITY_MAP', () => {
+          test('falls back to every transaction message type', () => {
+            client.getRecentActivity({ seasonId, msgType: 'NOT_A_TYPE' });
+
+            const { filterIncludeMessageTypeIds } = filterOf(0).topics;
+            expect(filterIncludeMessageTypeIds.value).toEqual([178, 180, 179, 239, 181, 244]);
+          });
+        });
+
+        describe('after the promises resolve', () => {
+          test('requests the league view second', async () => {
+            await client.getRecentActivity({ seasonId });
+
+            const route = `${routeBase(seasonId, client.leagueId)}` +
+              '?view=mTeam&view=mRoster&view=mMatchup&view=mSettings&view=mStandings';
+            expect(axios.get.mock.calls[1][0]).toBe(route);
+          });
+
+          test('requests the player card view third', async () => {
+            await client.getRecentActivity({ seasonId });
+
+            const route = `${routeBase(seasonId, client.leagueId)}?view=kona_playercard`;
+            expect(axios.get.mock.calls[2][0]).toBe(route);
+          });
+
+          describe('when the targeted player is on the acting team roster', () => {
+            test('uses the roster entry and does not look the player up', async () => {
+              const rosterEntry = { playerId: 555, playerPoolEntry: { player: { fullName: 'A' } } };
+
+              axios.get.mockReset();
+              mockResponses({
+                topics: [{
+                  date: 1600000000000,
+                  messages: [{ messageTypeId: 178, to: 1, targetId: 555 }]
+                }],
+                teams: [{ id: 1, roster: { entries: [rosterEntry] } }],
+                players: []
+              });
+
+              const activity = await client.getRecentActivity({ seasonId });
+
+              expect(activity[0][0].player).toBe(rosterEntry);
+              expect(filterOf(2).players.filterIds.value).toEqual([]);
+            });
+          });
+
+          describe('when the targeted player is not on the acting team roster', () => {
+            test('backfills the player from the player card response', async () => {
+              const cardPlayer = { id: 777, player: { fullName: 'B' } };
+
+              axios.get.mockReset();
+              mockResponses({
+                topics: [{
+                  date: 1600000000000,
+                  messages: [{ messageTypeId: 179, to: 2, targetId: 777 }]
+                }],
+                teams: [{ id: 2, roster: { entries: [] } }],
+                players: [cardPlayer]
+              });
+
+              const activity = await client.getRecentActivity({ seasonId });
+
+              expect(activity[0][0].player).toBe(cardPlayer);
+            });
+
+            test('requests only the unresolved player ids', async () => {
+              axios.get.mockReset();
+              mockResponses({
+                topics: [{
+                  date: 1600000000000,
+                  messages: [{ messageTypeId: 179, to: 2, targetId: 777 }]
+                }],
+                teams: [{ id: 2, roster: { entries: [] } }],
+                players: []
+              });
+
+              await client.getRecentActivity({ seasonId });
+
+              expect(filterOf(2).players.filterIds.value).toEqual([777]);
+            });
+          });
+
+          describe('when a topic holds several messages', () => {
+            test('returns one action per message', async () => {
+              axios.get.mockReset();
+              mockResponses({
+                topics: [{
+                  date: 1600000000000,
+                  messages: [
+                    { messageTypeId: 178, to: 1, targetId: 1 },
+                    { messageTypeId: 179, to: 1, targetId: 2 }
+                  ]
+                }],
+                teams: [{ id: 1, roster: { entries: [] } }],
+                players: []
+              });
+
+              const activity = await client.getRecentActivity({ seasonId });
+
+              expect(activity).toHaveLength(1);
+              expect(activity[0]).toHaveLength(2);
+            });
+          });
+        });
+      });
+    });
+
+    describe('_buildActivity', () => {
+      let client;
+      let date;
+
+      const buildTopic = (messages) => ({ date, messages });
+
+      beforeEach(() => {
+        date = 1600000000000;
+        client = new Client({ leagueId: 213213 });
+      });
+
+      describe('when the message is a free agent add', () => {
+        test('resolves the team from the "to" id', () => {
+          const teams = [{ id: 1, roster: { entries: [] } }];
+          const topic = buildTopic([{ messageTypeId: 178, to: 1, targetId: 99 }]);
+
+          const [action] = client._buildActivity(topic, { teams });
+
+          expect(action.team).toBe(teams[0]);
+          expect(action.action).toBe('FA ADDED');
+        });
+      });
+
+      describe('when the message is a waiver add', () => {
+        test('reads the bid amount off the "from" field', () => {
+          const teams = [{ id: 3, roster: { entries: [] } }];
+          const topic = buildTopic([{
+            messageTypeId: 180, to: 3, from: 42, targetId: 99
+          }]);
+
+          const [action] = client._buildActivity(topic, { teams });
+
+          expect(action.action).toBe('WAIVER ADDED');
+          expect(action.bidAmount).toBe(42);
+        });
+
+        test('defaults the bid amount to 0 when "from" is absent', () => {
+          const teams = [{ id: 3, roster: { entries: [] } }];
+          const topic = buildTopic([{ messageTypeId: 180, to: 3, targetId: 99 }]);
+
+          const [action] = client._buildActivity(topic, { teams });
+
+          expect(action.bidAmount).toBe(0);
+        });
+      });
+
+      describe('when the message is a trade', () => {
+        test('resolves the team from the "from" id', () => {
+          const teams = [{ id: 4, roster: { entries: [] } }, { id: 5, roster: { entries: [] } }];
+          const topic = buildTopic([{
+            messageTypeId: 244, from: 4, to: 5, targetId: 99
+          }]);
+
+          const [action] = client._buildActivity(topic, { teams });
+
+          expect(action.team).toBe(teams[0]);
+          expect(action.action).toBe('TRADED');
+        });
+      });
+
+      describe('when the message is a drop with a "for" id', () => {
+        test('resolves the team from the "for" id', () => {
+          const teams = [{ id: 6, roster: { entries: [] } }];
+          const topic = buildTopic([{ messageTypeId: 239, for: 6, targetId: 99 }]);
+
+          const [action] = client._buildActivity(topic, { teams });
+
+          expect(action.team).toBe(teams[0]);
+          expect(action.action).toBe('DROPPED');
+        });
+      });
+
+      describe('when the message type is not recognized', () => {
+        test('marks the action UNKNOWN', () => {
+          const teams = [{ id: 7, roster: { entries: [] } }];
+          const topic = buildTopic([{ messageTypeId: 1, to: 7, targetId: 99 }]);
+
+          const [action] = client._buildActivity(topic, { teams });
+
+          expect(action.action).toBe('UNKNOWN');
+        });
+      });
+
+      describe('when the targeted player is on the team roster', () => {
+        test('attaches the roster entry', () => {
+          const entry = { playerId: 99 };
+          const teams = [{ id: 8, roster: { entries: [entry] } }];
+          const topic = buildTopic([{ messageTypeId: 178, to: 8, targetId: 99 }]);
+
+          const [action] = client._buildActivity(topic, { teams });
+
+          expect(action.player).toBe(entry);
+        });
+      });
+
+      describe('when no team matches the message', () => {
+        test('leaves the player unresolved', () => {
+          const topic = buildTopic([{ messageTypeId: 178, to: 404, targetId: 99 }]);
+
+          const [action] = client._buildActivity(topic, { teams: [] });
+
+          expect(action.team).toBeUndefined();
+          expect(action.player).toBeNull();
+        });
+      });
+
+      test('carries the topic date, target id and raw ids onto each action', () => {
+        const teams = [{ id: 9, roster: { entries: [] } }];
+        const topic = buildTopic([{
+          messageTypeId: 178, to: 9, from: 1, for: 2, targetId: 99
+        }]);
+
+        const [action] = client._buildActivity(topic, { teams });
+
+        expect(action.date).toBe(date);
+        expect(action.targetId).toBe(99);
+        expect(action.ids).toEqual({ from: 1, for: 2, to: 9 });
+      });
+
+      describe('when the topic has no messages', () => {
+        test('returns an empty array', () => {
+          expect(client._buildActivity(buildTopic(undefined), { teams: [] })).toEqual([]);
+        });
+      });
+    });
   });
 });

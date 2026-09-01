@@ -1,10 +1,3 @@
-/* eslint-disable linebreak-style */
-/* eslint-disable jsdoc/require-param-description */
-/* eslint-disable jsdoc/require-param-type */
-/* eslint-disable jsdoc/require-returns-type */
-/* eslint-disable class-methods-use-this */
-/* eslint-disable guard-for-in */
-/* eslint-disable no-restricted-syntax */
 import axios from 'axios';
 import _ from 'lodash';
 
@@ -44,6 +37,8 @@ class Client {
 
     this.setCookies({ espnS2: options.espnS2, SWID: options.SWID });
 
+    // Maps ESPN's numeric `messageTypeId`s onto readable transaction labels, and readable keys
+    // back onto the ids `getRecentActivity` filters by.
     this.ACTIVITY_MAP = {
       178: 'FA ADDED',
       180: 'WAIVER ADDED',
@@ -369,100 +364,21 @@ class Client {
     });
   }
 
-  getExtendedLeagueInfo({ seasonId }) {
-    const route = this.constructor._buildRoute({
-      base: `apis/v3/games/ffl/seasons/${seasonId}/segments/0/leagues/${this.leagueId}`,
-      params: '?view=mTeam&view=mRoster&view=mMatchup&view=mSettings&view=mStandings'
-    });
-
-    const config = this._buildAxiosConfig({
-      baseURL: 'https://lm-api-reads.fantasy.espn.com/'
-    });
-
-    return axios.get(route, config).then((response) => {
-      const teams = response.data.teams.map((team) => ({
-        ...team,
-        ...this._fetchExtendedTeamData(response.data.teams, team, response.data.schedule)
-      }));
-      const scheduledTeams = teams.map((team) => {
-        const { schedule } = team;
-        team.schedule.forEach((matchup, week) => {
-          teams.forEach((opponent) => {
-            if (matchup === opponent.id) {
-              schedule[week] = {
-                ...opponent,
-                ...this._fetchExtendedTeamData(teams, opponent, response.data.schedule)
-              };
-            }
-          });
-        });
-        return {
-          ...team,
-          schedule
-        };
-      });
-      const movTeams = scheduledTeams.map((team) => {
-        const mov = [];
-        team.schedule.forEach((opponent, week) => {
-          mov.push(team.scores[week] - opponent.scores[week]);
-        });
-        return {
-          ...team,
-          mov
-        };
-      });
-
-      return movTeams;
-    });
-  }
-
-  _fetchExtendedTeamData(teams, team, data) {
-    const outcomes = [];
-    const scores = [];
-    const schedule = [];
-    data.forEach((matchup) => {
-      if (Object.keys(matchup).includes('away')) {
-        if (matchup.away.teamId === team.id) {
-          scores.push(matchup.away.totalPoints);
-          schedule.push(matchup.home.teamId);
-          outcomes.push(this._getWinner(matchup.winner, true));
-        } else if (matchup.home.teamId === team.id) {
-          scores.push(matchup.home.totalPoints);
-          schedule.push(matchup.away.teamId);
-          outcomes.push(this._getWinner(matchup.winner, false));
-        }
-      } else if (matchup.home.teamId === team.id) {
-        scores.push(matchup.home.totalPoints);
-        schedule.push(matchup.home.teamId);
-        outcomes.push(this._getWinner(matchup.winner, false));
-      }
-    });
-
-    return {
-      outcomes,
-      scores,
-      schedule
-    };
-  }
-
-  _getWinner(winner, isAway) {
-    if (winner === 'UNDECIDED') {
-      return 'U';
-    } else if ((isAway && winner === 'AWAY') || (!isAway && winner === 'HOME')) {
-      return 'W';
-    }
-    return 'L';
-  }
-
   /**
-   * Returns recent transactions on an ESPN fantasy football league
+   * Returns recent transaction activity (adds, drops, waiver claims and trades) for an ESPN
+   * fantasy football league, newest first. Each element of the returned array corresponds to one
+   * activity topic and holds one action per message within that topic.
    *
-   * @param {object} options Required options object.
-   * @param {number} options.seasonId The season to grab data from.
-   * @param options.msgType
-   * @returns Leagues Recent Activity
+   * @param   {object} options Required options object.
+   * @param   {number} options.seasonId The season to grab data from.
+   * @param   {string} [options.msgType] Restricts results to a single activity type. Accepts a key
+   *                                     of `ACTIVITY_MAP`: `FA`, `WAIVER` or `TRADED`. When
+   *                                     omitted, every transaction type is returned.
+   * @returns {Promise<object[][]>} A promise resolving to the league's recent activity.
    */
   getRecentActivity({ seasonId, msgType = '' }) {
+    this.constructor._validateV3Params(seasonId, 'getRecentActivity');
+
     let topics = [];
     let msgTypes = [178, 180, 179, 239, 181, 244];
     const searchIds = [];
@@ -501,18 +417,20 @@ class Client {
     const leagueConfig = this._buildAxiosConfig({
       baseURL: 'https://lm-api-reads.fantasy.espn.com/'
     });
+
     return axios.get(route, config).then((response) => {
       topics = response.data.topics;
       return axios.get(leagueRoute, leagueConfig);
     }).then((res) => {
-      activity = topics.map((topic) => this._buildActivity(topic, res.data));
-      activity.forEach((action) => {
-        action.forEach((msg) => {
+      activity = _.map(topics, (topic) => this._buildActivity(topic, res.data));
+      _.forEach(activity, (action) => {
+        _.forEach(action, (msg) => {
           if (!msg.player) {
             searchIds.push(msg.targetId);
           }
         });
       });
+
       const playerRoute = this.constructor._buildRoute({
         base: `apis/v3/games/ffl/seasons/${seasonId}/segments/0/leagues/${this.leagueId}`,
         params: '?view=kona_playercard'
@@ -524,65 +442,75 @@ class Client {
           'x-fantasy-filter': JSON.stringify({
             players: {
               filterIds: { value: searchIds },
-              filterStatsForTopScoringPeriodIds: { value: 17, additionalValue: [`00${seasonId}`, `10${seasonId}`] }
+              filterStatsForTopScoringPeriodIds: {
+                value: 17, additionalValue: [`00${seasonId}`, `10${seasonId}`]
+              }
             }
           })
         }
       });
+
       return axios.get(playerRoute, playerConfig);
-    }).then((resp) => {
-      const newData = activity.map((action) => action.map((msg) => {
-        if (!msg.player) {
-          return {
-            ...msg,
-            player: resp.data.players.find((x) => x.id === msg.targetId)
-          };
-        }
-        return msg;
-      }));
-      return newData;
-    });
+    }).then((resp) => _.map(activity, (action) => _.map(action, (msg) => {
+      if (!msg.player) {
+        return {
+          ...msg,
+          player: _.find(resp.data.players, (player) => player.id === msg.targetId)
+        };
+      }
+      return msg;
+    })));
   }
 
+  /**
+   * Maps a single activity topic onto its actions, resolving the team responsible for each message
+   * and, when the targeted player is still on that team's roster, the player entry itself. Messages
+   * whose player cannot be resolved here are looked up separately by `getRecentActivity`.
+   *
+   * @param   {object} topic An activity topic from the `kona_league_communication` view.
+   * @param   {object} data League response data used to resolve teams and their rosters.
+   * @returns {object[]} The actions parsed from the topic's messages.
+   * @private
+   */
   _buildActivity(topic, data) {
     const { teams } = data;
-    const actions = [];
     const { date } = topic;
-    for (const msg in topic.messages) {
+
+    return _.map(topic.messages, (message) => {
       let team = '';
       let action = 'UNKNOWN';
       let player = null;
       let bidAmount = 0;
-      const msgId = topic.messages[msg].messageTypeId;
+      const msgId = message.messageTypeId;
 
       if (msgId === 244) {
-        team = teams.find((x) => x.id === topic.messages[msg].from);
+        team = _.find(teams, (x) => x.id === message.from);
       } else if (msgId === 239) {
-        team = teams.find((x) => x.id === topic.messages[msg].for);
+        team = _.find(teams, (x) => x.id === message.for);
       } else {
-        team = teams.find((x) => x.id === topic.messages[msg].to);
+        team = _.find(teams, (x) => x.id === message.to);
       }
 
       if (this.ACTIVITY_MAP[msgId]) {
         action = this.ACTIVITY_MAP[msgId];
       }
       if (action === 'WAIVER ADDED') {
-        bidAmount = topic.messages[msg].from || 0;
+        bidAmount = message.from || 0;
       }
       if (team) {
-        player = team.roster.entries.find((x) => x.playerId === topic.messages[msg].targetId);
+        player = _.find(team.roster.entries, (x) => x.playerId === message.targetId);
       }
 
       const ids = {
-        from: topic.messages[msg].from,
-        for: topic.messages[msg].for,
-        to: topic.messages[msg].to
+        from: message.from,
+        for: message.for,
+        to: message.to
       };
-      actions.push({
-        team, action, player, bidAmount, date, targetId: topic.messages[msg].targetId, ids
-      });
-    }
-    return actions;
+
+      return {
+        team, action, player, bidAmount, date, targetId: message.targetId, ids
+      };
+    });
   }
 
   /**
