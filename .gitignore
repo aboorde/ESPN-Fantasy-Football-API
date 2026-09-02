@@ -16,10 +16,17 @@ node_modules/
 .cspellcache
 .eslintcache
 
-# dotenv environment variables file
+# dotenv environment variables file. The integration tests read ESPN_S2 and SWID from here, so
+# every variant is ignored rather than just `.env` -- this repository is public, and a stray
+# `.env.local` is how the credentials those tests need end up in it.
 .env
+.env.*
+!.env.example
 
 .DS_Store
+
+# npm pack output
+*.tgz
 
 # Build output. Not committed: `prepare` rebuilds it during `npm install`, including when this repo
 # is installed as a git dependency, so a consumer always gets artifacts matching the pinned commit.

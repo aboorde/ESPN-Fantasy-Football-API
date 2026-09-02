@@ -24,7 +24,7 @@
     "build": "npm run clean:dist && webpack && node scripts/build-types.mjs",
     "build:docs": "npm run clean:docs && jsdoc -c .jsdoc.json",
     "clean": "npm run clean:dist && npm run clean:docs",
-    "clean:dist": "rm -rf node.js node.js.map node-dev.js node.d.ts types",
+    "clean:dist": "rm -rf node.js node.js.map node.js.LICENSE.txt node-dev.js node.d.ts types",
     "clean:docs": "rm -rf docs",
     "ci": "npm run clean:dist && npm run lint && npm run test && npm run build",
     "lint": "npm run lint:js && npm run lint:spelling",
