@@ -302,5 +302,31 @@ describe('recorded ESPN payloads', () => {
         });
       });
     });
+
+    // The checks above cover this directory. A real SWID reached `team/team.test.js` anyway, from
+    // a payload recorded off a live league and pasted in whole -- so the SWID check runs over
+    // every source file, not just the fixtures. This repository is public.
+    describe('the rest of src/', () => {
+      const sourceFiles = fs.readdirSync(path.join(__dirname, '..'), {
+        recursive: true, withFileTypes: true
+      })
+        .filter((entry) => entry.isFile() && /\.(js|json)$/.test(entry.name))
+        .map((entry) => path.join(entry.parentPath, entry.name));
+
+      test('there are source files to check', () => {
+        expect(sourceFiles.length).toBeGreaterThan(0);
+      });
+
+      test.each(sourceFiles)('%s carries no real SWID', (file) => {
+        const identifiers = fs.readFileSync(file, 'utf8').match(
+          /\{[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\}/g
+        ) ?? [];
+
+        // Zeroed but for the last block, or upstream's own `BAD5167F` test constant.
+        identifiers.forEach((id) => expect(id).toMatch(
+          /^\{(00000000-0000-0000-0000-0000|BAD5167F-96F5-40FF-AFF0-)/
+        ));
+      });
+    });
   });
 });

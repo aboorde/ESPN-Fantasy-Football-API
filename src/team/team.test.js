@@ -98,9 +98,13 @@ describe('Team', () => {
 
     describe('when populated from a measured ESPN response', () => {
       // Recorded 2026-09-01 from `?view=mRoster&view=mTeam&view=mStandings` on a live league. Every
-      // path asserted below was observed on the wire. A mapping that drifts from ESPN's shape fails
-      // here instead of silently returning `undefined` forever, which is precisely how
-      // `wavierRank: 'wavierRank'` survived in shipped code and docs for years.
+      // path asserted below was observed on the wire, but the SWID is synthetic: a real one
+      // identifies a real ESPN account and this repository is public. Zero every block but the
+      // last, the way `__fixtures__/teams.json` does, when recording anything new here.
+      //
+      // A mapping that drifts from ESPN's shape fails here instead of silently returning
+      // `undefined` forever, which is precisely how `wavierRank: 'wavierRank'` survived in shipped
+      // code and docs for years.
       const responseData = {
         id: 1,
         abbrev: 'BALL',
